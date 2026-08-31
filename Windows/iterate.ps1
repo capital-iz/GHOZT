@@ -39,6 +39,32 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# git reports routinely on stderr - line-ending notices, push progress, branch advice - and none of
+# it means failure. PowerShell 5.1 raises NativeCommandError for ANY native stderr output while
+# $ErrorActionPreference is 'Stop', so a successful `git add` that mentioned CRLF conversion aborted
+# the whole iteration.
+#
+# Relaxing the preference for the duration of the call is the only form that reliably suppresses it -
+# redirecting the stream or assigning it to a variable does not. The exit code is the real signal and
+# is checked immediately after, so nothing is being swallowed: a genuine git failure still throws.
+function Invoke-Git {
+    param([string[]]$Arguments)
+
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & git @Arguments 2>&1
+        $code = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previous
+    }
+
+    foreach ($line in $output) { Write-Host "    $line" }
+    if ($code -ne 0) { throw "git $($Arguments[0]) failed with exit code $code" }
+}
+
+
 $productRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $propsPath = Join-Path $productRoot 'App\Directory.Build.props'
 
@@ -84,17 +110,9 @@ if (-not (Test-Path $msi)) { throw "expected $msi but it is not there" }
 
 Push-Location $productRoot
 try {
-    # git writes informational messages to stderr - line-ending notices, push progress, branch
-    # advice. Under $ErrorActionPreference = 'Stop' PowerShell turns any native stderr output into a
-    # terminating error, so a successful `git add` that mentioned CRLF conversion aborted the whole
-    # iteration. Exit codes are the actual signal, and they are checked after every call.
-    $previousPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-
     # Explicit paths only. `git add -A` has swept other agents' in-flight edits and embedded
     # repositories into commits on this machine.
-    & git add App Blueprints Windows/Installer Windows/iterate.ps1 .gitignore 2>&1 | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw "git add failed" }
+    Invoke-Git @('add', 'App', 'Blueprints', 'Windows/Installer', 'Windows/iterate.ps1', '.gitignore')
 
     $staged = & git diff --cached --name-only
     if (-not $staged) {
@@ -108,17 +126,13 @@ $Message
 Ghozt $next - installer built and verified before commit.
 Artifact: Ghozt-$next.msi ($size, self-contained win-x64).
 "@
-        & git commit -m $body 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
+        Invoke-Git @('commit', '-m', $body)
     }
 
     if (-not $NoPush) {
         Write-Host "==> Pushing to origin" -ForegroundColor Cyan
-        & git push origin HEAD 2>&1 | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "git push failed" }
+        Invoke-Git @('push', 'origin', 'HEAD')
     }
-
-    $ErrorActionPreference = $previousPreference
 }
 finally {
     Pop-Location
