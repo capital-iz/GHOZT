@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The theme engine is a plain library with no UI dependency, exactly as the suite's
+    CapitalIz.CommandDeck.Core.Theming is. That is deliberate: the whole contrast
+    guarantee can then be tested without a WPF binding, and the same generator can be
+    ported to another platform without dragging a widget toolkit behind it.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Ghozt.Theming</RootNamespace>
+    <AssemblyName>Ghozt.Theming</AssemblyName>
+  </PropertyGroup>
+
+</Project>

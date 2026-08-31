@@ -1,0 +1,158 @@
+<!--
+  Ghozt geometry and type.
+
+  Tighter than the Capital-Iz suite ladder on purpose: a forensics tool reads as an examination
+  facility rather than an operations deck, and the difference is carried by radius, border weight
+  and the measurement-like separators between regions.
+
+  Nothing here is a colour. Colours come from the token table, published live by ThemeManager.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- ============================ RADIUS LADDER ============================ -->
+    <!-- A container is rounder than what it holds. Inner radius = outer minus padding. -->
+    <CornerRadius x:Key="Radius.Shell">10</CornerRadius>
+    <CornerRadius x:Key="Radius.Panel">16</CornerRadius>
+    <CornerRadius x:Key="Radius.Card">12</CornerRadius>
+    <CornerRadius x:Key="Radius.CardLarge">16</CornerRadius>
+    <CornerRadius x:Key="Radius.Control">8</CornerRadius>
+    <CornerRadius x:Key="Radius.ControlLarge">12</CornerRadius>
+    <CornerRadius x:Key="Radius.Input">10</CornerRadius>
+    <CornerRadius x:Key="Radius.Chip">6</CornerRadius>
+    <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
+    <CornerRadius x:Key="Radius.Dialog">20</CornerRadius>
+
+    <!-- The chamfer: one clipped corner, for restricted actions and evidence seals. Used sparingly;
+         a chamfer everywhere is a texture, not a signal. -->
+    <CornerRadius x:Key="Radius.Chamfer">2,12,12,12</CornerRadius>
+    <CornerRadius x:Key="Radius.SealChamfer">2,10,2,10</CornerRadius>
+
+    <!-- ============================ BORDER WEIGHTS ============================ -->
+    <!--
+      1 standard, 2 selected or risk, 3 clearance seal.
+
+      Named Weight.* rather than Border.*, because Border.* is the generated token namespace and a
+      Thickness sharing a key with a brush is resolved by whichever dictionary merged last. That
+      collision already cost this shell one crash on startup; ResourceCoverageTests now refuses it.
+    -->
+    <Thickness x:Key="Weight.Hairline">1</Thickness>
+    <Thickness x:Key="Weight.Selected">2</Thickness>
+    <Thickness x:Key="Weight.Seal">3</Thickness>
+    <Thickness x:Key="Weight.LeftRail">3,0,0,0</Thickness>
+    <Thickness x:Key="Weight.TopOnly">0,1,0,0</Thickness>
+    <Thickness x:Key="Weight.BottomOnly">0,0,0,1</Thickness>
+    <Thickness x:Key="Weight.LeftOnly">1,0,0,0</Thickness>
+
+    <!-- ============================ TYPE ============================ -->
+    <!--
+      Inter where the operator has it, then the Windows variable face, then Segoe UI. Named in that
+      order rather than assuming Inter is installed: a blueprint may specify a face, but a shell that
+      falls back to a serif because the face is absent has broken its own hierarchy.
+    -->
+    <FontFamily x:Key="Font.Display">Inter Display, Inter, Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="Font.Ui">Inter, Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="Font.Mono">Cascadia Mono, Consolas, Courier New</FontFamily>
+    <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <sys:Double x:Key="Type.Display">30</sys:Double>
+    <sys:Double x:Key="Type.Title">21</sys:Double>
+    <sys:Double x:Key="Type.Section">16</sys:Double>
+    <sys:Double x:Key="Type.CardHeading">14</sys:Double>
+    <sys:Double x:Key="Type.Body">13</sys:Double>
+    <sys:Double x:Key="Type.Dense">12</sys:Double>
+    <sys:Double x:Key="Type.Caption">11</sys:Double>
+    <sys:Double x:Key="Type.Micro">10</sys:Double>
+    <sys:Double x:Key="Type.Legal">9</sys:Double>
+
+    <!-- ============================ TEXT STYLES ============================ -->
+
+    <Style x:Key="Type.DisplayStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Display}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Display}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Primary}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+
+    <Style x:Key="Type.TitleStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Display}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Title}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Primary}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+
+    <Style x:Key="Type.SectionStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Display}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Section}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Primary}" />
+    </Style>
+
+    <Style x:Key="Type.HeadingStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.CardHeading}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Primary}" />
+    </Style>
+
+    <Style x:Key="Type.BodyStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Body}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Type.CaptionStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Caption}" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Secondary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Type.MutedStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Caption}" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Muted}" />
+    </Style>
+
+    <!--
+      The micro-label above a control cluster. Letter-spaced and upper case, so a dropdown reading
+      "All groups" still says what it is grouping. Every cluster carries one, including the ones
+      where it seems obvious: a label present only on the ambiguous controls tells the operator
+      nothing about the unlabelled ones.
+    -->
+    <Style x:Key="Type.MicroLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Micro}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Faint}" />
+        <Setter Property="Margin" Value="2,0,0,4" />
+    </Style>
+
+    <!-- Raw evidence, paths, identifiers and hashes. Tabular figures so columns line up and live
+         numerals do not jitter as they update. -->
+    <Style x:Key="Type.MonoStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Caption}" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Body}" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+    </Style>
+
+    <Style x:Key="Type.IdentifierStyle" TargetType="TextBlock" BasedOn="{StaticResource Type.MonoStyle}">
+        <Setter Property="Foreground" Value="{DynamicResource Text.Muted}" />
+        <Setter Property="FontSize" Value="{StaticResource Type.Micro}" />
+    </Style>
+
+    <Style x:Key="Type.IconStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Icon}" />
+        <Setter Property="Foreground" Value="{DynamicResource Text.Secondary}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    </Style>
+
+</ResourceDictionary>

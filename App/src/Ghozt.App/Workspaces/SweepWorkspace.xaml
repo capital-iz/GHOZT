@@ -1,0 +1,230 @@
+<UserControl x:Class="Ghozt.App.Workspaces.SweepWorkspace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <UserControl.Resources>
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <shell:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <shell:IsEmptyConverter x:Key="IsEmpty" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="360" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ============ PLAN ============ -->
+        <Border BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,1,0">
+            <ScrollViewer Padding="18,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="RUN MODE" />
+                    <ComboBox x:Name="ModeBox" SelectionChanged="OnModeChanged"
+                              AutomationProperties.Name="Sweep run mode" />
+
+                    <!-- The plan is shown before it runs: which checks, in order, and what each
+                         one will look at. A run whose scope is only visible afterwards cannot be
+                         approved in advance. -->
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,6" Text="CHECKS IN THIS PLAN" />
+                    <ItemsControl x:Name="PlanList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,4" Padding="10,7"
+                                        Background="{DynamicResource Surface.Card}"
+                                        BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                        CornerRadius="{StaticResource Radius.Control}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Index}" Style="{StaticResource Type.IdentifierStyle}"
+                                                   Width="18" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Type.CaptionStyle}"
+                                                   FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,18,0,6" Text="EXPLORATION BUDGET" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="86" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="48" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="States" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
+                        <Slider Grid.Column="1" x:Name="StatesSlider" Minimum="5" Maximum="500" Value="200"
+                                IsSnapToTickEnabled="True" TickFrequency="5" ValueChanged="OnBudgetChanged"
+                                AutomationProperties.Name="Maximum states to visit" />
+                        <TextBlock Grid.Column="2" x:Name="StatesValue" Style="{StaticResource Type.MonoStyle}"
+                                   TextAlignment="Right" VerticalAlignment="Center" />
+
+                        <TextBlock Grid.Row="1" Text="Seconds" Style="{StaticResource Type.CaptionStyle}"
+                                   VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <Slider Grid.Row="1" Grid.Column="1" x:Name="SecondsSlider" Minimum="5" Maximum="600" Value="120"
+                                Margin="0,8,0,0" IsSnapToTickEnabled="True" TickFrequency="5"
+                                ValueChanged="OnBudgetChanged"
+                                AutomationProperties.Name="Maximum seconds" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" x:Name="SecondsValue" Margin="0,8,0,0"
+                                   Style="{StaticResource Type.MonoStyle}" TextAlignment="Right" VerticalAlignment="Center" />
+
+                        <TextBlock Grid.Row="2" Text="Depth" Style="{StaticResource Type.CaptionStyle}"
+                                   VerticalAlignment="Center" Margin="0,8,0,0" />
+                        <Slider Grid.Row="2" Grid.Column="1" x:Name="DepthSlider" Minimum="1" Maximum="20" Value="8"
+                                Margin="0,8,0,0" IsSnapToTickEnabled="True" TickFrequency="1"
+                                ValueChanged="OnBudgetChanged"
+                                AutomationProperties.Name="Maximum exploration depth" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" x:Name="DepthValue" Margin="0,8,0,0"
+                                   Style="{StaticResource Type.MonoStyle}" TextAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- Destructive permission. Off by default, gated by the target's access class,
+                         and the reason for a refusal is stated rather than the control just being
+                         dead. -->
+                    <Border Margin="0,16,0,0" Padding="10,8"
+                            BorderThickness="2,0,0,0"
+                            BorderBrush="{DynamicResource State.Critical}"
+                            x:Name="DestructiveNote">
+                        <StackPanel>
+                            <CheckBox x:Name="DestructiveToggle" Content="Allow destructive actions"
+                                      Foreground="{DynamicResource State.Critical}"
+                                      FontWeight="SemiBold" FontSize="11"
+                                      Click="OnDestructiveChanged"
+                                      AutomationProperties.Name="Allow destructive actions in this sweep" />
+                            <TextBlock x:Name="DestructiveReason" Margin="0,4,0,0"
+                                       Style="{StaticResource Type.MutedStyle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Pre-flight. Blockers stop the run; warnings do not. -->
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,18,0,6" Text="PRE-FLIGHT" />
+                    <ItemsControl x:Name="PreflightList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Font.Icon}"
+                                               FontSize="10" Foreground="{Binding Brush}" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Message}"
+                                               Style="{StaticResource Type.CaptionStyle}"
+                                               Foreground="{Binding Brush}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                        <Button x:Name="StartButton" Style="{StaticResource Button.Primary}"
+                                Content="Start sweep" MinWidth="130" Click="OnStart"
+                                AutomationProperties.Name="Start the sweep" />
+                        <Button x:Name="StopButton" Style="{StaticResource Button.Destructive}"
+                                Margin="8,0,0,0" Content="Stop" MinWidth="90" Click="OnStop"
+                                IsEnabled="False"
+                                AutomationProperties.Name="Stop the running sweep" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ============ LIVE BOARD ============ -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Padding="20,16" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="CURRENT PHASE" />
+                            <TextBlock x:Name="PhaseText" Style="{StaticResource Type.SectionStyle}" Text="Idle" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" x:Name="ElapsedText" VerticalAlignment="Bottom"
+                                   Style="{StaticResource Type.MonoStyle}" />
+                    </Grid>
+
+                    <!-- Progress against the budget, not against an invented total. -->
+                    <Border Margin="0,12,0,0" Height="6" CornerRadius="3"
+                            Background="{DynamicResource Surface.Inset}">
+                        <Border x:Name="ProgressFill" HorizontalAlignment="Left" Width="0"
+                                CornerRadius="3" Background="{DynamicResource Ghozt.Live}" />
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <shell:StatusPlate x:Name="StatesPlate" Label="STATES VISITED" Value="0" Mono="True" />
+                        <shell:StatusPlate x:Name="DeviationPlate" Label="DEVIATIONS" Value="0" Token="State.Fault" />
+                        <shell:StatusPlate x:Name="EvidencePlate" Label="EVIDENCE" Value="0" Token="Ghozt.Live" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SWEEP HISTORY" />
+                    <ItemsControl x:Name="History">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,6,0,0" Padding="14,11"
+                                        Background="{DynamicResource Surface.Card}"
+                                        BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                        CornerRadius="{StaticResource Radius.Card}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
+                                                <TextBlock Text="{Binding Mode}" Margin="10,0,0,0"
+                                                           Style="{StaticResource Type.CaptionStyle}" FontWeight="SemiBold" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Outcome}" Margin="0,4,0,0"
+                                                       Style="{StaticResource Type.CaptionStyle}" />
+                                            <TextBlock Margin="0,4,0,0" Style="{StaticResource Type.MutedStyle}">
+                                                <Run Text="{Binding StatesVisited, Mode=OneWay}" />
+                                                <Run Text="states ·" />
+                                                <Run Text="{Binding DeviationsFound, Mode=OneWay}" />
+                                                <Run Text="deviations ·" />
+                                                <Run Text="{Binding EvidenceCaptured, Mode=OneWay}" />
+                                                <Run Text="artefacts" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <Border Grid.Column="1" VerticalAlignment="Top" Padding="7,3"
+                                                CornerRadius="{StaticResource Radius.Chip}"
+                                                BorderThickness="1"
+                                                BorderBrush="{DynamicResource Border.Control}">
+                                            <TextBlock Text="{Binding State}" FontSize="9" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Text.Secondary}" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Style="{StaticResource Surface.EmptySlot}" Margin="0,10,0,0"
+                            x:Name="NoHistory">
+                        <TextBlock Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center"
+                                   Text="No sweep has run against this target. A sweep plans its checks, states its budget, and records evidence for every outcome — including the ones that pass." />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,396 @@
+<Window x:Class="Ghozt.App.Shell.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:Ghozt.App.Shell"
+        xmlns:ws="clr-namespace:Ghozt.App.Workspaces"
+        Title="Ghozt"
+        Width="1560" Height="960"
+        MinWidth="800" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        TextOptions.TextFormattingMode="Ideal"
+        UseLayoutRounding="True">
+
+    <!--
+      The shell is one rounded plate on a transparent window, so the desktop shows through at the
+      operator's chosen surface opacity. Regions inside it are separated by measurement-like hairlines
+      rather than by gaps, which is what gives Ghozt its instrument-panel character.
+    -->
+    <Border Background="{DynamicResource Surface.Void}"
+            BorderBrush="{DynamicResource Border.Strong}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource Radius.Shell}"
+            SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.55" Color="Black" />
+        </Border.Effect>
+
+        <Grid>
+            <!-- The full-app wash, painted behind every region. Collapsed entirely when the finish
+                 is off, so nothing costs a layer it does not need. -->
+            <Border x:Name="AppWash" CornerRadius="{StaticResource Radius.Shell}" IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="{DynamicResource Wash.Start.Color}" Offset="0" />
+                        <GradientStop Color="{DynamicResource Wash.Mid.Color}" Offset="0.55" />
+                        <GradientStop Color="{DynamicResource Wash.End.Color}" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />   <!-- title bar -->
+                    <RowDefinition Height="Auto" />   <!-- restricted status strip -->
+                    <RowDefinition Height="Auto" />   <!-- production banner -->
+                    <RowDefinition Height="*" />      <!-- rail + canvas + inspector -->
+                    <RowDefinition Height="Auto" />   <!-- black-box tray -->
+                    <RowDefinition Height="Auto" />   <!-- status footer -->
+                </Grid.RowDefinitions>
+
+                <!-- ===================== TITLE BAR ===================== -->
+                <Border Grid.Row="0" Height="44" Background="Transparent"
+                        MouseLeftButtonDown="OnTitleBarDrag">
+                    <Grid Margin="14,0,8,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- The mark. A chamfered plate, spectral teal: the product's own presence,
+                             not a logo pasted on. -->
+                        <Border Width="26" Height="26" VerticalAlignment="Center"
+                                Background="{DynamicResource Ghozt.LiveSoft}"
+                                BorderBrush="{DynamicResource Ghozt.LiveBorder}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.SealChamfer}">
+                            <TextBlock Text="&#xEA18;" FontFamily="{StaticResource Font.Icon}"
+                                       FontSize="13" Foreground="{DynamicResource Ghozt.Live}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+
+                        <TextBlock Grid.Column="1" Text="Ghozt" Margin="10,0,0,0"
+                                   VerticalAlignment="Center"
+                                   FontFamily="{StaticResource Font.Display}"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Text.Primary}" />
+
+                        <!-- Global search doubles as the command palette entry. -->
+                        <Button Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Width="360" Height="28" Cursor="Hand"
+                                Command="{Binding OpenCommandPalette}"
+                                ToolTip="Search targets, workspaces and actions (Ctrl+K)"
+                                AutomationProperties.Name="Open command palette">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Root" Background="{DynamicResource Surface.Inset}"
+                                            BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1"
+                                            CornerRadius="{StaticResource Radius.Pill}">
+                                        <Grid Margin="10,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="&#xE721;" FontFamily="{StaticResource Font.Icon}"
+                                                       FontSize="11" Foreground="{DynamicResource Text.Muted}"
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="Search or run a command"
+                                                       FontSize="11" Foreground="{DynamicResource Text.Muted}"
+                                                       VerticalAlignment="Center" />
+                                            <Border Grid.Column="2" Background="{DynamicResource Surface.CardStrong}"
+                                                    CornerRadius="{StaticResource Radius.Chip}" Padding="6,1">
+                                                <TextBlock Text="Ctrl K" FontFamily="{StaticResource Font.Mono}"
+                                                           FontSize="9" Foreground="{DynamicResource Text.Muted}" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent.BorderHover}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- Emergency control. Always reachable during execution, and it says what
+                             it does rather than offering one ambiguous stop. -->
+                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <Button Style="{StaticResource Button.Icon}" Content="&#xE769;"
+                                    Command="{Binding PauseAll}"
+                                    ToolTip="Pause the active run (execution continues; streaming stops)"
+                                    AutomationProperties.Name="Pause active run" />
+                            <Button Content="&#xE71A;" Command="{Binding StopAll}"
+                                    Width="32" Height="32" Cursor="Hand"
+                                    FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                    Foreground="{DynamicResource State.Critical}"
+                                    ToolTip="Stop everything now (contained; evidence preserved)"
+                                    AutomationProperties.Name="Emergency stop">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Root" Background="Transparent"
+                                                BorderBrush="{DynamicResource State.CriticalSoft}" BorderThickness="1"
+                                                CornerRadius="{StaticResource Radius.Control}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource State.CriticalFill}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource State.OnCritical}" />
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Foreground" Value="{DynamicResource Text.Disabled}" />
+                                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Border.Subtle}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource Button.Icon}" Content="&#xE921;" Click="OnMinimise"
+                                    ToolTip="Minimise" AutomationProperties.Name="Minimise" />
+                            <Button Style="{StaticResource Button.Icon}" Content="&#xE922;" Click="OnMaximise"
+                                    ToolTip="Maximise or restore" AutomationProperties.Name="Maximise or restore" />
+                            <Button Style="{StaticResource Button.WindowClose}" Content="&#xE8BB;" Click="OnClose"
+                                    ToolTip="Close" AutomationProperties.Name="Close" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ===================== RESTRICTED STATUS STRIP ===================== -->
+                <!-- The current truth about what Ghozt is examining and what it may do. Visible
+                     during navigation, overlays, full-screen graphs and report review. -->
+                <Border Grid.Row="1" Background="{DynamicResource Surface.BaseSecondary}"
+                        BorderBrush="{DynamicResource Border.Subtle}"
+                        BorderThickness="0,1,0,1" Padding="14,7">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                        <StackPanel Orientation="Horizontal">
+                            <shell:StatusPlate Label="TARGET" Value="{Binding TargetName}" Token="Accent.Text" />
+                            <shell:StatusPlate Label="ID" Value="{Binding TargetId}" Mono="True" />
+                            <shell:StatusPlate Label="BUILD" Value="{Binding BuildLabel}" Mono="True" />
+                            <shell:StatusPlate Label="ENVIRONMENT" Value="{Binding EnvironmentLabel}"
+                                               Token="{Binding EnvironmentToken}" Strong="True" />
+                            <shell:StatusPlate Label="ACCESS" Value="{Binding AccessLabel}"
+                                               Token="{Binding AccessToken}" Strong="True" />
+                            <shell:StatusPlate Label="CONNECTION" Value="{Binding ConnectionLabel}"
+                                               Token="{Binding ConnectionToken}" />
+                            <shell:StatusPlate Label="RUN MODE" Value="{Binding RunModeLabel}"
+                                               Token="{Binding RunModeToken}" />
+                            <shell:StatusPlate Label="RECORDER" Value="{Binding RecorderLabel}"
+                                               Token="{Binding RecorderToken}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- ===================== PRODUCTION BANNER ===================== -->
+                <Border Grid.Row="2" Background="{DynamicResource State.CriticalSoft}"
+                        BorderBrush="{DynamicResource State.Critical}" BorderThickness="0,0,0,1"
+                        Padding="14,6"
+                        Visibility="{Binding IsProduction, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE7BA;" FontFamily="{StaticResource Font.Icon}" FontSize="12"
+                                   Foreground="{DynamicResource State.Critical}" VerticalAlignment="Center" />
+                        <TextBlock Margin="8,0,0,0" VerticalAlignment="Center"
+                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource State.Critical}"
+                                   Text="PRODUCTION TARGET — destructive tests are denied by policy; every action is recorded against your identity." />
+                    </StackPanel>
+                </Border>
+
+                <!-- ===================== MAIN BODY ===================== -->
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="RailColumn" Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="InspectorColumn" Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ========== OPERATIONS RAIL ========== -->
+                    <Border Grid.Column="0" Background="{DynamicResource Surface.PanelDeep}"
+                            BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,1,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <ItemsControl x:Name="Rail" ItemsSource="{Binding Workspaces}" Margin="6,10,6,10">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <shell:RailButton Definition="{Binding}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- The rail expand toggle sits at the foot, away from the workspaces so
+                                 it is never mistaken for one. -->
+                            <Button Grid.Row="1" Style="{StaticResource Button.Icon}" Content="&#xE700;"
+                                    Margin="0,0,0,8" Click="OnToggleRail"
+                                    ToolTip="Expand or collapse the rail"
+                                    AutomationProperties.Name="Expand or collapse the operations rail" />
+                        </Grid>
+                    </Border>
+
+                    <!-- ========== WORKSPACE ========== -->
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Workspace header: badge, title, scope line. The scope line is a
+                             Structure-stage obligation, not decoration - a screen that does not
+                             state its scope has not stated its authority boundary. -->
+                        <Border Grid.Row="0" Padding="20,16,20,14"
+                                BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Width="38" Height="38" VerticalAlignment="Center"
+                                        Background="{DynamicResource Surface.AccentWash}"
+                                        BorderBrush="{DynamicResource Accent.BorderSoft}" BorderThickness="1"
+                                        CornerRadius="{StaticResource Radius.Control}">
+                                    <TextBlock Text="{Binding CurrentWorkspace.Glyph}"
+                                               FontFamily="{StaticResource Font.Icon}" FontSize="16"
+                                               Foreground="{DynamicResource Accent.Text}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding CurrentWorkspace.Title}"
+                                               Style="{StaticResource Type.TitleStyle}" />
+                                    <TextBlock Text="{Binding ScopeLine}" Style="{StaticResource Type.CaptionStyle}"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                                           MaxWidth="330" TextAlignment="Right"
+                                           Text="{Binding CurrentWorkspace.Purpose}"
+                                           Style="{StaticResource Type.MutedStyle}" TextWrapping="Wrap" />
+                            </Grid>
+                        </Border>
+
+                        <!-- The canvas. One workspace visible at a time; each keeps its own state. -->
+                        <ContentControl Grid.Row="1" x:Name="Canvas" />
+                    </Grid>
+
+                    <!-- ========== FORENSICS INSPECTOR ========== -->
+                    <Border Grid.Column="2" x:Name="Inspector" Width="360"
+                            Background="{DynamicResource Surface.Panel}"
+                            BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1,0,0,0">
+                        <shell:InspectorPanel />
+                    </Border>
+                </Grid>
+
+                <!-- ===================== BLACK-BOX TRAY ===================== -->
+                <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="{Binding TrayHeight}" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="{DynamicResource Surface.BaseSecondary}"
+                            BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0"
+                            Padding="14,5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Style="{StaticResource Button.Icon}" Width="24" Height="24"
+                                    Content="&#xE70D;" Command="{Binding ToggleTray}"
+                                    ToolTip="Collapse or show the black-box stream"
+                                    AutomationProperties.Name="Toggle black-box stream" />
+
+                            <TextBlock Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center"
+                                       Style="{StaticResource Type.MicroLabelStyle}"
+                                       Text="BLACK-BOX STREAM" />
+
+                            <Grid Grid.Column="2" HorizontalAlignment="Left" Margin="16,0,0,0">
+                                <TextBox x:Name="StreamFilter" Width="240" Height="24" FontSize="11"
+                                     Text="{Binding StreamFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}"
+                                         ToolTip="Filter by event code prefix, e.g. HTTP or UI (Ctrl+L)"
+                                         AutomationProperties.Name="Filter the event stream by code" />
+                                <!-- A hint that yields to typed text, so an empty box still says what it filters. -->
+                                <TextBlock Text="Filter by code, e.g. SWP" Margin="10,0,0,0" FontSize="11"
+                                           IsHitTestVisible="False" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Text.Muted}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=StreamFilter}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <TextBlock Grid.Column="3" VerticalAlignment="Center" Margin="0,0,10,0"
+                                       Style="{StaticResource Type.IdentifierStyle}">
+                                <Run Text="{Binding Events.Count, Mode=OneWay}" />
+                                <Run Text="shown /" />
+                                <Run Text="{Binding EventCount, Mode=OneWay}" />
+                                <Run Text="recorded" />
+                            </TextBlock>
+
+                            <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                <RadioButton Style="{StaticResource Toggle.Pill}" Content="Peek" Height="22"
+                                             Command="{Binding SetTray}" CommandParameter="{x:Static shell:TrayState.Peek}"
+                                             GroupName="Tray" Margin="0,0,4,0" />
+                                <RadioButton Style="{StaticResource Toggle.Pill}" Content="Half" Height="22"
+                                             Command="{Binding SetTray}" CommandParameter="{x:Static shell:TrayState.Half}"
+                                             GroupName="Tray" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="1" Background="{DynamicResource Surface.Void}"
+                            Visibility="{Binding TrayExpanded, Converter={StaticResource BoolToVisibility}}">
+                        <shell:BlackBoxStream />
+                    </Border>
+                </Grid>
+
+                <!-- ===================== STATUS FOOTER ===================== -->
+                <!-- Evidence, not decoration: the database actually in use and the exact look on
+                     screen, so a screenshot can be reproduced later. -->
+                <Border Grid.Row="5" Background="{DynamicResource Surface.PanelDeep}"
+                        BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0"
+                        CornerRadius="0,0,9,9" Padding="14,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="FooterPath" Style="{StaticResource Type.IdentifierStyle}"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1" x:Name="FooterTheme" Style="{StaticResource Type.IdentifierStyle}"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ===================== COMMAND PALETTE ===================== -->
+            <shell:CommandPalette x:Name="Palette"
+                                  Visibility="{Binding CommandPaletteOpen, Converter={StaticResource BoolToVisibility}}" />
+        </Grid>
+    </Border>
+</Window>

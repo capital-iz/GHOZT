@@ -1,0 +1,118 @@
+<UserControl x:Class="Ghozt.App.Shell.BlackBoxStream"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <!--
+      The raw operational record. Not a decorative terminal: a structured, time-synchronised evidence
+      surface that can be read quickly while retaining the exact raw record.
+
+      Virtualised, because the ledger is designed to grow without limit and this has to stay
+      responsive on the machine the product is sized for. Severity colours the badge, never the whole
+      row - only a critical line is allowed to tint its background.
+    -->
+    <UserControl.Resources>
+        <shell:StreamTimeConverter x:Key="Time" />
+        <shell:SeverityBrushConverter x:Key="SeverityBrush" />
+        <shell:IsEmptyConverter x:Key="IsEmpty" />
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <ListBox x:Name="Rows"
+                 ItemsSource="{Binding Events}"
+                 SelectedItem="{Binding InspectorSubject, Mode=TwoWay}"
+                 Background="Transparent" BorderThickness="0"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 VirtualizingPanel.IsVirtualizing="True"
+                 VirtualizingPanel.VirtualizationMode="Recycling"
+                 VirtualizingPanel.ScrollUnit="Pixel"
+                 AutomationProperties.Name="Black-box event stream">
+
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border x:Name="Root" Background="Transparent" Padding="14,2">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.RowHover}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.Selected}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="96" />   <!-- time -->
+                            <ColumnDefinition Width="86" />   <!-- id -->
+                            <ColumnDefinition Width="140" />  <!-- code -->
+                            <ColumnDefinition Width="Auto" /> <!-- severity -->
+                            <ColumnDefinition Width="*" />    <!-- message -->
+                            <ColumnDefinition Width="Auto" /> <!-- actor -->
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Millisecond precision, tabular, so the column reads as a column. -->
+                        <TextBlock Text="{Binding At, Converter={StaticResource Time}}"
+                                   FontFamily="{StaticResource Font.Mono}" FontSize="10"
+                                   Foreground="{DynamicResource Text.Muted}" />
+
+                        <TextBlock Grid.Column="1" Text="{Binding Id}"
+                                   FontFamily="{StaticResource Font.Mono}" FontSize="10"
+                                   Foreground="{DynamicResource Ghozt.Telemetry}" />
+
+                        <TextBlock Grid.Column="2" Text="{Binding Code}"
+                                   FontFamily="{StaticResource Font.Mono}" FontSize="10"
+                                   Foreground="{DynamicResource Text.Secondary}" />
+
+                        <!-- The severity badge. Colour supports the label; it never replaces it. -->
+                        <Border Grid.Column="3" Margin="0,0,10,0" Padding="5,0"
+                                CornerRadius="{StaticResource Radius.Chip}"
+                                BorderThickness="1"
+                                BorderBrush="{Binding Severity, Converter={StaticResource SeverityBrush}}">
+                            <TextBlock Text="{Binding Severity}"
+                                       FontFamily="{StaticResource Font.Ui}" FontSize="9" FontWeight="SemiBold"
+                                       Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}" />
+                        </Border>
+
+                        <TextBlock Grid.Column="4" Text="{Binding Message}"
+                                   FontFamily="{StaticResource Font.Mono}" FontSize="10"
+                                   Foreground="{DynamicResource Text.Body}"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding Detail}" />
+
+                        <TextBlock Grid.Column="5" Text="{Binding Actor}" Margin="10,0,0,0"
+                                   FontFamily="{StaticResource Font.Mono}" FontSize="10"
+                                   Foreground="{DynamicResource Text.Muted}" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!--
+          The empty state distinguishes "nothing has happened yet" from "your filter excluded
+          everything" - the same distinction the blueprint requires between "no faults found in
+          tested scope" and "nothing has been tested".
+        -->
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Visibility="{Binding Events.Count, Converter={StaticResource IsEmpty}}">
+            <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource Font.Icon}" FontSize="20"
+                       Foreground="{DynamicResource Text.Muted}" HorizontalAlignment="Center" />
+            <TextBlock x:Name="EmptyMessage" Margin="0,8,0,0" HorizontalAlignment="Center"
+                       Style="{StaticResource Type.CaptionStyle}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

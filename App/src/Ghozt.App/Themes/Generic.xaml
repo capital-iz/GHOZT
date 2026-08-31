@@ -1,0 +1,131 @@
+<!--
+  Default templates for the Ghozt shell controls. WPF looks here by convention for a control that
+  overrides DefaultStyleKey.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/Ghozt;component/Themes/Geometry.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <shell:BoolToVisibilityConverter x:Key="Generic.BoolToVisibility" />
+    <shell:InverseBoolToVisibilityConverter x:Key="Generic.InverseBoolToVisibility" />
+
+    <!-- ============================ STATUS PLATE ============================ -->
+    <Style TargetType="{x:Type shell:StatusPlate}">
+        <Setter Property="Margin" Value="0,0,22,0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type shell:StatusPlate}">
+                    <StackPanel>
+                        <TextBlock Text="{TemplateBinding Label}"
+                                   FontFamily="{StaticResource Font.Ui}"
+                                   FontSize="{StaticResource Type.Legal}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Text.Faint}" />
+
+                        <!-- The plain form. -->
+                        <TextBlock x:Name="Plain"
+                                   Text="{TemplateBinding Value}"
+                                   Margin="0,1,0,0"
+                                   FontFamily="{StaticResource Font.Ui}"
+                                   FontSize="{StaticResource Type.Caption}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{TemplateBinding ValueBrush}" />
+
+                        <!-- The boxed form, for readings that gate what may be done. -->
+                        <Border x:Name="Boxed" Visibility="Collapsed" Margin="0,2,0,0"
+                                HorizontalAlignment="Left"
+                                BorderBrush="{TemplateBinding ValueBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Chip}"
+                                Padding="6,1">
+                            <TextBlock Text="{TemplateBinding Value}"
+                                       FontFamily="{StaticResource Font.Ui}"
+                                       FontSize="{StaticResource Type.Legal}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{TemplateBinding ValueBrush}" />
+                        </Border>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Mono" Value="True">
+                            <Setter TargetName="Plain" Property="FontFamily" Value="{StaticResource Font.Mono}" />
+                            <Setter TargetName="Plain" Property="FontSize" Value="{StaticResource Type.Micro}" />
+                            <Setter TargetName="Plain" Property="FontWeight" Value="Normal" />
+                        </Trigger>
+                        <Trigger Property="Strong" Value="True">
+                            <Setter TargetName="Plain" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="Boxed" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================ RAIL BUTTON ============================ -->
+    <Style TargetType="{x:Type shell:RailButton}">
+        <Setter Property="Height" Value="42" />
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type shell:RailButton}">
+                    <Border x:Name="Root" Background="Transparent"
+                            CornerRadius="{StaticResource Radius.Control}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="42" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- The illuminated leading rail. Channel one of three. -->
+                            <Border x:Name="Rail" Width="3" Margin="0,8" Background="Transparent"
+                                    CornerRadius="0,2,2,0" />
+
+                            <TextBlock x:Name="Glyph" Grid.Column="1"
+                                       Text="{Binding Definition.Glyph, RelativeSource={RelativeSource TemplatedParent}}"
+                                       FontFamily="{StaticResource Font.Icon}" FontSize="16"
+                                       Foreground="{DynamicResource Text.Secondary}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                            <TextBlock x:Name="Title" Grid.Column="2" Margin="4,0,14,0"
+                                       Text="{Binding Definition.Title, RelativeSource={RelativeSource TemplatedParent}}"
+                                       FontFamily="{StaticResource Font.Ui}"
+                                       FontSize="{StaticResource Type.Body}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource Text.Secondary}"
+                                       VerticalAlignment="Center"
+                                       Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.RowHover}" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Text.Primary}" />
+                            <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsActive" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.SelectedStrong}" />
+                            <Setter TargetName="Rail" Property="Background" Value="{DynamicResource Accent.Fill}" />
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Accent.Text}" />
+                            <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource Accent.Text}" />
+                        </Trigger>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="Title" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Focus.Ring}" />
+                            <Setter TargetName="Root" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

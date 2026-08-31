@@ -1,0 +1,31 @@
+<Project>
+
+  <!--
+    Shared build settings for every Ghozt project.
+
+    Ghozt targets net8.0-windows to match the rest of the Capital-Iz desktop suite
+    (CommanDeck and Mouse n Key both target net8.0-windows10.0.19041.0). A newer SDK is
+    installed on this machine, but matching the suite is what lets the shared theming
+    discipline, the installer tooling and the registry publishing pipeline stay one thing
+    rather than two.
+  -->
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <Company>Capital-Iz</Company>
+    <Product>Ghozt - Dev Tester</Product>
+    <Authors>Capital-Iz</Authors>
+    <Copyright>Copyright (c) Capital-Iz</Copyright>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+  </PropertyGroup>
+
+</Project>

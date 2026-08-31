@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The domain and the evidence plane. No UI dependency, for the same reason the theme engine has
+    none: the identifier discipline, the event ledger and the hashing can then be tested without a
+    WPF binding, and the same core can back a headless runner later.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Ghozt.Core</RootNamespace>
+    <AssemblyName>Ghozt.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+  </ItemGroup>
+
+</Project>

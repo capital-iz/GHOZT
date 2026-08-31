@@ -1,0 +1,17 @@
+<Application x:Class="Ghozt.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!--
+                  Geometry and type first, then controls, which depend on them. The live token table
+                  is merged in at startup by ThemeManager: it is generated, not authored, so it
+                  cannot be a file here.
+                -->
+                <ResourceDictionary Source="Themes/Geometry.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

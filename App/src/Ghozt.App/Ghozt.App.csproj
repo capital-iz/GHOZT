@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Ghozt.App</RootNamespace>
+    <AssemblyName>Ghozt</AssemblyName>
+
+    <!-- The visible brand is "Ghozt". The hyphenated descriptor is formal metadata only. -->
+    <AssemblyTitle>Ghozt</AssemblyTitle>
+    <Product>Ghozt - Dev Tester</Product>
+
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!--
+      Self-contained publishing is the suite standard: an installer must run on a machine that is
+      not the author's, carrying every dependency it needs.
+    -->
+    <RuntimeIdentifier Condition="'$(PublishSelfContained)' == 'true'">win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ghozt.Core\Ghozt.Core.csproj" />
+    <ProjectReference Include="..\Ghozt.Theming\Ghozt.Theming.csproj" />
+  </ItemGroup>
+
+</Project>

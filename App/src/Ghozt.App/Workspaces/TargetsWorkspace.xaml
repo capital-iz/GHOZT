@@ -1,0 +1,130 @@
+<UserControl x:Class="Ghozt.App.Workspaces.TargetsWorkspace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <UserControl.Resources>
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <shell:IsEmptyConverter x:Key="IsEmpty" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar. Exactly one accent-filled control: the screen's primary action. -->
+        <Border Grid.Row="0" Padding="20,12"
+                BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource Button.Primary}" Content="Register target"
+                        Click="OnRegister"
+                        AutomationProperties.Name="Register a new target" />
+                <Button Margin="8,0,0,0" Content="Probe capability" Click="OnProbe"
+                        IsEnabled="{Binding HasTarget}"
+                        ToolTip="Check whether the selected target is reachable and record the result"
+                        AutomationProperties.Name="Probe the selected target" />
+                <Button Margin="8,0,0,0" Content="Seed demonstration target" Click="OnSeed"
+                        ToolTip="Registers Ghozt's own evidence store as a target, so the shell has something real to examine"
+                        AutomationProperties.Name="Seed a demonstration target" />
+                <Button Style="{StaticResource Button.Destructive}" Margin="24,0,0,0"
+                        Content="Remove target" Click="OnRemove"
+                        IsEnabled="{Binding HasTarget}"
+                        ToolTip="Permanently removes the target and everything recorded against it"
+                        AutomationProperties.Name="Remove the selected target and its records" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" Padding="20,16">
+            <Grid>
+                <ItemsControl ItemsSource="{Binding Targets}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <!-- A target card. Every reading that gates what may be done is on the
+                                 card, not behind a click: environment, access class, authority. -->
+                            <Border Width="330" Margin="0,0,14,14" Padding="14"
+                                    Background="{DynamicResource Surface.Card}"
+                                    BorderBrush="{DynamicResource Border.Card}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource Radius.CardLarge}"
+                                    MouseLeftButtonUp="OnSelectTarget"
+                                    Cursor="Hand">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Type.HeadingStyle}" />
+                                            <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
+                                        </StackPanel>
+                                        <Border Grid.Column="1" VerticalAlignment="Top" Padding="6,2"
+                                                CornerRadius="{StaticResource Radius.Chip}"
+                                                Background="{DynamicResource Surface.Inset}">
+                                            <TextBlock Text="{Binding Kind}" FontSize="9"
+                                                       Foreground="{DynamicResource Text.Secondary}" />
+                                        </Border>
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <shell:StatusPlate Label="ENVIRONMENT" Value="{Binding Environment}" Strong="True" />
+                                        <shell:StatusPlate Label="ACCESS" Value="{Binding Access}" Strong="True" />
+                                    </StackPanel>
+
+                                    <TextBlock Margin="0,10,0,0" Style="{StaticResource Type.MutedStyle}"
+                                               Text="{Binding BaseAddress}"
+                                               TextTrimming="CharacterEllipsis" />
+
+                                    <!-- Authority is stated or its absence is stated. An empty
+                                         authority note is not a blank space; it is a condition. -->
+                                    <Border Margin="0,10,0,0" Padding="8,6"
+                                            BorderThickness="2,0,0,0"
+                                            BorderBrush="{DynamicResource Authority.Border}">
+                                        <TextBlock>
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Type.CaptionStyle}">
+                                                    <Setter Property="Text" Value="{Binding AuthorityNote}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AuthorityNote}" Value="">
+                                                            <Setter Property="Text" Value="No authority grant recorded — Ghozt will observe only." />
+                                                            <Setter Property="Foreground" Value="{DynamicResource State.Warning}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Empty state: explains what a target is and offers the next valid action, rather
+                     than showing a generic empty dashboard. -->
+                <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
+                        VerticalAlignment="Top" HorizontalAlignment="Center"
+                        Visibility="{Binding Targets.Count, Converter={StaticResource IsEmpty}}">
+                    <StackPanel>
+                        <TextBlock Text="&#xE8A9;" FontFamily="{StaticResource Font.Icon}" FontSize="24"
+                                   Foreground="{DynamicResource Accent.Text}" HorizontalAlignment="Center" />
+                        <TextBlock Margin="0,12,0,0" HorizontalAlignment="Center"
+                                   Style="{StaticResource Type.SectionStyle}" Text="No targets registered" />
+                        <TextBlock Margin="0,8,0,0" TextAlignment="Center" Style="{StaticResource Type.CaptionStyle}"
+                                   Text="A target is the application, service, algorithm or system Ghozt will examine — together with the environment it runs in and the authority you hold to examine it. Nothing runs until one exists." />
+                        <Button Style="{StaticResource Button.Primary}" Margin="0,16,0,0"
+                                HorizontalAlignment="Center" Content="Register your first target"
+                                Click="OnRegister" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

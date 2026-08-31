@@ -1,0 +1,85 @@
+<UserControl x:Class="Ghozt.App.Shell.InspectorPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <!--
+      The primary bridge between visual overview and defensible detail. It follows selection, keeps
+      context stable, and exposes the exact evidence behind every summary.
+
+      Tabs with no content for the current selection stay visible with an explicit reason rather than
+      disappearing: a tab that vanishes teaches an operator that the question cannot be asked, when
+      the truth is that this particular subject has no answer for it yet.
+    -->
+    <UserControl.Resources>
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <shell:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="16,12,12,10"
+                BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="FORENSICS INSPECTOR" />
+                    <TextBlock x:Name="SubjectTitle" Style="{StaticResource Type.HeadingStyle}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="SubjectId" Style="{StaticResource Type.IdentifierStyle}" Margin="0,2,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1" Style="{StaticResource Button.Icon}" Content="&#xE842;"
+                        VerticalAlignment="Top"
+                        ToolTip="Pin this subject so selection no longer changes it"
+                        AutomationProperties.Name="Pin the inspector to this subject"
+                        Click="OnTogglePin" x:Name="PinButton" />
+            </Grid>
+        </Border>
+
+        <!-- Tabs. Every one stays present; unavailable ones say why. -->
+        <Border Grid.Row="1" Padding="10,8"
+                BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <ItemsControl x:Name="Tabs">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton Style="{StaticResource Toggle.Pill}" GroupName="InspectorTab"
+                                     Height="24" Margin="0,0,4,4"
+                                     Content="{Binding Title}"
+                                     IsEnabled="{Binding Available}"
+                                     IsChecked="{Binding Selected, Mode=TwoWay}"
+                                     ToolTip="{Binding Reason}"
+                                     AutomationProperties.HelpText="{Binding Reason}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!-- Body -->
+        <ScrollViewer Grid.Row="2" Padding="16,14">
+            <StackPanel x:Name="Body" />
+        </ScrollViewer>
+
+        <!-- Empty state: what the inspector is for, and how to fill it. -->
+        <StackPanel Grid.Row="2" x:Name="EmptyState" VerticalAlignment="Center" Margin="24">
+            <TextBlock Text="&#xE7B3;" FontFamily="{StaticResource Font.Icon}" FontSize="22"
+                       Foreground="{DynamicResource Text.Muted}" HorizontalAlignment="Center" />
+            <TextBlock Margin="0,10,0,0" HorizontalAlignment="Center" TextAlignment="Center"
+                       Style="{StaticResource Type.CaptionStyle}"
+                       Text="Nothing selected. Choose a target, a finding, an event or a lattice node and its evidence appears here." />
+        </StackPanel>
+    </Grid>
+</UserControl>

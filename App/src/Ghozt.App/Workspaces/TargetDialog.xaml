@@ -1,0 +1,140 @@
+<Window x:Class="Ghozt.App.Workspaces.TargetDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        SizeToContent="Height" Width="600" MaxHeight="820"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Title="Register target">
+
+    <Border Background="{DynamicResource Surface.Dialog}"
+            BorderBrush="{DynamicResource Border.Strong}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource Radius.Dialog}">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="34" ShadowDepth="0" Opacity="0.6" Color="Black" />
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="24,20,24,16"
+                    BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="OnDrag">
+                <StackPanel>
+                    <TextBlock Text="Register target" Style="{StaticResource Type.SectionStyle}"
+                               Foreground="{DynamicResource Accent.Text}" />
+                    <TextBlock Margin="0,4,0,0" Style="{StaticResource Type.CaptionStyle}"
+                               Text="Identify what Ghozt will examine, where it runs, and the authority you hold over it. Access class and environment govern what may be executed." />
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" Padding="24,18">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="NAME" />
+                    <TextBox x:Name="NameBox" AutomationProperties.Name="Target name" />
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="KIND" />
+                            <ComboBox x:Name="KindBox" IsEditable="True" AutomationProperties.Name="Target kind">
+                                <ComboBoxItem Content="Desktop application" />
+                                <ComboBoxItem Content="Web application" />
+                                <ComboBoxItem Content="HTTP API" />
+                                <ComboBoxItem Content="Service" />
+                                <ComboBoxItem Content="Algorithm" />
+                                <ComboBoxItem Content="Database" />
+                                <ComboBoxItem Content="Mobile application" />
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="OWNER" />
+                            <TextBox x:Name="OwnerBox" AutomationProperties.Name="Target owner" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="ENVIRONMENT" />
+                            <ComboBox x:Name="EnvironmentBox" SelectionChanged="OnEnvironmentChanged"
+                                      AutomationProperties.Name="Environment" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="ACCESS CLASS" />
+                            <ComboBox x:Name="AccessBox" SelectionChanged="OnAccessChanged"
+                                      AutomationProperties.Name="Access class" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- The consequence of the two choices above, stated before the target exists
+                         rather than discovered when an action is refused. -->
+                    <Border x:Name="PolicyNote" Margin="0,12,0,0" Padding="10,8"
+                            BorderThickness="2,0,0,0"
+                            BorderBrush="{DynamicResource State.Warning}">
+                        <TextBlock x:Name="PolicyText" Style="{StaticResource Type.CaptionStyle}" />
+                    </Border>
+
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,4"
+                               Text="BASE ADDRESS OR PATH" />
+                    <TextBox x:Name="AddressBox"
+                             ToolTip="An http(s) URL, or a file or folder path. Used by the capability probe."
+                             AutomationProperties.Name="Base address or path" />
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="BUILD LABEL" />
+                            <TextBox x:Name="BuildBox"
+                                     ToolTip="A version, commit or package identifier. Findings are recorded against it."
+                                     AutomationProperties.Name="Build label" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="REPOSITORY PATH" />
+                            <TextBox x:Name="RepositoryBox" AutomationProperties.Name="Repository path" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,4"
+                               Text="AUTHORITY GRANT" />
+                    <TextBox x:Name="AuthorityBox" AcceptsReturn="True" TextWrapping="Wrap"
+                             Height="66" VerticalContentAlignment="Top" Padding="10,8"
+                             ToolTip="Who authorised which actions, against which environment, for what period."
+                             AutomationProperties.Name="Authority grant" />
+                    <TextBlock Margin="0,6,0,0" Style="{StaticResource Type.MutedStyle}"
+                               Text="Ghozt operates only against targets and actions for which you hold explicit permission. Without a grant, the target is observation-only." />
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Row="2" Padding="24,14" Background="{DynamicResource Surface.Inset}"
+                    CornerRadius="0,0,19,19">
+                <Grid>
+                    <TextBlock x:Name="Validation" VerticalAlignment="Center"
+                               Style="{StaticResource Type.MutedStyle}"
+                               Foreground="{DynamicResource State.Warning}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel" MinWidth="90" IsCancel="True" Click="OnCancel" />
+                        <Button x:Name="RegisterButton" Style="{StaticResource Button.Primary}"
+                                Margin="10,0,0,0" MinWidth="130" Content="Register" Click="OnRegister" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

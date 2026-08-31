@@ -1,0 +1,147 @@
+<UserControl x:Class="Ghozt.App.Workspaces.EvidenceWorkspace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <UserControl.Resources>
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="SealButton" Style="{StaticResource Button.Approval}"
+                            Content="Seal artefact" MinWidth="140" Click="OnSeal" IsEnabled="False"
+                            ToolTip="Verifies the hash and records you as the reviewer"
+                            AutomationProperties.Name="Seal the selected evidence artefact" />
+                    <Button Margin="8,0,0,0" x:Name="VerifyButton" Content="Verify hash"
+                            Click="OnVerify" IsEnabled="False"
+                            ToolTip="Recomputes the content hash and compares it with the recorded value"
+                            AutomationProperties.Name="Verify the artefact hash" />
+                    <Button Margin="8,0,0,0" x:Name="RedactButton" Content="Redact"
+                            Click="OnRedact" IsEnabled="False"
+                            ToolTip="Masks the payload while preserving the original under permission"
+                            AutomationProperties.Name="Redact the artefact payload" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SEARCH" />
+                    <TextBox x:Name="Search" MaxWidth="320" HorizontalAlignment="Left" Height="26"
+                             TextChanged="OnSearch"
+                             AutomationProperties.Name="Search evidence by summary, kind or hash" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="COMPLETENESS" />
+                    <TextBlock x:Name="Completeness" Style="{StaticResource Type.MonoStyle}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <ListBox x:Name="Items" Background="Transparent" BorderThickness="0" Padding="20,14"
+                     SelectionChanged="OnSelect"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     AutomationProperties.Name="Evidence artefacts">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Margin" Value="0,0,0,6" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Root"
+                                            Background="{DynamicResource Surface.Card}"
+                                            BorderBrush="{DynamicResource Border.Card}"
+                                            BorderThickness="1"
+                                            CornerRadius="{StaticResource Radius.Card}"
+                                            Padding="14,11">
+                                        <ContentPresenter />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.CardStrongHover}" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.Selected}" />
+                                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent.BorderStrong}" />
+                                            <Setter TargetName="Root" Property="BorderThickness" Value="2" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Type.HeadingStyle}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
+                                    <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
+                                    <TextBlock Text="{Binding Kind}" Style="{StaticResource Type.IdentifierStyle}" />
+                                    <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
+                                    <TextBlock Text="{Binding SourceAdapter}" Style="{StaticResource Type.IdentifierStyle}" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding Sha256}" Margin="0,4,0,0"
+                                           Style="{StaticResource Type.IdentifierStyle}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <!--
+                              The seal. Gold only when the artefact is verified; an unsealed artefact
+                              gets a plain outline, never a dimmed gold. A faint gold seal reads as a
+                              weak approval rather than as no approval.
+                            -->
+                            <Border Grid.Column="1" VerticalAlignment="Top" Padding="8,4"
+                                    CornerRadius="{StaticResource Radius.SealChamfer}"
+                                    BorderThickness="1"
+                                    Visibility="{Binding Sealed, Converter={StaticResource BoolToVisibility}}"
+                                    Background="{DynamicResource Authority.Soft}"
+                                    BorderBrush="{DynamicResource Authority.Border}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE72E;" FontFamily="{StaticResource Font.Icon}" FontSize="10"
+                                               Foreground="{DynamicResource Authority.Clearance}" VerticalAlignment="Center" />
+                                    <TextBlock Text="SEALED" Margin="5,0,0,0" FontSize="9" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Authority.Clearance}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
+                    VerticalAlignment="Top" HorizontalAlignment="Center" x:Name="EmptyPanel">
+                <StackPanel>
+                    <TextBlock Text="&#xE8F1;" FontFamily="{StaticResource Font.Icon}" FontSize="22"
+                               Foreground="{DynamicResource Text.Muted}" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="EmptyTitle" Margin="0,12,0,0" HorizontalAlignment="Center"
+                               Style="{StaticResource Type.SectionStyle}" />
+                    <TextBlock x:Name="EmptyBody" Margin="0,8,0,0" TextAlignment="Center"
+                               Style="{StaticResource Type.CaptionStyle}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
