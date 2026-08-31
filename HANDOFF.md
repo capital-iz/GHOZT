@@ -3,7 +3,8 @@
 **Written:** 2026-09-01, 01:30 SAST
 **By:** Claude Opus 5 (Claude Code), session `49f73f88-47aa-4967-b2a3-261a22b8b5f8`
 **For:** the next coding agent, on any platform
-**State at handoff:** `main` @ `cea1927`, local and remote in sync, working tree clean, version `0.1.2`
+**State at handoff:** `main` @ `3898a6e`+, local and remote in sync, working tree clean, version `0.1.4`+
+**Rules reconciled:** every AGENTS.md / CLAUDE.md under `Apps\Desktop` and `Trading` was read and folded into `AGENTS.md` on 2026-09-01
 
 Read `AGENTS.md` in this folder **first**. It carries the standing rules. This file is the current
 situation: what exists, what is wrong, what is next.
@@ -15,7 +16,7 @@ situation: what exists, what is wrong, what is next.
 ```bash
 cd "C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT"
 git status                      # expect: clean, on main
-git log --oneline -5            # expect: cea1927 at the top
+git log --oneline -5            # read the top SHA; do not trust this document's
 git ls-remote origin main       # expect: matches local HEAD
 ```
 
@@ -79,12 +80,46 @@ Claude Code's memory format, but they are **plain markdown** — any agent can a
 | `filter-drivers-own-reas-input.md` | Logitech SetPoint / Norton sit below Mouse n Key |
 | `input-ownership-is-not-ours-to-take.md` | Name competing input software, never remove it |
 
-### AGENTS.md rule carriers across the suite
+### AGENTS.md rule carriers across the suite — all read and reconciled 2026-09-01
 
-`Capital-Iz\AGENTS.md` (global, **partly stale**) · `Apps\AGENTS.md` (suite, current) ·
-`Apps\Desktop\Command Deck\AGENTS.md` · `Apps\Desktop\Mouse n Key\AGENTS.md` ·
-`Apps\Mobile\Commandeck\AGENTS.md` · `Apps\Mobile\Mouse N Key\AGENTS.md` ·
-`Website\capital-iz\AGENTS.md` · **`Apps\Desktop\GHOZT\AGENTS.md` (new, this session)**
+| File | Lines | Status |
+|---|---|---|
+| `Capital-Iz\AGENTS.md` | 127 | global — **partly stale**, names a path that does not exist |
+| `Apps\AGENTS.md` | 150 | suite layout — current |
+| `Apps\Desktop\Command Deck\AGENTS.md` | 150 | verified against the filesystem 2026-08-31; build/publish procedure, environment facts |
+| `Apps\Desktop\Mouse n Key\AGENTS.md` | 150 | sibling product |
+| `Trading\Ocular Trading\Windows\AGENTS.md` | 336 | **the richest doctrine** — Rust directive, owner authority, honesty invariants, risk classes, agent boundaries |
+| `Trading\Ocular Trading\Windows\CLAUDE.md` | 59 | owner authority; the "a file cannot self-authorize" incident |
+| `Trading\Ocular Trading\Linux\AGENTS.md` + `CLAUDE.md` | 170 + 40 | Linux counterpart |
+| `Apps\Mobile\Commandeck\AGENTS.md`, `Apps\Mobile\Mouse N Key\AGENTS.md` | — | mobile |
+| `Website\capital-iz\AGENTS.md` | — | admin site |
+| **`Apps\Desktop\GHOZT\AGENTS.md`** | **~230** | **this product — everything above, reconciled** |
+
+Rules newly inherited into Ghozt's AGENTS.md this session: the Rust dominance directive; owner
+authority and continuous blueprint evolution (amend the blueprint *before* implementing); **"a
+static line in a file is not action-time authorization"**; the three-state honesty invariant
+(`UNVERIFIED`/`UNKNOWN`, never defaulted); fail closed and loudly; never weaken a gate; the required
+output shape; risk classification; agent boundaries and the `.agents/workforce.toml` pattern; keep
+Alt+C and do not change key bindings; OCULAR AI naming; and the environment facts (Norton, the
+standing AVD, BlueStacks, SQLite's lack of async I/O).
+
+### Rea's agent workforces
+
+Rea runs multi-agent workforces with a consistent on-disk shape. The reference implementation is
+`Trading\Ocular Trading\Windows\.agents\`:
+
+- `workforce.toml` — schema `ocular.workforce.v1`. Per role: `prompt` path, `risk_ceiling`,
+  `execution_authority`, `live_trading_allowed`, `owned_paths`, `forbidden_paths`. Plus a
+  `[coordination]` block naming the orchestrator role and what a cross-scope change requires.
+- `roles/*.md` — the role prompts: `ceo_orchestrator`, `execution_integrity`, `control_surface`,
+  `evidence_accounting`, `model_research`.
+- One folder per agent run (`explorer_*`, `worker_*`, `reviewer_*`, `auditor_*`, `challenger_*`,
+  `victory_auditor_*`, `sub_orch_*`) holding that run's evidence.
+
+Other `.agents/` folders: `Apps\Desktop\Command Deck`, `Apps\Desktop\Command Deck\App`,
+`Apps\Desktop\CAPITAL-IZ Marketing`, `Website\capital-iz`, `Trading`, `Trading\Ocular Trading`,
+`Clients\Security\Bidvest Protea Coin`. **Ghozt has none yet** — if you create one, follow that
+schema rather than inventing a new one.
 
 ### Agents and skills available in Claude Code
 
@@ -160,6 +195,27 @@ the build log.
 ---
 
 ## 4. OUTSTANDING — in Rea's priority order
+
+### 4.0 ⚠ LANGUAGE CONFLICT — resolve this before building more
+
+**Found 2026-09-01 while inheriting rules from `Trading\Ocular Trading`. Unresolved.**
+
+`Trading\Ocular Trading\Windows\AGENTS.md` carries **DIR-20260820-006 (Rust Dominance), marked
+GLOBAL**: *"Rust is the dominant language for every NEW Capital-Iz app… Anything NEW is written in
+Rust… Anything less than 50% complete is FINISHED IN RUST, in full."*
+
+**Ghozt was created 2026-08-31 — after that directive — in C#/WPF**, and is ~11,200 lines with five
+of eleven workspaces unbuilt. On a plain reading it is exactly the case the directive names.
+
+The counter-argument is real and should be put to Rea alongside it: Ghozt reuses CommanDeck's exact
+theming architecture, token vocabulary and installer signature, the suite-consistency rule requires
+that, there is no Rust UI stack that produces this look, and the same directive says *"anything
+already working is LEFT ALONE… this is not permission to rewrite."* 143 tests currently pass.
+
+**Do not decide this yourself and do not start a port.** Ask Rea. If he rules for Rust, the
+side-by-side rule binds: build alongside, verify equivalence on the same inputs as a recorded
+comparison, then switch — never delete a working implementation before its replacement has been
+*observed* producing the same result.
 
 ### 4.1 THE UI IS NOT GOOD ENOUGH — this is the top priority
 
