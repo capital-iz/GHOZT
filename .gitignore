@@ -1,0 +1,22 @@
+# Build output.
+bin/
+obj/
+*.user
+
+# The publish tree and the packaged installers.
+#
+# Artifacts are deliberately NOT committed. A self-contained MSI is ~57 MB and GitHub refuses any
+# blob over 100 MB outright, so a repository that carried every iteration's installer would stop
+# accepting pushes within a few builds. Releases go to the private registry at admin.capital-iz.com,
+# which is where the in-app updater looks for them; git carries the source that produces them.
+Windows/build/
+Windows/artifacts/
+
+# Claude Code worktrees and session state. These are checkouts of a different repository that happen
+# to sit inside this folder; sweeping them into a commit is how another agent's in-flight work gets
+# committed by mistake.
+.claude/
+
+# Local scratch.
+*.tmp
+*.log

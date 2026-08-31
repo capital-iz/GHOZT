@@ -12,7 +12,16 @@
     <Product>Ghozt - Dev Tester</Product>
 
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\GhoztLogo.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!--
+      Version metadata Windows shows on the file itself, so a build can be identified from Explorer
+      without opening the app. Directory.Build.props supplies Version; these follow it.
+    -->
+    <AssemblyVersion>$(Version).0</AssemblyVersion>
+    <FileVersion>$(Version).0</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
 
     <!--
       Self-contained publishing is the suite standard: an installer must run on a machine that is
@@ -24,6 +33,20 @@
   <ItemGroup>
     <ProjectReference Include="..\Ghozt.Core\Ghozt.Core.csproj" />
     <ProjectReference Include="..\Ghozt.Theming\Ghozt.Theming.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The icon travels with the build as well as being embedded in the exe. The MSI points
+      ARPPRODUCTICON and both shortcuts at the copy in the publish folder, so if it is not laid down
+      beside the app the installer builds an unbranded Add/Remove Programs entry.
+    -->
+    <Content Include="Assets\GhoztLogo.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\GhoztLogo-256.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

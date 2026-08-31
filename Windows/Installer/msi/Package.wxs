@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ghozt - Dev Tester installer.
+
+    Follows the Capital-Iz suite signature: WixUI_InstallDir with the family's wizard chrome,
+    perMachine into Program Files\Capital-Iz, a Start menu folder shared with the other products,
+    and an HKLM registration other Capital-Iz apps can read.
+
+    UpgradeCode below must never change: it is what lets every future build recognise and replace
+    this one instead of installing alongside it.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Ghozt - Dev Tester"
+           Manufacturer="Capital-Iz"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="8F3A6C21-7D94-4E52-9B08-51C4A7E6D310"
+           Scope="perMachine"
+           Compressed="yes"
+           InstallerVersion="500">
+
+    <SummaryInformation Description="Ghozt - autonomous software forensics and quality certification"
+                        Manufacturer="Capital-Iz"/>
+
+    <!-- Remove the previous version before laying down the new one, so no stale files survive. -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  Schedule="afterInstallInitialize"
+                  DowngradeErrorMessage="A newer version of Ghozt is already installed. Uninstall it first if you want to go back to this version."/>
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high"/>
+
+    <!--
+        Ghozt holds its evidence database open for the whole session. Asking it to exit first is what
+        stops an upgrade from hitting files-in-use and demanding a reboot - and, more importantly,
+        lets SQLite close its write-ahead log cleanly rather than being killed mid-transaction.
+    -->
+    <util:CloseApplication Id="CloseGhozt"
+                           Target="Ghozt.exe"
+                           CloseMessage="yes"
+                           RebootPrompt="no"
+                           Timeout="15"
+                           TerminateProcess="1"
+                           EndSessionMessage="yes"/>
+
+    <!-- Add/Remove Programs presentation. -->
+    <Icon Id="GhoztIcon" SourceFile="$(var.PublishDir)\Assets\GhoztLogo.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="GhoztIcon"/>
+    <Property Id="ARPHELPLINK" Value="https://github.com/capital-iz/GHOZT"/>
+    <Property Id="ARPURLINFOABOUT" Value="https://capital-iz.com"/>
+    <!-- ARPNOMODIFY comes from WixUI_InstallDir; setting it here would be a duplicate. -->
+
+    <!-- Windows 10 or later; the app targets the 19041 Windows SDK. -->
+    <Launch Condition="Installed OR (VersionNT &gt;= 603)"
+            Message="Ghozt requires Windows 10 or later."/>
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="CompanyFolder" Name="Capital-Iz">
+        <Directory Id="INSTALLFOLDER" Name="Ghozt"/>
+      </Directory>
+    </StandardDirectory>
+
+    <!-- The same Start menu folder the rest of the suite uses, so the products group together. -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="Capital-Iz"/>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder"/>
+
+    <Feature Id="Main" Title="Ghozt - Dev Tester" Level="1" AllowAbsent="no">
+      <ComponentGroupRef Id="ApplicationFiles"/>
+      <ComponentGroupRef Id="ApplicationShortcuts"/>
+      <ComponentGroupRef Id="ApplicationRegistration"/>
+    </Feature>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER"/>
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf"/>
+
+    <!--
+        The wizard chrome the whole suite wears. A bundle that chains a branded installer and an
+        unbranded one presents as two companies.
+
+        Sizes are WiX UI's own fixed expectations for WixUI_InstallDir - 493x58 for the banner that
+        every page after Welcome carries along its top, 493x312 for the background behind the Welcome
+        and Exit pages. Get them wrong and the bitmap is stretched or letterboxed rather than
+        rejected.
+
+        The mark sits at the RIGHT of the banner deliberately. WiX draws each dialog's title and
+        description over the banner's left, so artwork placed there is overlapped by the text.
+        BannerBrandingTests guards the clearance.
+    -->
+    <WixVariable Id="WixUIBannerBmp" Value="Assets\BannerTop.bmp"/>
+    <WixVariable Id="WixUIDialogBmp" Value="Assets\DialogBackground.bmp"/>
+  </Package>
+
+  <Fragment>
+    <!--
+        Every published file, harvested at build time. Listing them by hand would go stale the moment
+        a dependency changes - and the publish is self-contained, so this is what carries the .NET
+        runtime, WPF and every managed dependency onto a machine that has none of them.
+    -->
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)\**"/>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ApplicationShortcuts">
+      <Component Id="StartMenuShortcuts" Guid="6C1D9E43-2B87-4A50-BF31-9D2E70A5C8F4" Directory="ApplicationProgramsFolder">
+        <!-- The visible brand is "Ghozt". The descriptor is formal metadata, not the shortcut label. -->
+        <Shortcut Id="StartMenuShortcut"
+                  Name="Ghozt"
+                  Description="Software forensics, evidence and release clearance"
+                  Target="[INSTALLFOLDER]Ghozt.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="GhoztIcon"/>
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall"/>
+
+        <!-- perMachine packages still need a per-user key path for the shortcut component. -->
+        <RegistryValue Root="HKCU" Key="Software\Capital-Iz\Ghozt" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+
+      <Component Id="DesktopShortcutComponent" Guid="B7E4102A-58C6-4D19-8A73-2F60D9B14E85" Directory="DesktopFolder">
+        <Shortcut Id="DesktopShortcut"
+                  Name="Ghozt"
+                  Description="Software forensics, evidence and release clearance"
+                  Target="[INSTALLFOLDER]Ghozt.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="GhoztIcon"/>
+        <RegistryValue Root="HKCU" Key="Software\Capital-Iz\Ghozt" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ApplicationRegistration">
+      <!--
+          Publishes where Ghozt lives so other Capital-Iz apps can find the one installed copy
+          instead of shipping their own, exactly as CommandDeck does. Ghozt is a testing tool for
+          the suite's own products, so the deck and Mouse n Key need to be able to locate it.
+      -->
+      <Component Id="InstallLocationRegistration" Guid="D419F7B2-6E30-4C8D-95A1-7C0B3E58A6D2" Directory="INSTALLFOLDER">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Capital-Iz\Ghozt">
+          <RegistryValue Name="InstallPath" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes"/>
+          <RegistryValue Name="Version" Type="string" Value="$(var.ProductVersion)"/>
+          <RegistryValue Name="Executable" Type="string" Value="[INSTALLFOLDER]Ghozt.exe"/>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+
+    <!--
+        Deliberately no autostart component.
+
+        CommandDeck registers a Run key because a clipboard manager that is not running has missed
+        the copy. Ghozt is the opposite: it examines systems under explicit authority, and a
+        forensics tool that launches itself at every logon is one that can act before anyone has
+        decided it should.
+    -->
+  </Fragment>
+</Wix>
