@@ -1,0 +1,11 @@
+- [Patent-standard blueprints](patent-standard-blueprints.md) — global rule: every task ships with build and product blueprints written to patent standard.
+- [Local is the authority](local-is-the-authority.md) — git must match local, and other agents' work in the repo counts.
+- [Installers carry every dependency](installers-carry-every-dependency.md) — global rule: packages must run on a machine that is not the author's; virtual drivers authorised.
+- [One house, many rooms](one-house-many-rooms.md) — the suite is one ecosystem; mobile must feel exactly like PC and vice versa, in substance not just layout.
+- [Publish every release to the VPS registry](publish-every-release-to-vps-registry.md) — standing rule: every build goes to admin.capital-iz.com; the in-app updater serves from it.
+- [Queue, don't interrupt](queue-dont-interrupt.md) — new feedback is queued and followed through later; only an explicit stop redirects work in flight.
+- [AGENTS.md is the rule carrier](agents-md-is-the-rule-carrier.md) — every repo carries the standing rules so any agent on any platform picks them up.
+- [Four products, four places](four-products-four-places.md) — the suite layout; never nest a product inside another or duplicate it into a container folder.
+- [Filter drivers own Rea's input](filter-drivers-own-reas-input.md) — Logitech SetPoint and Norton sit below Mouse n Key; check them before hunting in the app.
+- [Input ownership is not ours to take](input-ownership-is-not-ours-to-take.md) — name competing input software, never remove it.
+- [Ghozt is the fifth product](ghozt-is-the-fifth-product.md) — Apps/Desktop/GHOZT, own repo; its AGENTS.md and HANDOFF.md carry the rules and the current state.
