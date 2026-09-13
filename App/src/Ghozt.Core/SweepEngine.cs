@@ -1,5 +1,8 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Net.Http;
+using System.Text.Json;
+using Microsoft.Data.Sqlite;
 
 namespace Ghozt.Core;
 
@@ -32,6 +35,15 @@ public sealed record SweepProgress(
 /// </remarks>
 public sealed class SweepEngine
 {
+    private static readonly HttpClient s_httpClient = new(new HttpClientHandler
+    {
+        AllowAutoRedirect = true,
+        CheckCertificateRevocationList = false,
+    })
+    {
+        Timeout = TimeSpan.FromSeconds(10),
+    };
+
     private readonly GhoztStore _store;
 
     public SweepEngine(GhoztStore store) => _store = store;
@@ -269,21 +281,90 @@ public sealed class SweepEngine
                         Severity.Medium, 1);
                 }
 
-                var exists = File.Exists(path) || Directory.Exists(path);
                 if (Uri.TryCreate(path, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
                 {
-                    return new CheckResult(false, true,
-                        "Reachability deferred to the capability probe.",
-                        $"{uri} is an HTTP target; the sweep engine performs filesystem checks only in this build.",
-                        Severity.Low, 1);
+                    try
+                    {
+                        var sw = Stopwatch.StartNew();
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+                        cts.CancelAfter(TimeSpan.FromSeconds(8));
+                        using var req = new HttpRequestMessage(HttpMethod.Get, uri);
+                        using var resp = await s_httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+                        sw.Stop();
+                        var status = (int)resp.StatusCode;
+                        var latency = sw.ElapsedMilliseconds;
+                        var server = resp.Headers.Server?.ToString() ?? "Standard";
+                        var contentType = resp.Content.Headers.ContentType?.ToString() ?? "unknown";
+                        var pass = resp.IsSuccessStatusCode;
+                        return pass
+                            ? new CheckResult(true, false,
+                                $"HTTP Endpoint reachable: HTTP {status} in {latency}ms.",
+                                $"uri={uri}\nstatusCode={status} {resp.ReasonPhrase}\nlatencyMs={latency}\nserver={server}\ncontentType={contentType}",
+                                Severity.Info, 1)
+                            : new CheckResult(false, false,
+                                $"HTTP Endpoint returned error status: HTTP {status} {resp.ReasonPhrase}.",
+                                $"uri={uri}\nstatusCode={status} {resp.ReasonPhrase}\nlatencyMs={latency}",
+                                Severity.High, 1, "HTTP 2xx Success", $"HTTP {status}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            $"HTTP Endpoint connection failed: {ex.Message}",
+                            $"uri={uri}\nexception={ex.GetType().Name}: {ex.Message}",
+                            Severity.High, 1, "Reachable HTTP endpoint", ex.Message);
+                    }
                 }
 
-                return exists
-                    ? new CheckResult(true, false, "Target is present and readable.",
-                        $"Resolved {path}.", Severity.Info, 1)
-                    : new CheckResult(false, false, "Target path does not exist.",
-                        $"Expected a file or directory at {path}; nothing is there.",
-                        Severity.High, 1, $"A readable artefact at {path}", "Path not found");
+                if (path.StartsWith("process:", StringComparison.OrdinalIgnoreCase) && int.TryParse(path["process:".Length..], out var pid))
+                {
+                    try
+                    {
+                        var proc = Process.GetProcessById(pid);
+                        var responding = proc.Responding;
+                        return new CheckResult(!proc.HasExited, false,
+                            $"Process target reachable: {proc.ProcessName} (PID {pid}).",
+                            $"processName={proc.ProcessName}\npid={pid}\nresponding={responding}\nthreads={proc.Threads.Count}",
+                            Severity.Info, 1);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            $"Process target unreachable (PID {pid}): {ex.Message}",
+                            $"pid={pid}\nerror={ex.Message}", Severity.High, 1, "Active process", "Exited or access denied");
+                    }
+                }
+
+                if (File.Exists(path))
+                {
+                    var procName = Path.GetFileNameWithoutExtension(path);
+                    var running = Process.GetProcessesByName(procName);
+                    if (running.Length > 0)
+                    {
+                        var main = running[0];
+                        return new CheckResult(true, false,
+                            $"Target binary present and active: {procName} (PID {main.Id}).",
+                            $"path={path}\nactivePid={main.Id}\nresponding={main.Responding}\nwindowHandle={main.MainWindowHandle:X}",
+                            Severity.Info, 1);
+                    }
+
+                    return new CheckResult(true, false,
+                        "Target file is present and readable.",
+                        $"Resolved {path} ({new FileInfo(path).Length:N0} bytes).", Severity.Info, 1);
+                }
+
+                if (Directory.Exists(path))
+                {
+                    var dir = new DirectoryInfo(path);
+                    var count = 0;
+                    try { count = Directory.EnumerateFileSystemEntries(path).Take(100).Count(); } catch { }
+                    return new CheckResult(true, false,
+                        $"Target directory reachable: {dir.Name} ({count}+ items).",
+                        $"path={dir.FullName}\ncreated={dir.CreationTimeUtc:O}\naccessibleItems={count}", Severity.Info, 1);
+                }
+
+                return new CheckResult(false, false, "Target path does not exist.",
+                    $"Expected a file, directory or endpoint at {path}; nothing is there.",
+                    Severity.High, 1, $"A readable artefact at {path}", "Path not found");
             }
 
             case "Identity":
@@ -304,57 +385,329 @@ public sealed class SweepEngine
 
             case "Structure":
             {
-                if (!File.Exists(path))
+                if (Uri.TryCreate(path, UriKind.Absolute, out var sUri) && sUri.Scheme is "http" or "https")
                 {
-                    return new CheckResult(false, true, "Structure check skipped.",
-                        "Structure is read from a file target; this target is not a readable file.",
-                        Severity.Low, 1);
+                    try
+                    {
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+                        cts.CancelAfter(TimeSpan.FromSeconds(8));
+                        using var resp = await s_httpClient.GetAsync(sUri, cts.Token).ConfigureAwait(false);
+                        var content = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+                        var contentType = resp.Content.Headers.ContentType?.MediaType ?? "text/plain";
+                        if (contentType.Contains("json", StringComparison.OrdinalIgnoreCase) || content.TrimStart().StartsWith('{') || content.TrimStart().StartsWith('['))
+                        {
+                            try
+                            {
+                                using var doc = JsonDocument.Parse(content);
+                                var root = doc.RootElement;
+                                var keyCount = root.ValueKind == JsonValueKind.Object ? root.EnumerateObject().Count() : (root.ValueKind == JsonValueKind.Array ? root.GetArrayLength() : 1);
+                                return new CheckResult(true, false,
+                                    $"HTTP JSON structure verified: {root.ValueKind} ({keyCount} items/keys, {content.Length:N0} chars).",
+                                    $"contentType={contentType}\nrootKind={root.ValueKind}\nitemsCount={keyCount}\npayloadBytes={System.Text.Encoding.UTF8.GetByteCount(content)}",
+                                    Severity.Info, 2);
+                            }
+                            catch (JsonException jex)
+                            {
+                                return new CheckResult(false, false,
+                                    "HTTP response declared JSON but failed structural parsing.",
+                                    $"uri={sUri}\nerror={jex.Message}\npayloadSnippet={content[..Math.Min(200, content.Length)]}",
+                                    Severity.High, 2, "Valid JSON document", "Invalid JSON syntax");
+                            }
+                        }
+                        else
+                        {
+                            return new CheckResult(true, false,
+                                $"HTTP response structure verified: {contentType} ({content.Length:N0} chars).",
+                                $"uri={sUri}\ncontentType={contentType}\nsizeBytes={System.Text.Encoding.UTF8.GetByteCount(content)}",
+                                Severity.Info, 2);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            $"HTTP response structure check failed: {ex.Message}",
+                            $"uri={sUri}\nexception={ex.GetType().Name}: {ex.Message}",
+                            Severity.High, 2, "Readable HTTP response", ex.Message);
+                    }
                 }
 
-                var info = new FileInfo(path);
-                return new CheckResult(true, false,
-                    $"Structure readable: {info.Length:N0} bytes.",
-                    $"path={info.FullName}\nlength={info.Length}\nmodified={info.LastWriteTimeUtc:O}",
-                    Severity.Info, 2);
+                if (Directory.Exists(path))
+                {
+                    var dir = new DirectoryInfo(path);
+                    var gitDir = Path.Combine(path, ".git");
+                    var hasGit = Directory.Exists(gitDir);
+                    var gitBranch = "";
+                    if (hasGit)
+                    {
+                        var headFile = Path.Combine(gitDir, "HEAD");
+                        if (File.Exists(headFile))
+                        {
+                            var headContent = File.ReadAllText(headFile).Trim();
+                            gitBranch = headContent.StartsWith("ref: refs/heads/") ? headContent["ref: refs/heads/".Length..] : headContent;
+                        }
+                    }
+                    var files = Directory.EnumerateFiles(path, "*.*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, MaxRecursionDepth = 3 }).Take(500).ToList();
+                    var extensions = files.GroupBy(f => Path.GetExtension(f).ToLowerInvariant())
+                                          .OrderByDescending(g => g.Count())
+                                          .Take(5)
+                                          .Select(g => $"{g.Key} ({g.Count()})");
+                    return new CheckResult(true, false,
+                        $"Directory structure verified: {files.Count} files sampled" + (hasGit ? $" · Git branch: {gitBranch}" : "") + ".",
+                        $"path={dir.FullName}\nsampledFiles={files.Count}\nhasGitRepository={hasGit}\ngitBranch={gitBranch}\ntopExtensions={string.Join(", ", extensions)}",
+                        Severity.Info, 2);
+                }
+
+                if (File.Exists(path) && (path.EndsWith(".db", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".sqlite", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".sqlite3", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
+                    {
+                        using var conn = new SqliteConnection($"Data Source={path};Mode=ReadOnly;");
+                        conn.Open();
+                        using var cmd = conn.CreateCommand();
+                        cmd.CommandText = "SELECT type, count(*) FROM sqlite_master GROUP BY type;";
+                        using var reader = cmd.ExecuteReader();
+                        var summaryParts = new List<string>();
+                        while (reader.Read())
+                        {
+                            summaryParts.Add($"{reader.GetString(0)}s: {reader.GetInt32(1)}");
+                        }
+                        using var cmdVer = conn.CreateCommand();
+                        cmdVer.CommandText = "PRAGMA user_version;";
+                        var userVer = cmdVer.ExecuteScalar()?.ToString() ?? "0";
+                        return new CheckResult(true, false,
+                            $"SQLite schema structure verified: {string.Join(", ", summaryParts)} · Schema v{userVer}.",
+                            $"path={path}\nuserVersion={userVer}\nschemaObjects={string.Join("; ", summaryParts)}",
+                            Severity.Info, 2);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            "SQLite database structure check failed.",
+                            $"path={path}\nexception={ex.GetType().Name}: {ex.Message}",
+                            Severity.High, 2, "Valid readable SQLite schema", "Corrupted or unreadable SQLite database");
+                    }
+                }
+
+                if (File.Exists(path) && (path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var vi = FileVersionInfo.GetVersionInfo(path);
+                    var fi = new FileInfo(path);
+                    return new CheckResult(true, false,
+                        $"Binary PE structure verified: {fi.Length:N0} bytes · Version {vi.FileVersion ?? vi.ProductVersion ?? "unknown"}.",
+                        $"path={path}\nproduct={vi.ProductName}\nfileVersion={vi.FileVersion}\ncompany={vi.CompanyName}\ndescription={vi.FileDescription}\nsizeBytes={fi.Length}",
+                        Severity.Info, 2);
+                }
+
+                if (File.Exists(path))
+                {
+                    var info = new FileInfo(path);
+                    return new CheckResult(true, false,
+                        $"Structure readable: {info.Length:N0} bytes.",
+                        $"path={info.FullName}\nlength={info.Length}\nmodified={info.LastWriteTimeUtc:O}",
+                        Severity.Info, 2);
+                }
+
+                return new CheckResult(false, false,
+                    "Structure check failed: target path does not exist.",
+                    $"Target path '{path}' was not found as a file, directory or URL.",
+                    Severity.High, 2, "Existing file or directory", "Not found");
             }
 
             case "Integrity":
             {
-                if (!File.Exists(path))
+                if (Uri.TryCreate(path, UriKind.Absolute, out var iUri) && iUri.Scheme is "http" or "https")
                 {
-                    return new CheckResult(false, true, "Integrity check skipped.",
-                        "Integrity is computed over a file; this target is not a readable file.",
-                        Severity.Low, 1);
+                    try
+                    {
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+                        cts.CancelAfter(TimeSpan.FromSeconds(8));
+                        using var resp = await s_httpClient.GetAsync(iUri, cts.Token).ConfigureAwait(false);
+                        var etag = resp.Headers.ETag?.Tag ?? "";
+                        var bodyBytes = await resp.Content.ReadAsByteArrayAsync(cts.Token).ConfigureAwait(false);
+                        var hash = Hashing.Sha256(bodyBytes);
+                        return new CheckResult(true, false,
+                            $"HTTP payload integrity hash computed: {hash[..12]}…" + (!string.IsNullOrEmpty(etag) ? $" (ETag: {etag})" : "") + ".",
+                            $"uri={iUri}\nsha256={hash}\netag={etag}\nsizeBytes={bodyBytes.Length}",
+                            Severity.Info, 2);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            $"HTTP integrity check failed: {ex.Message}",
+                            $"uri={iUri}\nexception={ex.GetType().Name}: {ex.Message}",
+                            Severity.High, 2, "Fetchable payload", ex.Message);
+                    }
                 }
 
-                var hash = Hashing.Sha256File(path);
-                return new CheckResult(true, false,
-                    "Content hash computed.",
-                    $"sha256={hash}\nThis is the value a later run compares against to detect drift.",
-                    Severity.Info, 2);
+                if (Directory.Exists(path))
+                {
+                    var gitDir = Path.Combine(path, ".git");
+                    if (Directory.Exists(gitDir))
+                    {
+                        var headFile = Path.Combine(gitDir, "HEAD");
+                        if (File.Exists(headFile))
+                        {
+                            var headRef = File.ReadAllText(headFile).Trim();
+                            var commitHash = headRef;
+                            if (headRef.StartsWith("ref: "))
+                            {
+                                var refPath = Path.Combine(gitDir, headRef[5..].Replace('/', Path.DirectorySeparatorChar));
+                                if (File.Exists(refPath)) commitHash = File.ReadAllText(refPath).Trim();
+                            }
+                            return new CheckResult(true, false,
+                                $"Git repository integrity verified: commit {commitHash[..Math.Min(10, commitHash.Length)]}…",
+                                $"path={path}\nheadRef={headRef}\ncommitHash={commitHash}",
+                                Severity.Info, 2);
+                        }
+                    }
+                    var sample = Directory.EnumerateFiles(path, "*.*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, MaxRecursionDepth = 2 })
+                                          .Take(50).Select(f => $"{Path.GetFileName(f)}:{new FileInfo(f).Length}").ToList();
+                    var manifestHash = Hashing.Sha256(string.Join(";", sample));
+                    return new CheckResult(true, false,
+                        $"Directory tree manifest hash computed: {manifestHash[..12]}… ({sample.Count} files).",
+                        $"path={path}\nmanifestHash={manifestHash}\nsampledFiles={sample.Count}",
+                        Severity.Info, 2);
+                }
+
+                if (File.Exists(path) && (path.EndsWith(".db", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".sqlite", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".sqlite3", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
+                    {
+                        using var conn = new SqliteConnection($"Data Source={path};Mode=ReadOnly;");
+                        conn.Open();
+                        using var cmd = conn.CreateCommand();
+                        cmd.CommandText = "PRAGMA integrity_check(10);";
+                        var integrityOutput = cmd.ExecuteScalar()?.ToString() ?? "unknown";
+                        var isOk = string.Equals(integrityOutput, "ok", StringComparison.OrdinalIgnoreCase);
+                        var fileHash = Hashing.Sha256File(path);
+                        return isOk
+                            ? new CheckResult(true, false,
+                                "SQLite database integrity verified (PRAGMA integrity_check = ok).",
+                                $"path={path}\nintegrityCheck={integrityOutput}\nfileSha256={fileHash}",
+                                Severity.Info, 2)
+                            : new CheckResult(false, false,
+                                $"SQLite integrity check reported corruption: {integrityOutput}",
+                                $"path={path}\nintegrityCheck={integrityOutput}\nfileSha256={fileHash}",
+                                Severity.High, 2, "ok", integrityOutput);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            $"SQLite database integrity check error: {ex.Message}",
+                            $"path={path}\nerror={ex}",
+                            Severity.High, 2, "Readable database with PRAGMA integrity_check = ok", ex.Message);
+                    }
+                }
+
+                if (File.Exists(path))
+                {
+                    var hash = Hashing.Sha256File(path);
+                    return new CheckResult(true, false,
+                        "Content hash computed.",
+                        $"sha256={hash}\nThis is the value a later run compares against to detect drift.",
+                        Severity.Info, 2);
+                }
+
+                return new CheckResult(false, false,
+                    "Integrity check failed: target path does not exist.",
+                    $"Cannot compute integrity over non-existent path '{path}'.",
+                    Severity.High, 2, "Existing artifact", "Not found");
             }
 
             case "Capacity":
             {
-                if (!File.Exists(path))
+                if (Uri.TryCreate(path, UriKind.Absolute, out var cUri) && cUri.Scheme is "http" or "https")
                 {
-                    return new CheckResult(false, true, "Capacity check skipped.",
-                        "Capacity is measured against a file target.", Severity.Low, 1);
+                    try
+                    {
+                        var sw = Stopwatch.StartNew();
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+                        cts.CancelAfter(TimeSpan.FromSeconds(5));
+                        using var resp = await s_httpClient.GetAsync(cUri, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+                        sw.Stop();
+                        var latency = sw.ElapsedMilliseconds;
+                        var rateLimitRemaining = resp.Headers.TryGetValues("X-RateLimit-Remaining", out var rVals) ? rVals.FirstOrDefault() : null;
+                        var passed = latency < 1500;
+                        return passed
+                            ? new CheckResult(true, false,
+                                $"HTTP endpoint capacity adequate: {latency}ms latency.",
+                                $"uri={cUri}\nlatencyMs={latency}\nrateLimitRemaining={rateLimitRemaining ?? "unbounded"}",
+                                Severity.Info, 1)
+                            : new CheckResult(false, false,
+                                $"HTTP endpoint latency exceeds capacity SLA: {latency}ms (> 1500ms).",
+                                $"uri={cUri}\nlatencyMs={latency}\nrateLimitRemaining={rateLimitRemaining ?? "unbounded"}",
+                                Severity.Medium, 1, "< 1500ms latency", $"{latency}ms");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CheckResult(false, false,
+                            $"HTTP endpoint capacity probe failed: {ex.Message}",
+                            $"uri={cUri}\nexception={ex.GetType().Name}: {ex.Message}",
+                            Severity.Medium, 1, "Responsive endpoint", ex.Message);
+                    }
                 }
 
-                var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(path)) ?? "C:\\");
-                var freeGb = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
+                if (File.Exists(path) && (path.EndsWith(".db", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".sqlite", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".sqlite3", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var fi = new FileInfo(path);
+                    var walPath = path + "-wal";
+                    var walSize = File.Exists(walPath) ? new FileInfo(walPath).Length : 0;
+                    var drive = new DriveInfo(Path.GetPathRoot(Path.GetFullPath(path)) ?? "C:\\");
+                    var freeGb = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
+                    return freeGb < 2.0
+                        ? new CheckResult(false, false,
+                            $"Storage pressure: {freeGb:F1} GB free on DB volume.",
+                            $"path={path}\ndbSizeBytes={fi.Length}\nwalSizeBytes={walSize}\nfreeSpaceGb={freeGb:F2}",
+                            Severity.High, 1, "at least 2 GB free", $"{freeGb:F2} GB")
+                        : new CheckResult(true, false,
+                            $"Database capacity adequate: {fi.Length / 1024.0 / 1024.0:F2} MB DB (volume has {freeGb:F1} GB free).",
+                            $"path={path}\ndbSizeBytes={fi.Length}\nwalSizeBytes={walSize}\nfreeSpaceGb={freeGb:F2}",
+                            Severity.Info, 1);
+                }
 
-                // A real threshold against a real reading. Storage pressure has to warn before
-                // evidence is lost, which is the whole reason this check exists.
-                return freeGb < 2.0
-                    ? new CheckResult(false, false,
-                        $"Storage pressure: {freeGb:F1} GB free.",
-                        $"drive={drive.Name}; free={freeGb:F2} GB. Evidence capture may be degraded or lost below 2 GB.",
-                        Severity.High, 1, "at least 2 GB free", $"{freeGb:F2} GB")
-                    : new CheckResult(true, false,
-                        $"Storage headroom adequate: {freeGb:F1} GB free.",
-                        $"drive={drive.Name}; free={freeGb:F2} GB", Severity.Info, 1);
+                if (File.Exists(path))
+                {
+                    var procName = Path.GetFileNameWithoutExtension(path);
+                    var procs = Process.GetProcessesByName(procName);
+                    if (procs.Length > 0)
+                    {
+                        var p = procs[0];
+                        var wsMb = p.WorkingSet64 / 1024.0 / 1024.0;
+                        var privateMb = p.PrivateMemorySize64 / 1024.0 / 1024.0;
+                        var handles = p.HandleCount;
+                        var threads = p.Threads.Count;
+                        var highMem = wsMb > 1500.0;
+                        return highMem
+                            ? new CheckResult(false, false,
+                                $"Process memory capacity warning: {wsMb:F1} MB working set.",
+                                $"process={p.ProcessName} (PID {p.Id})\nworkingSetMb={wsMb:F1}\nprivateMemoryMb={privateMb:F1}\nhandles={handles}\nthreads={threads}",
+                                Severity.Medium, 1, "< 1500 MB memory", $"{wsMb:F1} MB")
+                            : new CheckResult(true, false,
+                                $"Process capacity healthy: {wsMb:F1} MB working set, {threads} threads, {handles} handles.",
+                                $"process={p.ProcessName} (PID {p.Id})\nworkingSetMb={wsMb:F1}\nprivateMemoryMb={privateMb:F1}\nhandles={handles}\nthreads={threads}",
+                                Severity.Info, 1);
+                    }
+                }
+
+                if (File.Exists(path) || Directory.Exists(path))
+                {
+                    var driveRoot = Path.GetPathRoot(Path.GetFullPath(path)) ?? "C:\\";
+                    var drive = new DriveInfo(driveRoot);
+                    var freeGb = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
+                    return freeGb < 2.0
+                        ? new CheckResult(false, false,
+                            $"Storage pressure: {freeGb:F1} GB free.",
+                            $"drive={drive.Name}; free={freeGb:F2} GB. Evidence capture may be degraded or lost below 2 GB.",
+                            Severity.High, 1, "at least 2 GB free", $"{freeGb:F2} GB")
+                        : new CheckResult(true, false,
+                            $"Storage headroom adequate: {freeGb:F1} GB free.",
+                            $"drive={drive.Name}; free={freeGb:F2} GB", Severity.Info, 1);
+                }
+
+                return new CheckResult(false, false,
+                    "Capacity check failed: target path does not exist.",
+                    $"Cannot measure capacity for non-existent target '{path}'.",
+                    Severity.Medium, 1, "Valid target entity", "Not found");
             }
 
             case "Consistency":

@@ -4,6 +4,13 @@ namespace Ghozt.Core;
 
 public sealed record ProcessOutput(DateTimeOffset Timestamp, bool IsError, string Text);
 
+public sealed record ProcessInfoSnapshot(
+    int ProcessId,
+    string ProcessName,
+    string MainWindowTitle,
+    string ExecutablePath,
+    IntPtr MainWindowHandle);
+
 public sealed class TargetSupervisor : IDisposable
 {
     private Process? _process;
@@ -22,6 +29,43 @@ public sealed class TargetSupervisor : IDisposable
 
     public event Action<ProcessOutput>? OutputReceived;
     public event Action<int>? Exited;
+
+    public bool Attach(int processId)
+    {
+        try
+        {
+            var proc = Process.GetProcessById(processId);
+            if (proc.HasExited) return false;
+            _process = proc;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static IReadOnlyList<ProcessInfoSnapshot> GetActiveDesktopProcesses()
+    {
+        var list = new List<ProcessInfoSnapshot>();
+        foreach (var p in Process.GetProcesses())
+        {
+            try
+            {
+                if (p.MainWindowHandle != IntPtr.Zero && !string.IsNullOrWhiteSpace(p.MainWindowTitle))
+                {
+                    var exePath = "";
+                    try { exePath = p.MainModule?.FileName ?? ""; } catch { }
+                    list.Add(new ProcessInfoSnapshot(p.Id, p.ProcessName, p.MainWindowTitle, exePath, p.MainWindowHandle));
+                }
+            }
+            catch
+            {
+                // Access denied on elevated/system processes is expected on Windows
+            }
+        }
+        return list.OrderBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase).ToList();
+    }
 
     public async Task<bool> LaunchAsync(string executablePath, string arguments = "", string workingDirectory = "", CancellationToken cancellationToken = default)
     {

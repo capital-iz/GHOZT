@@ -212,12 +212,12 @@ public partial class StateMapWorkspace : UserControl
             ToolTip = $"{node.Label}\n{node.Kind} · {state.Label()}\n{node.Detail}",
             Tag = node,
 
-            // Shape by kind: a system is a rounded region, an action a pill, an endpoint a tighter
+            // Shape by kind: a system is a rounded region, an action a rounded rectangle, an endpoint a tighter
             // plate, data a small square.
             CornerRadius = node.Kind switch
             {
                 NodeKind.System => new CornerRadius(14),
-                NodeKind.Action => new CornerRadius(999),
+                NodeKind.Action => new CornerRadius(8),
                 NodeKind.Endpoint => new CornerRadius(4),
                 NodeKind.DataState => new CornerRadius(2),
                 NodeKind.Evidence => new CornerRadius(2, 10, 2, 10),

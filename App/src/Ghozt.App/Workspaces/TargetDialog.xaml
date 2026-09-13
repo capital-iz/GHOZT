@@ -87,8 +87,24 @@
                         <TextBlock x:Name="PolicyText" Style="{StaticResource Type.CaptionStyle}" />
                     </Border>
 
-                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,4"
-                               Text="BASE ADDRESS OR PATH" />
+                    <Grid Margin="0,16,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="BASE ADDRESS OR PATH" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="Attach Process..." Click="OnAttachProcess" Height="22" Padding="8,0" Margin="0,0,6,0"
+                                    ToolTip="Select a running desktop application to auto-fill metadata"
+                                    AutomationProperties.Name="Attach running process" />
+                            <Button Content="Browse File..." Click="OnBrowseFile" Height="22" Padding="8,0" Margin="0,0,6,0"
+                                    ToolTip="Select an executable, assembly, database, or document"
+                                    AutomationProperties.Name="Browse for file" />
+                            <Button Content="Browse Folder..." Click="OnBrowseAddressFolder" Height="22" Padding="8,0"
+                                    ToolTip="Select a root directory or endpoint directory"
+                                    AutomationProperties.Name="Browse for address folder" />
+                        </StackPanel>
+                    </Grid>
                     <TextBox x:Name="AddressBox"
                              ToolTip="An http(s) URL, or a file or folder path. Used by the capability probe."
                              AutomationProperties.Name="Base address or path" />
@@ -106,7 +122,16 @@
                                      AutomationProperties.Name="Build label" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="REPOSITORY PATH" />
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="REPOSITORY PATH" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Content="Browse..." Click="OnBrowseRepository" Height="20" Padding="6,0"
+                                        ToolTip="Select the source repository folder for behavioural manifest discovery"
+                                        AutomationProperties.Name="Browse repository folder" />
+                            </Grid>
                             <TextBox x:Name="RepositoryBox" AutomationProperties.Name="Repository path" />
                         </StackPanel>
                     </Grid>

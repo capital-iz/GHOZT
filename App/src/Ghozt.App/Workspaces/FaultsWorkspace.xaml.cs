@@ -230,15 +230,19 @@ public partial class FaultsWorkspace : UserControl
         Shell.Log("RPR.START", $"Attempting reproduction of {finding.Id}.", Severity.Info,
             related: finding.Id.ToString());
 
+        var originalSweep = App.Store.Sweeps(target.Id).FirstOrDefault(s => s.Id == finding.SweepId);
+        var reproMode = originalSweep?.Mode ?? "Full sweep";
+
         var sweep = new Sweep
         {
             Id = App.Store.NextId(IdKind.Sweep),
             TargetId = target.Id,
             Name = $"Reproduction of {finding.Id}",
-            Mode = "Smoke",
-            MaxStates = 20,
-            MaxSeconds = 30,
-            MaxDepth = 2,
+            Mode = reproMode,
+            MaxStates = originalSweep?.MaxStates ?? 30,
+            MaxSeconds = originalSweep?.MaxSeconds ?? 45,
+            MaxDepth = originalSweep?.MaxDepth ?? 4,
+            AllowDestructive = originalSweep?.AllowDestructive ?? false,
         };
 
         App.Store.Save(sweep);

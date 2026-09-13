@@ -1,8 +1,11 @@
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Ghozt.Core;
+using Microsoft.Win32;
 
 namespace Ghozt.App.Workspaces;
 
@@ -106,6 +109,122 @@ public partial class TargetDialog : Window
         {
             PolicyNote.BorderBrush = brush;
             PolicyText.Foreground = brush;
+        }
+    }
+
+    private void OnAttachProcess(object sender, RoutedEventArgs e)
+    {
+        var picker = new ProcessPickerDialog { Owner = this };
+        if (picker.ShowDialog() == true && picker.SelectedProcess is { } proc)
+        {
+            if (string.IsNullOrWhiteSpace(NameBox.Text))
+            {
+                NameBox.Text = proc.MainWindowTitle;
+            }
+            KindBox.Text = "Desktop application";
+            if (!string.IsNullOrWhiteSpace(proc.ExecutablePath))
+            {
+                AddressBox.Text = proc.ExecutablePath;
+                try
+                {
+                    if (File.Exists(proc.ExecutablePath))
+                    {
+                        var vi = FileVersionInfo.GetVersionInfo(proc.ExecutablePath);
+                        BuildBox.Text = vi.FileVersion ?? vi.ProductVersion ?? "1.0.0";
+                        var dir = Path.GetDirectoryName(proc.ExecutablePath);
+                        if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(Path.Combine(dir, ".git")))
+                        {
+                            RepositoryBox.Text = dir;
+                        }
+                    }
+                }
+                catch
+                {
+                    BuildBox.Text = "1.0.0";
+                }
+            }
+            else
+            {
+                AddressBox.Text = $"process:{proc.ProcessId}";
+            }
+
+            AuthorityBox.Text = $"Local desktop application inspection. Attached to active process {proc.ProcessName} (PID {proc.ProcessId}).";
+        }
+    }
+
+    private void OnBrowseFile(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title = "Select Target Executable, Database, or Binary",
+            Filter = "Executable Applications (*.exe)|*.exe|SQLite Databases (*.db;*.sqlite;*.sqlite3)|*.db;*.sqlite;*.sqlite3|Assemblies & Libraries (*.dll)|*.dll|JSON / Data (*.json;*.xml)|*.json;*.xml|All Files (*.*)|*.*",
+            CheckFileExists = true,
+        };
+
+        if (dlg.ShowDialog(this) == true)
+        {
+            AddressBox.Text = dlg.FileName;
+            var ext = Path.GetExtension(dlg.FileName).ToLowerInvariant();
+
+            if (string.IsNullOrWhiteSpace(NameBox.Text))
+            {
+                NameBox.Text = Path.GetFileNameWithoutExtension(dlg.FileName);
+            }
+
+            if (ext is ".exe")
+            {
+                KindBox.Text = "Desktop application";
+                try
+                {
+                    var vi = FileVersionInfo.GetVersionInfo(dlg.FileName);
+                    if (string.IsNullOrWhiteSpace(BuildBox.Text))
+                    {
+                        BuildBox.Text = vi.FileVersion ?? vi.ProductVersion ?? "1.0.0";
+                    }
+                }
+                catch { }
+            }
+            else if (ext is ".db" or ".sqlite" or ".sqlite3")
+            {
+                KindBox.Text = "Database";
+            }
+            else if (ext is ".json" or ".xml")
+            {
+                KindBox.Text = "Service";
+            }
+        }
+    }
+
+    private void OnBrowseAddressFolder(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog
+        {
+            Title = "Select Target Directory or Service Root",
+            Multiselect = false,
+        };
+
+        if (dlg.ShowDialog(this) == true)
+        {
+            AddressBox.Text = dlg.FolderName;
+            if (string.IsNullOrWhiteSpace(NameBox.Text))
+            {
+                NameBox.Text = Path.GetFileName(dlg.FolderName);
+            }
+            KindBox.Text = "Service";
+        }
+    }
+
+    private void OnBrowseRepository(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog
+        {
+            Title = "Select Target Source Repository Folder",
+            Multiselect = false,
+        };
+
+        if (dlg.ShowDialog(this) == true)
+        {
+            RepositoryBox.Text = dlg.FolderName;
         }
     }
 

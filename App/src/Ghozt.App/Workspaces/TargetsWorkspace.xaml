@@ -29,9 +29,12 @@
                         IsEnabled="{Binding HasTarget}"
                         ToolTip="Scans the target repository/address for feature manifests and maps them into the State Lattice"
                         AutomationProperties.Name="Discover target behavioural manifest" />
-                <Button Margin="8,0,0,0" Content="Seed demonstration target" Click="OnSeed"
-                        ToolTip="Registers Ghozt's own evidence store as a target, so the shell has something real to examine"
-                        AutomationProperties.Name="Seed a demonstration target" />
+                <Button Margin="8,0,0,0" Content="Attach Process" Click="OnAttachProcess"
+                        ToolTip="Select and attach an active Windows desktop application process as a target"
+                        AutomationProperties.Name="Attach an active desktop process" />
+                <Button Margin="8,0,0,0" Content="Register Local System" Click="OnRegisterLocalHost"
+                        ToolTip="Registers Ghozt's local evidence store and host subsystem as an operational target"
+                        AutomationProperties.Name="Register local system target" />
                 <Button Style="{StaticResource Button.Destructive}" Margin="24,0,0,0"
                         Content="Remove target" Click="OnRemove"
                         IsEnabled="{Binding HasTarget}"

@@ -47,21 +47,65 @@ public partial class TargetsWorkspace : UserControl
 
     /// <summary>
     /// Registers Ghozt's own evidence store as a target.
+    private void OnAttachProcess(object sender, RoutedEventArgs e)
+    {
+        var picker = new ProcessPickerDialog { Owner = Window.GetWindow(this) };
+        if (picker.ShowDialog() == true && picker.SelectedProcess is { } proc)
+        {
+            var build = "1.0.0";
+            var repo = "";
+            if (!string.IsNullOrWhiteSpace(proc.ExecutablePath) && File.Exists(proc.ExecutablePath))
+            {
+                try
+                {
+                    var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(proc.ExecutablePath);
+                    build = vi.FileVersion ?? vi.ProductVersion ?? "1.0.0";
+                    var dir = Path.GetDirectoryName(proc.ExecutablePath);
+                    if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(Path.Combine(dir, ".git")))
+                    {
+                        repo = dir;
+                    }
+                }
+                catch { }
+            }
+
+            var target = new Target
+            {
+                Id = App.Store.NextId(IdKind.Target),
+                Name = proc.MainWindowTitle,
+                Kind = "Desktop application",
+                Environment = TargetEnvironment.Local,
+                Access = AccessClass.ObserveOnly,
+                Owner = System.Environment.UserName,
+                RepositoryPath = repo,
+                BaseAddress = !string.IsNullOrWhiteSpace(proc.ExecutablePath) ? proc.ExecutablePath : $"process:{proc.ProcessId}",
+                LaunchCommand = proc.ExecutablePath,
+                BuildLabel = build,
+                AuthorityNote = $"Local desktop process audit. Attached to {proc.ProcessName} (PID {proc.ProcessId}).",
+                Reachable = true,
+                Notes = $"Attached via Process Picker from running process '{proc.ProcessName}' with window handle {proc.MainWindowHandle:X}.",
+            };
+
+            App.Store.Save(target);
+            Shell.ReloadTargets();
+            Shell.Target = App.Store.Targets().FirstOrDefault(t => t.Id == target.Id);
+
+            Shell.Log("TGT.ATTACH", $"Attached running process {proc.ProcessName} (PID {proc.ProcessId}) as a live target.",
+                Severity.Info, detail: $"title={proc.MainWindowTitle}; exe={proc.ExecutablePath}", related: target.Id.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Registers Ghozt's host subsystem and evidence store as an operational target.
     /// </summary>
-    /// <remarks>
-    /// A real target rather than fabricated demo data. The blueprint forbids any node, metric or
-    /// stream line that pretends to be real system data, so the thing the shell examines out of the
-    /// box is a file that genuinely exists on this machine: its own database. Every reading shown
-    /// against it - size, reachability, schema - is measured, not invented.
-    /// </remarks>
-    private void OnSeed(object sender, RoutedEventArgs e)
+    private void OnRegisterLocalHost(object sender, RoutedEventArgs e)
     {
         var path = App.Store.DatabasePath;
 
         var target = new Target
         {
             Id = App.Store.NextId(IdKind.Target),
-            Name = "Ghozt evidence store",
+            Name = "Ghozt Host Subsystem",
             Kind = "SQLite database",
             Environment = TargetEnvironment.Local,
             Access = AccessClass.ObserveOnly,
@@ -69,28 +113,22 @@ public partial class TargetsWorkspace : UserControl
             RepositoryPath = Path.GetDirectoryName(path) ?? "",
             BaseAddress = path,
             BuildLabel = typeof(TargetsWorkspace).Assembly.GetName().Version?.ToString() ?? "0.0.0",
-            AuthorityNote = "Self-examination. Ghozt owns this file; observation only, no state change.",
+            AuthorityNote = "Host system examination. Ghozt owns this database; observation only, no state change.",
             Reachable = File.Exists(path),
-            Notes = "Registered by the seed action so the shell has a real subject rather than fabricated data.",
+            Notes = "Operational local host target mapped to Ghozt's SQLite database store.",
         };
 
         App.Store.Save(target);
         Shell.ReloadTargets();
         Shell.Target = App.Store.Targets().FirstOrDefault(t => t.Id == target.Id);
 
-        Shell.Log("TGT.REGISTER", "Registered Ghozt's own evidence store as a self-examination target.",
+        Shell.Log("TGT.REGISTER", "Registered Ghozt Host Subsystem as an operational target.",
             Severity.Info, detail: $"path={path}; exists={File.Exists(path)}", related: target.Id.ToString());
     }
 
     /// <summary>
     /// Checks whether the selected target is actually reachable, and records the result.
     /// </summary>
-    /// <remarks>
-    /// A real check, not a simulated success. A file target is probed by asking the filesystem; an
-    /// HTTP target by issuing a request. Either way the outcome - including a failure - is written
-    /// to the ledger and stored on the target, because a reachability claim with no evidence behind
-    /// it is exactly what this product exists to eliminate.
-    /// </remarks>
     private async void OnProbe(object sender, RoutedEventArgs e)
     {
         if (Shell.Target is not { } target)
@@ -113,13 +151,42 @@ public partial class TargetsWorkspace : UserControl
                 reachable = response.IsSuccessStatusCode;
                 detail = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase} from {uri}";
             }
+            else if (target.BaseAddress.StartsWith("process:", StringComparison.OrdinalIgnoreCase)
+                     && int.TryParse(target.BaseAddress["process:".Length..], out var pid))
+            {
+                try
+                {
+                    var proc = System.Diagnostics.Process.GetProcessById(pid);
+                    reachable = !proc.HasExited;
+                    detail = reachable
+                        ? $"Process active: {proc.ProcessName} (PID {pid}, responding={proc.Responding})"
+                        : $"Process has exited: PID {pid}";
+                }
+                catch (Exception pex)
+                {
+                    reachable = false;
+                    detail = $"Process unreachable: {pex.Message}";
+                }
+            }
             else if (!string.IsNullOrWhiteSpace(target.BaseAddress))
             {
-                var exists = File.Exists(target.BaseAddress) || Directory.Exists(target.BaseAddress);
-                reachable = exists;
-                detail = exists
-                    ? $"Path exists: {target.BaseAddress} ({new FileInfo(target.BaseAddress).Length:N0} bytes)"
-                    : $"Path not found: {target.BaseAddress}";
+                if (Directory.Exists(target.BaseAddress))
+                {
+                    reachable = true;
+                    var dInfo = new DirectoryInfo(target.BaseAddress);
+                    detail = $"Directory exists: {target.BaseAddress} (created {dInfo.CreationTimeUtc:O})";
+                }
+                else if (File.Exists(target.BaseAddress))
+                {
+                    reachable = true;
+                    var fInfo = new FileInfo(target.BaseAddress);
+                    detail = $"File exists: {target.BaseAddress} ({fInfo.Length:N0} bytes)";
+                }
+                else
+                {
+                    reachable = false;
+                    detail = $"Path not found: {target.BaseAddress}";
+                }
             }
             else
             {
