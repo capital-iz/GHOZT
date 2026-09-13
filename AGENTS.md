@@ -233,7 +233,9 @@ One command, from `Apps\Desktop\GHOZT\Windows`:
 ```
 
 Bumps the version, regenerates brand assets, runs tests, publishes self-contained, packages the MSI,
-commits by explicit path, pushes. **A failing test stops it and produces no installer.** The MSI is
+installs the latest MSI build to `C:\Program Files\Capital-Iz\Ghozt\`, commits by explicit path, pushes.
+**Always install latest build.** The owner's standing rule: every iteration must immediately update the
+installed application on this machine. **A failing test stops it and produces no installer.** The MSI is
 built **before** the commit deliberately: a commit claiming to be an iteration whose code does not
 package leaves history nobody can trust.
 

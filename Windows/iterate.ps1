@@ -34,7 +34,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$Message,
     [ValidateSet('major', 'minor', 'patch', 'none')][string]$Bump = 'patch',
-    [switch]$NoPush
+    [switch]$NoPush,
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -105,6 +106,18 @@ if ($LASTEXITCODE -ne 0) { throw "installer build failed - nothing committed" }
 
 $msi = Join-Path $productRoot "Windows\artifacts\Ghozt-$next.msi"
 if (-not (Test-Path $msi)) { throw "expected $msi but it is not there" }
+
+# ---------------------------------------------------------------- install latest build
+# Standing rule: always install the latest build.
+if (-not $SkipInstall) {
+    Write-Host "==> Installing latest build: $msi" -ForegroundColor Cyan
+    $proc = Start-Process msiexec.exe -ArgumentList @('/i', "`"$msi`"", '/qb') -Wait -PassThru
+    if ($proc.ExitCode -eq 0 -or $proc.ExitCode -eq 3010) {
+        Write-Host "==> Successfully installed Ghozt $next" -ForegroundColor Green
+    } else {
+        Write-Warning "msiexec exited with code $($proc.ExitCode)"
+    }
+}
 
 # ---------------------------------------------------------------- commit and push
 
