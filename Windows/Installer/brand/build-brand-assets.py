@@ -21,9 +21,12 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MASTER_MARK = os.path.join(
-    HERE, "..", "..", "..", "..", "CAPITAL-IZ Marketing", "public", "images",
-    "capital-iz-logo-01.png")
+_CANDIDATE_MARKS = [
+    os.path.join(HERE, "..", "..", "..", "..", "CAPITAL-IZ Marketing", "public", "images", "capital-iz-logo-01.png"),
+    os.path.join(HERE, "..", "..", "..", "..", "..", "..", "Website", "capital-iz", "public", "images", "capital-iz-logo-01.png"),
+    os.path.join(HERE, "..", "..", "..", "..", "Psykick", "public", "images", "capital-iz-logo-01.png"),
+]
+MASTER_MARK = next((p for p in _CANDIDATE_MARKS if os.path.isfile(p)), _CANDIDATE_MARKS[0])
 
 MSI_ASSETS = os.path.join(HERE, "..", "msi", "Assets")
 APP_ASSETS = os.path.join(HERE, "..", "..", "..", "App", "src", "Ghozt.App", "Assets")

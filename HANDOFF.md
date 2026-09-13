@@ -196,26 +196,18 @@ the build log.
 
 ## 4. OUTSTANDING — in Rea's priority order
 
-### 4.0 ⚠ LANGUAGE CONFLICT — resolve this before building more
+### 4.0 LANGUAGE POLICY RESOLUTION (Amended 2026-09-11)
 
-**Found 2026-09-01 while inheriting rules from `Trading\Ocular Trading`. Unresolved.**
+**SUPERSEDED (2026-09-11):** The prior conflict flagged 2026-09-01 under DIR-20260820-006 (Rust dominance)
+has been superseded by the Owner's global Language Policy amendment dated 2026-09-11. Under the amended
+doctrine, C#, Rust and Python are preferred languages, and a repository already in a language remains in it.
+Ghozt stays in C#/WPF, preserving suite theming consistency and 143 passing tests, with Rust permitted alongside
+where beneficial and authorized.
 
-`Trading\Ocular Trading\Windows\AGENTS.md` carries **DIR-20260820-006 (Rust Dominance), marked
-GLOBAL**: *"Rust is the dominant language for every NEW Capital-Iz app… Anything NEW is written in
-Rust… Anything less than 50% complete is FINISHED IN RUST, in full."*
-
-**Ghozt was created 2026-08-31 — after that directive — in C#/WPF**, and is ~11,200 lines with five
-of eleven workspaces unbuilt. On a plain reading it is exactly the case the directive names.
-
-The counter-argument is real and should be put to Rea alongside it: Ghozt reuses CommanDeck's exact
-theming architecture, token vocabulary and installer signature, the suite-consistency rule requires
-that, there is no Rust UI stack that produces this look, and the same directive says *"anything
-already working is LEFT ALONE… this is not permission to rewrite."* 143 tests currently pass.
-
-**Do not decide this yourself and do not start a port.** Ask Rea. If he rules for Rust, the
-side-by-side rule binds: build alongside, verify equivalence on the same inputs as a recorded
-comparison, then switch — never delete a working implementation before its replacement has been
-*observed* producing the same result.
+_Historical Record (Preserved):_
+> DIR-20260820-006 originally mandated Rust for new apps. Ghozt was created 2026-08-31 in C#/WPF reusing
+> CommanDeck's theming architecture, token vocabulary and installer signature. The owner confirmed Ghozt
+> proceeds in C#/WPF.
 
 ### 4.1 THE UI IS NOT GOOD ENOUGH — this is the top priority
 

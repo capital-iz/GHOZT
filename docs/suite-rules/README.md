@@ -27,9 +27,10 @@ you must know about:
 1. `00-Capital-Iz-AGENTS.md` names `Apps\Desktop\CAPITAL-IZ DESKTOP\Command Deck\App` as
    authoritative and calls `Apps\Desktop\Command Deck` stale. **That path does not exist.**
    `01-Apps-AGENTS.md` and `02-CommandDeck-AGENTS.md` are newer and correct.
-2. `04-OcularTrading-Windows-AGENTS.md` carries DIR-20260820-006, which makes **Rust** the language
-   for every new Capital-Iz app. Ghozt is new and is C#/WPF. See Ghozt's `AGENTS.md` §3 — this is
-   unresolved and needs Rea.
+2. `04-OcularTrading-Windows-AGENTS.md` carries DIR-20260820-006, which made Rust the language
+   for every new Capital-Iz app. **SUPERSEDED (2026-09-11):** The Owner amended the Language Policy
+   on 2026-09-11: C#, Rust and Python are preferred languages, and existing repos remain in their
+   established language. Ghozt stays C#/WPF. See Ghozt's `AGENTS.md` §3.
 
 ## Refreshing
 

@@ -112,7 +112,7 @@ Push-Location $productRoot
 try {
     # Explicit paths only. `git add -A` has swept other agents' in-flight edits and embedded
     # repositories into commits on this machine.
-    Invoke-Git @('add', 'App', 'Blueprints', 'Windows/Installer', 'Windows/iterate.ps1', '.gitignore', 'AGENTS.md', 'HANDOFF.md', 'docs')
+    Invoke-Git @('add', 'App', 'Blueprints', 'Windows/Installer', 'Windows/iterate.ps1', '.gitignore', 'AGENTS.md', 'HANDOFF.md', 'docs', '.agent-memory')
 
     $staged = & git diff --cached --name-only
     if (-not $staged) {

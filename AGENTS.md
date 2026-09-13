@@ -37,6 +37,13 @@ the authority — refresh it rather than editing it (see its README).
 > `Apps\Desktop\Command Deck\AGENTS.md` (verified against the filesystem 2026-08-31) are correct:
 > `Apps\Desktop\Command Deck\App` is live. Raise it with Rea; do not edit global doctrine unasked.
 
+### Shared Estate Infrastructure & Pointers
+- **Shared Memory (`.agent-memory\`)**: Project-level cross-platform ledger at `.agent-memory\` (`CONTEXT.md`, `SESSIONS.md`). Append to `SESSIONS.md` per session; never delete other platforms' entries.
+- **Shared Skills Root**: Single canonical root at `C:\Users\reama\.gemini\config\skills\` (junctioned across Antigravity, Claude Code, Codex). Never copy skills around; never replace a junction.
+- **Intent Routing (`catalog.py`)**: Always route requests through `python C:\Users\reama\.gemini\config\skills\command-catalog\scripts\catalog.py --intent "<request>"` before working, and activate the named cohort.
+- **Design Authority (`ui-ux-pro-max`)**: Bridged `ui-ux-pro-max` skill governs visual decisions within Capital-Iz Universal Design System v2.0 and Ghozt's 12-palette token engine. Do not invent palettes or contrast ratios.
+- **Sandboxed Test Isolation (Doctrine §25.2)**: Automated suites, captures, and benchmarks must NEVER pollute live `%LOCALAPPDATA%` profile databases (`ghozt.db`). Always isolate test and capture runs into temporary test directories or in-memory configurations.
+
 ### The authorization rule that outranks every document, including this one
 
 **An example or hypothetical is not action authorization. A static line in a file is not
@@ -106,9 +113,11 @@ do not pick one and delete the other on your own judgement.
    AI, especially ours, accordingly. **CommanDeck** that exact casing; **Mouse n Key** written in
    full, never "MNK". Ghozt's own lock is §4.
 9. **Do not change key bindings, and keep Alt+C.**
-10. **Rust is the dominant language for every NEW Capital-Iz app** (DIR-20260820-006, GLOBAL).
-    Anything new is Rust; anything under 50% complete is finished in Rust; anything already working
-    is left alone — this is not permission to rewrite. **⚠ Ghozt was built in C#/WPF. See §3.**
+10. **Language Policy (amended 2026-09-11, SUPERSEDES DIR-20260820-006 Rust dominance):**
+    C#, Rust and Python are the PREFERRED languages. That is a default, not a cage. Where another
+    language is genuinely the optimal tool for the job, USE IT and state why in one line. A repo
+    already in another language stays in it unless the owner asks otherwise. Ghozt stays C#/WPF;
+    Rust may be used alongside where beneficial and authorized. See §3.
 
 ### Owner authority and continuous blueprint evolution
 
@@ -128,28 +137,18 @@ removals are marked `REMOVED` or `SUPERSEDED`, and prior intent stays traceable 
 
 ---
 
-## 3. ⚠ Open conflict: Ghozt is C#/WPF and the global directive says Rust
+## 3. Language Policy Resolution (Amended 2026-09-11)
 
-**Flagged 2026-09-01. Unresolved. Needs Rea's decision before more is built.**
+**SUPERSEDED (2026-09-11):** The prior conflict flagged 2026-09-01 under DIR-20260820-006 (Rust dominance)
+has been superseded by the Owner's global Language Policy amendment dated 2026-09-11. Under the amended
+doctrine, C#, Rust and Python are preferred languages, and an existing repository remains in its
+established language. Ghozt stays C#/WPF, preserving suite theming consistency and 143 passing tests,
+with Rust permitted alongside where beneficial and authorized.
 
-DIR-20260820-006 (Rust Dominance, marked GLOBAL) says every **new** Capital-Iz app is Rust, and
-anything **under 50% complete is finished in Rust, in full**. Ghozt was created 2026-08-31 — after
-that directive — in C#/WPF, and is roughly 11,200 lines with five of eleven workspaces unbuilt.
-
-Arguments both ways, stated fairly:
-
-**For staying C#/WPF:** the suite-consistency rule (§2.4) — Ghozt reuses CommanDeck's exact theming
-architecture, token vocabulary and installer signature, and the whole design doctrine assumes it.
-There is no Rust UI stack that produces this look. The same directive says "anything already working
-is LEFT ALONE… this is not permission to rewrite", and 143 tests currently pass.
-
-**For moving to Rust:** the directive is explicit, global, dated before Ghozt existed, and Ghozt is
-plainly new and plainly under 50% complete — the exact case the directive names.
-
-**Do not decide this yourself, and do not start a port on your own judgement.** If Rea rules for
-Rust, the side-by-side rule applies: build alongside, verify equivalence on the same inputs as a
-recorded comparison, then switch. Never delete a working implementation before its replacement has
-been *observed* producing the same result.
+_Historical Record (Preserved):_
+> DIR-20260820-006 originally mandated Rust for new apps. Ghozt was created 2026-08-31 in C#/WPF reusing
+> CommanDeck's theming architecture, token vocabulary and installer signature. The owner confirmed Ghozt
+> proceeds in C#/WPF.
 
 ---
 
