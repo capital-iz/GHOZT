@@ -263,8 +263,20 @@ public sealed record Finding
     /// </remarks>
     public double? Reproducibility => ReproAttempts == 0 ? null : (double)ReproSuccesses / ReproAttempts;
 
-    /// <summary>A Phantom is a finding that has been seen but does not reliably return.</summary>
-    public bool IsPhantom => Reproducibility is > 0 and < 0.85;
+    /// <summary>
+    /// Bayesian Laplace-smoothed reproducibility estimate under a Beta(1,1) uniform prior: (k + 1) / (n + 2).
+    /// </summary>
+    public double BayesianReproducibility => StateSpaceMath.LaplaceSmoothedProbability(ReproSuccesses, ReproAttempts);
+
+    /// <summary>
+    /// 95% Wilson score confidence interval for the true defect reproducibility rate.
+    /// </summary>
+    public ConfidenceInterval WilsonConfidence => StateSpaceMath.WilsonScoreInterval(ReproSuccesses, ReproAttempts);
+
+    /// <summary>
+    /// A Phantom is a finding that has been seen but does not reliably return, validated through Wilson score intervals.
+    /// </summary>
+    public bool IsPhantom => StateSpaceMath.IsPhantomDefect(ReproSuccesses, ReproAttempts);
 }
 
 /// <summary>A captured artefact, bound to the finding or event it proves something about.</summary>

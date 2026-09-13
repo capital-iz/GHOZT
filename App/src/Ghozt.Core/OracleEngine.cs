@@ -157,7 +157,7 @@ public sealed class OracleEngine
                 Title = $"Unhandled Exception or Error Dialog Detected: {errorNodes[0].Name}",
                 Expected = "Target executes without unhandled exception dialogs, crash alerts, or fatal fault windows.",
                 Actual = $"Error indicator displayed: \"{snippet}\" in {detailNode.ControlType} '{detailNode.Name}'.",
-                Fingerprint = $"ui_error:{errorNodes[0].Name}:{Hashing.Sha256(summaryText)[..12]}",
+                Fingerprint = $"ui_error:{errorNodes[0].Name}:{Hashing.Sha256(summaryText)[..32]}",
                 Detail = $"Detected error control:\nID: {detailNode.Id}\nName: {detailNode.Name}\nClassName: {detailNode.ClassName}\nValue: {detailNode.Value}",
             };
         }
@@ -165,8 +165,17 @@ public sealed class OracleEngine
         return null;
     }
 
-    private static void TraverseAndFindErrors(UiElementSnapshot node, List<UiElementSnapshot> findings)
+    private static void TraverseAndFindErrors(
+        UiElementSnapshot node,
+        List<UiElementSnapshot> findings,
+        HashSet<UiElementSnapshot>? visited = null)
     {
+        visited ??= [];
+        if (!visited.Add(node))
+        {
+            return;
+        }
+
         // Check window / dialog title
         if (node.ControlType is "Window" or "Pane" &&
             ErrorDialogTitles.Any(t => node.Name.Contains(t, StringComparison.OrdinalIgnoreCase)))
@@ -185,7 +194,7 @@ public sealed class OracleEngine
 
         foreach (var child in node.Children)
         {
-            TraverseAndFindErrors(child, findings);
+            TraverseAndFindErrors(child, findings, visited);
         }
     }
 

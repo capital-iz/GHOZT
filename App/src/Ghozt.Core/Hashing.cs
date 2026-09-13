@@ -60,6 +60,7 @@ public static class Hashing
 
         // A unit separator between features, so two different splits of the same characters
         // ("ab"+"c" and "a"+"bc") cannot collide into one fingerprint.
-        return Sha256(string.Join('\u001F', normalised))[..16];
+        // 32 hex characters (128-bit digest) provides 2^64 birthday collision immunity.
+        return Sha256(string.Join('\u001F', normalised))[..32];
     }
 }

@@ -81,7 +81,8 @@ public sealed class AgenticSweepRunner
         var visitedStates = 0;
         var deviationsFound = 0;
         var evidenceCaptured = 0;
-        var executedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var executedTransitions = new HashSet<(string StateId, string ActionKey)>();
+        var stateVisitCounts = new Dictionary<string, int>(StringComparer.Ordinal) { ["state:root"] = 1 };
 
         try
         {
@@ -153,17 +154,17 @@ public sealed class AgenticSweepRunner
 
                 // Discover actions
                 var availableActions = await _uiaDriver.DiscoverActionsAsync(currentTree, sweep.AllowDestructive).ConfigureAwait(false);
-                var candidateAction = availableActions.FirstOrDefault(a => !executedActions.Contains(GetActionKey(a)));
+                var candidateAction = availableActions.FirstOrDefault(a => !executedTransitions.Contains((currentStateId, GetActionKey(a))));
 
                 if (candidateAction is null)
                 {
-                    // No unvisited actions on current surface
+                    // No unvisited actions on current surface from current state
                     _store.Append(new LedgerEvent
                     {
                         Id = _store.NextId(IdKind.Event),
                         At = DateTimeOffset.Now,
                         Code = "SWP.SURFACE_EXHAUSTED",
-                        Message = $"All {availableActions.Count} discoverable UI actions on this surface have been explored.",
+                        Message = $"All {availableActions.Count} discoverable UI actions from state '{currentStateId}' have been explored.",
                         Severity = Severity.Info,
                         TargetId = target.Id,
                         SweepId = sweep.Id,
@@ -173,7 +174,7 @@ public sealed class AgenticSweepRunner
                 }
 
                 var actionKey = GetActionKey(candidateAction);
-                executedActions.Add(actionKey);
+                executedTransitions.Add((currentStateId, actionKey));
 
                 progress?.Report(new SweepProgress(
                     "Executing Action",
@@ -270,6 +271,7 @@ public sealed class AgenticSweepRunner
                     RecordFinding(target, sweep, oracle, actionNodeId);
                 }
 
+                stateVisitCounts[nextStateId] = stateVisitCounts.GetValueOrDefault(nextStateId, 0) + 1;
                 currentStateId = nextStateId;
             }
         }
@@ -325,6 +327,9 @@ public sealed class AgenticSweepRunner
         _store.Save(completedSweep);
         _store.Save(target with { LastSweepAt = DateTimeOffset.Now });
 
+        var entropy = StateSpaceMath.ShannonEntropy(stateVisitCounts);
+        var efficiency = StateSpaceMath.ExplorationEfficiency(stateVisitCounts);
+
         _store.Append(new LedgerEvent
         {
             Id = _store.NextId(IdKind.Event),
@@ -335,7 +340,8 @@ public sealed class AgenticSweepRunner
             TargetId = target.Id,
             SweepId = sweep.Id,
             Actor = "AgenticSweepRunner",
-            Detail = $"Visited: {visitedStates}, Deviations: {deviationsFound}, Evidence: {evidenceCaptured}, Duration: {clock.Elapsed.TotalSeconds:F1}s",
+            Detail = $"Visited: {visitedStates}, Deviations: {deviationsFound}, Evidence: {evidenceCaptured}, "
+                     + $"Duration: {clock.Elapsed.TotalSeconds:F1}s, Entropy: {entropy:F2} bits, Efficiency: {efficiency:P0}",
         });
 
         progress?.Report(new SweepProgress("Finished", visitedStates, sweep.MaxStates, deviationsFound, evidenceCaptured, clock.Elapsed, outcome));

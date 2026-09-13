@@ -122,7 +122,9 @@ public partial class StateMapWorkspace : UserControl
     /// </remarks>
     private void LayOut(IReadOnlyList<LatticeNode> nodes, IReadOnlyList<LatticeEdge> edges)
     {
-        var centre = new Point(Lattice.Width / 2, Lattice.Height / 2);
+        var w = double.IsNaN(Lattice.Width) || Lattice.Width <= 0 ? 1200.0 : Lattice.Width;
+        var h = double.IsNaN(Lattice.Height) || Lattice.Height <= 0 ? 800.0 : Lattice.Height;
+        var centre = new Point(w / 2, h / 2);
         var positions = new Dictionary<string, Point>(StringComparer.Ordinal);
 
         var root = nodes.FirstOrDefault(n => n.Kind == NodeKind.System);
@@ -133,7 +135,7 @@ public partial class StateMapWorkspace : UserControl
             positions[root.Id] = centre;
         }
 
-        var radius = Math.Min(centre.X, centre.Y) * 0.62;
+        var radius = Math.Max(40.0, Math.Min(centre.X, centre.Y) * 0.62);
         for (var i = 0; i < children.Count; i++)
         {
             var angle = (2 * Math.PI * i / Math.Max(children.Count, 1)) - (Math.PI / 2);
@@ -267,6 +269,10 @@ public partial class StateMapWorkspace : UserControl
             return;
         }
 
+        // Project onto an acyclic spanning tree to prevent infinite recursion and StackOverflowException
+        // when directed state cycles exist in the exploration lattice.
+        var tree = StateSpaceMath.ProjectAcyclicSpanningTree(nodes, edges, root.Id);
+
         TreeViewItem Item(LatticeNode node)
         {
             var state = System.Enum.TryParse<GhoztState>(node.State, true, out var parsed) ? parsed : GhoztState.Untested;
@@ -280,10 +286,9 @@ public partial class StateMapWorkspace : UserControl
                 FontSize = 13,
             };
 
-            foreach (var edge in edges.Where(e => e.FromId == node.Id))
+            if (tree.TryGetValue(node.Id, out var children))
             {
-                var child = nodes.FirstOrDefault(n => n.Id == edge.ToId);
-                if (child is not null)
+                foreach (var child in children)
                 {
                     item.Items.Add(Item(child));
                 }
