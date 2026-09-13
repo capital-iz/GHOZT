@@ -206,7 +206,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource Border.Control}"
                             BorderThickness="1"
-                            CornerRadius="{StaticResource Radius.Pill}"
+                            CornerRadius="{StaticResource Radius.Control}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="Center" VerticalAlignment="Center" />

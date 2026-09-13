@@ -90,7 +90,7 @@
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="Root" Background="{DynamicResource Surface.Inset}"
                                             BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1"
-                                            CornerRadius="{StaticResource Radius.Pill}">
+                                            CornerRadius="{StaticResource Radius.Control}">
                                         <Grid Margin="10,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />

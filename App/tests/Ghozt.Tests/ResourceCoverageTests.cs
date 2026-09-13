@@ -171,4 +171,20 @@ public sealed class ResourceCoverageTests
             offenders.Count == 0,
             "These dictionary keys sit in the generated Text.* namespace:\n" + string.Join("\n", offenders));
     }
+
+    [Fact]
+    public void ButtonsAndTogglesMustBeRoundedRectanglesAndNotOvals()
+    {
+        // Ghozt design doctrine: buttons must be rounded rectangles, never ovals or capsules.
+        var root = AppSource();
+        var geometryPath = Path.Combine(root.FullName, "Themes", "Geometry.xaml");
+        Assert.True(File.Exists(geometryPath), "Geometry.xaml must exist.");
+
+        var geometryXaml = File.ReadAllText(geometryPath);
+        var match = Regex.Match(geometryXaml, @"<CornerRadius\s+x:Key=""Radius\.Pill"">(\d+)</CornerRadius>");
+        Assert.True(match.Success, "Radius.Pill must be declared in Geometry.xaml.");
+
+        var radius = int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.True(radius <= 12, $"Radius.Pill must be a rounded rectangle (<= 12), but was {radius}. Ovals (999) are prohibited.");
+    }
 }
