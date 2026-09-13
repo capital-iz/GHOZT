@@ -25,6 +25,10 @@
                         IsEnabled="{Binding HasTarget}"
                         ToolTip="Check whether the selected target is reachable and record the result"
                         AutomationProperties.Name="Probe the selected target" />
+                <Button Margin="8,0,0,0" Content="Discover Manifest" Click="OnDiscoverManifest"
+                        IsEnabled="{Binding HasTarget}"
+                        ToolTip="Scans the target repository/address for feature manifests and maps them into the State Lattice"
+                        AutomationProperties.Name="Discover target behavioural manifest" />
                 <Button Margin="8,0,0,0" Content="Seed demonstration target" Click="OnSeed"
                         ToolTip="Registers Ghozt's own evidence store as a target, so the shell has something real to examine"
                         AutomationProperties.Name="Seed a demonstration target" />

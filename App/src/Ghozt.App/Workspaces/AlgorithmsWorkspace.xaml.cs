@@ -145,38 +145,10 @@ public partial class AlgorithmsWorkspace : UserControl
         }
 
         var target = Shell.Target;
-        var payload = $"suite=AlgorithmHarness\ntarget={target.Id}\nat={_lastReport.ExecutedAt:O}\n"
-                      + $"digest={_lastReport.Sha256Digest}\npassed={_lastReport.PassedCount}/{_lastReport.Results.Count}\n"
-                      + string.Join('\n', _lastReport.Results.Select(r => $"{r.Id}: {r.Passed} ({r.Actual})"));
-
-        App.Store.Save(new Evidence
-        {
-            Id = App.Store.NextId(IdKind.Evidence),
-            TargetId = target.Id,
-            Kind = "algorithm:verification",
-            Summary = $"Algorithm harness verified: {_lastReport.PassedCount}/{_lastReport.Results.Count} invariants",
-            Sha256 = Hashing.Sha256(payload),
-            SizeBytes = System.Text.Encoding.UTF8.GetByteCount(payload),
-            Payload = payload,
-            SourceAdapter = "AlgorithmHarness",
-            Sealed = true,
-            SealedBy = "operator",
-            CapturedAt = DateTimeOffset.Now,
-        });
-
-        App.Store.Append(new LedgerEvent
-        {
-            Id = App.Store.NextId(IdKind.Event),
-            At = DateTimeOffset.Now,
-            Code = "ALG.SEALED",
-            Message = $"Algorithm suite report sealed to evidence: {_lastReport.PassedCount}/{_lastReport.Results.Count} passed",
-            Severity = _lastReport.FailedCount > 0 ? Severity.Medium : Severity.Info,
-            TargetId = target.Id,
-            Actor = "AlgorithmHarness",
-            Detail = payload,
-        });
+        AlgorithmHarness.SealReportToEvidence(App.Store, target.Id, _lastReport);
 
         SealButton.IsEnabled = false;
         SealButton.Content = "Sealed";
+        Shell.Refresh();
     }
 }

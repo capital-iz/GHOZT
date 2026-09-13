@@ -144,27 +144,54 @@ public partial class ReportsWorkspace : UserControl
         parent.Children.Add(p);
     }
 
+    private string? _lastExportedPath;
+
     private void OnExportMarkdown(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
-        var path = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.md");
-        File.WriteAllText(path, _currentReport.MarkdownContent);
-        StatusText.Text = $"Exported to {path}";
+        _lastExportedPath = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.md");
+        File.WriteAllText(_lastExportedPath, _currentReport.MarkdownContent);
+        StatusText.Text = $"Exported to {_lastExportedPath}";
+        OpenViewerButton.IsEnabled = true;
     }
 
     private void OnExportHtml(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
-        var path = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.html");
-        File.WriteAllText(path, _currentReport.HtmlContent);
-        StatusText.Text = $"Exported to {path}";
+        _lastExportedPath = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.html");
+        File.WriteAllText(_lastExportedPath, _currentReport.HtmlContent);
+        StatusText.Text = $"Exported to {_lastExportedPath}";
+        OpenViewerButton.IsEnabled = true;
     }
 
     private void OnExportJson(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
-        var path = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.json");
-        File.WriteAllText(path, _currentReport.JsonContent);
-        StatusText.Text = $"Exported to {path}";
+        _lastExportedPath = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.json");
+        File.WriteAllText(_lastExportedPath, _currentReport.JsonContent);
+        StatusText.Text = $"Exported to {_lastExportedPath}";
+        OpenViewerButton.IsEnabled = true;
+    }
+
+    private void OnOpenViewer(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastExportedPath) || !File.Exists(_lastExportedPath))
+        {
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = _lastExportedPath,
+                UseShellExecute = true,
+            });
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // Fallback if no association exists
+        }
     }
 }
+

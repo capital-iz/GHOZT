@@ -27,120 +27,198 @@
                             x:Name="AdvanceButton" IsEnabled="False"
                             ToolTip="Moves the finding to its next lifecycle state"
                             AutomationProperties.Name="Advance the finding's maturity" />
+                    <Button Margin="8,0,0,0" Content="Investigate Cause" Click="OnInvestigateCausal"
+                            x:Name="CausalButton" IsEnabled="False"
+                            ToolTip="Tests counterfactual interventions to isolate the root causal mechanism"
+                            AutomationProperties.Name="Run counterfactual causal analysis" />
+                    <Button Margin="8,0,0,0" Content="Generate Fix Brief" Click="OnGenerateFixBrief"
+                            x:Name="FixBriefButton" IsEnabled="False"
+                            ToolTip="Generates a bounded repair contract with scope constraints and rejection rules"
+                            AutomationProperties.Name="Generate bounded Fix Brief" />
                     <Button Margin="8,0,0,0" Content="Assign to me" Click="OnAssign"
                             x:Name="AssignButton" IsEnabled="False"
                             AutomationProperties.Name="Assign the finding to the current operator" />
                 </StackPanel>
 
-                <!-- Bulk closure is deliberately absent. The blueprint forbids closing findings in
-                     bulk without evidence or policy, and the safest way to honour that is not to
-                     provide the control at all. -->
                 <TextBlock Margin="0,10,0,0" Style="{StaticResource Type.MutedStyle}"
                            Text="Findings cannot be closed in bulk. Each verdict needs its own evidence, and a queue-wide sweep of the backlog is how untested scope gets recorded as passing." />
             </StackPanel>
         </Border>
 
         <Grid Grid.Row="1">
-            <ListBox x:Name="Queue" Background="Transparent" BorderThickness="0"
-                     Padding="20,14"
-                     SelectionChanged="OnSelect"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     AutomationProperties.Name="Fault queue">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Margin" Value="0,0,0,8" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="Root"
-                                            Background="{DynamicResource Surface.Card}"
-                                            BorderBrush="{DynamicResource Border.Card}"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="360" />
+                <ColumnDefinition Width="420" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Fault Queue List -->
+            <Grid Grid.Column="0">
+                <ListBox x:Name="Queue" Background="Transparent" BorderThickness="0"
+                         Padding="20,14"
+                         SelectionChanged="OnSelect"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         AutomationProperties.Name="Fault queue">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Margin" Value="0,0,0,8" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="Root"
+                                                Background="{DynamicResource Surface.Card}"
+                                                BorderBrush="{DynamicResource Border.Card}"
+                                                BorderThickness="1"
+                                                CornerRadius="{StaticResource Radius.Card}"
+                                                Padding="14,12">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.CardStrongHover}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.Selected}" />
+                                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent.BorderStrong}" />
+                                                <Setter TargetName="Root" Property="BorderThickness" Value="2" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- The severity rail. Two channels: the bar and the badge text. -->
+                                <Border Width="3" Margin="0,0,12,0" CornerRadius="2"
+                                        Background="{Binding Severity, Converter={StaticResource SeverityBrush}}" />
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Type.HeadingStyle}"
+                                               TextWrapping="Wrap" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="{Binding Maturity}" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Style="{StaticResource Type.IdentifierStyle}">
+                                            <Run Text="reproduces" />
+                                            <Run Text="{Binding Reproducibility, Converter={StaticResource Repro}, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <!-- Phantom badge -->
+                                    <Border Margin="0,8,0,0" Padding="8,4" HorizontalAlignment="Left"
+                                            CornerRadius="{StaticResource Radius.Chip}"
                                             BorderThickness="1"
-                                            CornerRadius="{StaticResource Radius.Card}"
-                                            Padding="14,12">
-                                        <ContentPresenter />
+                                            BorderBrush="{DynamicResource Ghozt.CounterfactualBorder}"
+                                            Visibility="{Binding IsPhantom, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="PHANTOM — intermittent, cause unconfirmed"
+                                                   FontSize="9" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Ghozt.Counterfactual}" />
                                     </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.CardStrongHover}" />
-                                        </Trigger>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.Selected}" />
-                                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent.BorderStrong}" />
-                                            <Setter TargetName="Root" Property="BorderThickness" Value="2" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <!-- The severity rail. Two channels: the bar and the badge text. -->
-                            <Border Width="3" Margin="0,0,12,0" CornerRadius="2"
-                                    Background="{Binding Severity, Converter={StaticResource SeverityBrush}}" />
-
-                            <StackPanel Grid.Column="1">
-                                <TextBlock Text="{Binding Title}" Style="{StaticResource Type.HeadingStyle}"
-                                           TextWrapping="Wrap" />
-                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                    <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="{Binding Maturity}" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Style="{StaticResource Type.IdentifierStyle}">
-                                        <Run Text="reproduces" />
-                                        <Run Text="{Binding Reproducibility, Converter={StaticResource Repro}, Mode=OneWay}" />
-                                    </TextBlock>
                                 </StackPanel>
 
-                                <!-- A Phantom is called out explicitly: a fault that does not reliably
-                                     return is a different thing from one that does, and treating them
-                                     alike is how an untrusted fix ships. -->
-                                <Border Margin="0,8,0,0" Padding="8,4" HorizontalAlignment="Left"
-                                        CornerRadius="{StaticResource Radius.Chip}"
-                                        BorderThickness="1"
-                                        BorderBrush="{DynamicResource Ghozt.CounterfactualBorder}"
-                                        Visibility="{Binding IsPhantom, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Text="PHANTOM — intermittent, cause unconfirmed"
-                                               FontSize="9" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Ghozt.Counterfactual}" />
+                                <Border Grid.Column="2" VerticalAlignment="Top" Padding="7,3"
+                                        CornerRadius="{StaticResource Radius.Chip}" BorderThickness="1"
+                                        BorderBrush="{Binding Severity, Converter={StaticResource SeverityBrush}}">
+                                    <TextBlock Text="{Binding Severity}" FontSize="9" FontWeight="SemiBold"
+                                               Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}" />
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Emptiness notification -->
+                <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
+                        VerticalAlignment="Top" HorizontalAlignment="Center"
+                        x:Name="EmptyPanel">
+                    <StackPanel>
+                        <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Font.Icon}" FontSize="22"
+                                   Foreground="{DynamicResource State.Verified}" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="EmptyTitle" Margin="0,12,0,0" HorizontalAlignment="Center"
+                                   Style="{StaticResource Type.SectionStyle}" />
+                        <TextBlock x:Name="EmptyBody" Margin="0,8,0,0" TextAlignment="Center"
+                                   Style="{StaticResource Type.CaptionStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Forensic Dossier & Causal / Fix Brief Drawer -->
+            <Border Grid.Column="1" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1,0,0,0"
+                    Background="{DynamicResource Surface.Deep}" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="DossierPanel">
+                        <TextBlock Text="FORENSIC INVESTIGATION" Style="{StaticResource Type.SectionStyle}" />
+                        <TextBlock Text="Counterfactual causal hypothesis and bounded repair contract."
+                                   Style="{StaticResource Type.CaptionStyle}" Margin="0,4,0,16" />
+
+                        <!-- Placeholder when no finding selected -->
+                        <Border x:Name="NoSelectionBox" Style="{StaticResource Surface.EmptySlot}" Padding="16" Margin="0,20,0,0">
+                            <TextBlock Text="Select a finding to inspect causal mechanisms and generate Fix Briefs."
+                                       Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" />
+                        </Border>
+
+                        <!-- Causal Forensics Card -->
+                        <Border x:Name="CausalCard" Background="{DynamicResource Surface.Card}"
+                                BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="14" Margin="0,0,0,14" Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="&#xE946;" FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                               Foreground="{DynamicResource Accent.Text}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Causal Hypothesis" Style="{StaticResource Type.HeadingStyle}" FontSize="13" />
+                                </StackPanel>
+                                <TextBlock x:Name="HypothesisIdText" Style="{StaticResource Type.IdentifierStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                <TextBlock x:Name="HypothesisClaimText" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock x:Name="HypothesisMechanismText" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                                <TextBlock Text="Counterfactual Interventions:" FontWeight="SemiBold" FontSize="10" Margin="0,10,0,4"
+                                           Foreground="{DynamicResource Text.Secondary}" />
+                                <StackPanel x:Name="InterventionsList" />
+
+                                <Border Margin="0,10,0,0" Padding="8,4" CornerRadius="{StaticResource Radius.Chip}"
+                                        HorizontalAlignment="Left" Background="{DynamicResource Surface.Elevated}">
+                                    <TextBlock x:Name="CausalStatusText" Style="{StaticResource Type.IdentifierStyle}" />
                                 </Border>
                             </StackPanel>
+                        </Border>
 
-                            <Border Grid.Column="2" VerticalAlignment="Top" Padding="7,3"
-                                    CornerRadius="{StaticResource Radius.Chip}" BorderThickness="1"
-                                    BorderBrush="{Binding Severity, Converter={StaticResource SeverityBrush}}">
-                                <TextBlock Text="{Binding Severity}" FontSize="9" FontWeight="SemiBold"
-                                           Foreground="{Binding Severity, Converter={StaticResource SeverityBrush}}" />
-                            </Border>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                        <!-- Fix Brief Card -->
+                        <Border x:Name="FixBriefCard" Background="{DynamicResource Surface.Card}"
+                                BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="14" Margin="0,0,0,14" Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="&#xE8A5;" FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                               Foreground="{DynamicResource Authority.Clearance}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Fix Brief Contract" Style="{StaticResource Type.HeadingStyle}" FontSize="13" />
+                                </StackPanel>
+                                <TextBlock x:Name="FixBriefIdText" Style="{StaticResource Type.IdentifierStyle}" Foreground="{DynamicResource Authority.Clearance}" />
+                                <TextBlock x:Name="FixBriefTitleText" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
 
-            <!-- Two different emptinesses, distinguished. -->
-            <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
-                    VerticalAlignment="Top" HorizontalAlignment="Center"
-                    x:Name="EmptyPanel">
-                <StackPanel>
-                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Font.Icon}" FontSize="22"
-                               Foreground="{DynamicResource State.Verified}" HorizontalAlignment="Center" />
-                    <TextBlock x:Name="EmptyTitle" Margin="0,12,0,0" HorizontalAlignment="Center"
-                               Style="{StaticResource Type.SectionStyle}" />
-                    <TextBlock x:Name="EmptyBody" Margin="0,8,0,0" TextAlignment="Center"
-                               Style="{StaticResource Type.CaptionStyle}" />
-                </StackPanel>
+                                <TextBlock Text="Allowed Scope:" FontWeight="SemiBold" FontSize="10" Margin="0,8,0,2" Foreground="{DynamicResource Text.Secondary}" />
+                                <TextBlock x:Name="FixBriefScopeText" Style="{StaticResource Type.MonoStyle}" FontSize="10" TextWrapping="Wrap" />
+
+                                <TextBlock Text="Regression Guard:" FontWeight="SemiBold" FontSize="10" Margin="0,8,0,2" Foreground="{DynamicResource Text.Secondary}" />
+                                <TextBlock x:Name="FixBriefGuardText" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+
+                                <Button Margin="0,12,0,0" Content="Copy Fix Brief Markdown" Click="OnCopyFixBrief"
+                                        HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>

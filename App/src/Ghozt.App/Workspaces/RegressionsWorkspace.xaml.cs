@@ -61,6 +61,32 @@ public partial class RegressionsWorkspace : UserControl
         Refresh();
     }
 
+    private async void OnRunSuite(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            GuardSummaryText.Text = "No target selected";
+            return;
+        }
+
+        RunSuiteButton.IsEnabled = false;
+        GuardSummaryText.Text = "Executing regression guards...";
+
+        try
+        {
+            var engine = new RegressionEngine(App.Store);
+            var evaluated = await engine.ExecuteGuardsAsync(target).ConfigureAwait(true);
+            RenderGuards(evaluated);
+            Shell?.Refresh();
+        }
+        finally
+        {
+            RunSuiteButton.IsEnabled = true;
+        }
+    }
+
+
     private void RenderGuards(IReadOnlyList<RegressionGuard> guards)
     {
         GuardsPanel.Children.Clear();

@@ -468,4 +468,35 @@ installed (use `git` directly; the GitHub credential is cached and pushes work).
    - `OperationalEnginesTests.cs`: 5 integration tests covering `ClearanceEngine`, `AlgorithmHarness`, `RegressionEngine`, and `ReportGenerator`.
    - 174 total unit and integration tests passing.
 
+---
+
+## 11. 2026-09-13 — Full App Functionality Completed
+
+**By:** Antigravity (Codex/Claude harness parity)  
+**Deliverables Completed:**
+1. **Causal Forensics & Counterfactual Interventions Engine (`CausalForensicsEngine.cs`):**
+   - Formulates causal hypotheses (`HYP-...`) for deviations and findings.
+   - Evaluates counterfactual interventions (`CFX-...`) across 6 classes: `Input`, `State`, `Sequence`, `Dependency`, `Timing`, `NegativeControl`.
+   - Computes causal support score: $S(h) = \sum w_j \text{supporting}_j - \sum w_k \text{contradicting}_k$.
+   - Classifies status: `Observed`, `Associated`, `SupportedNotFinal`, `MechanisticallyVerified`, `Refuted`.
+2. **Fix Brief Engine (`FixBriefEngine.cs`):**
+   - Implements formal, bounded repair contracts (`FXB-...`).
+   - Generates allowed/forbidden file and module scopes, root causal mechanisms, minimal reproduction sequence, required verification evidence, and the 7 patent blueprint rejection rules.
+   - Exports Fix Brief in Markdown and structured format.
+3. **Behavioural Manifest Discovery Engine (`ManifestEngine.cs`):**
+   - Discovers target feature contracts (`FTR-...`), endpoints, and state invariant contracts from repository source files and configuration endpoints (`MAN-...`).
+   - Populates discovered contracts directly into the State Lattice graph.
+4. **Active Regression Guard Runner (`RegressionEngine.cs`):**
+   - Implemented `ExecuteGuardsAsync` to actively test regression guards against live target state, recording `RGR.PASS` / `RGR.FAIL` events to the black-box stream.
+5. **Interactive UI Enhancements across Workspaces (`Ghozt.App`):**
+   - `FaultsWorkspace`: Integrated Causal Forensics and Fix Brief contract inspection panels and handlers (`Investigate Cause`, `Generate Fix Brief`, `Copy Fix Brief`).
+   - `RegressionsWorkspace`: Added `Run Regression Suite` with real-time execution telemetry and passing/failing updates.
+   - `TargetsWorkspace`: Added `Discover Manifest` to scan target repositories and map contracts into the State Lattice.
+   - `AlgorithmsWorkspace`: Integrated sealed algorithm harness evidence directly into `GhoztStore`.
+   - `ReportsWorkspace`: Added `Open in Viewer` action for exported technical and executive dossiers.
+6. **Automated Testing & Mutation Proof:**
+   - 179 / 179 tests passing in `Ghozt.Tests.csproj` (0 failed, 0 skipped).
+   - Mutation testing verified on `FixBriefEngineBuildsBoundedRepairContract` (assertion mutated from 7 to 999, observed RED failure, restored to clean GREEN).
+
+
 

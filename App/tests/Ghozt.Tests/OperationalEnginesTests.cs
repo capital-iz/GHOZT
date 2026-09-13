@@ -198,4 +198,187 @@ public sealed class OperationalEnginesTests : IDisposable
         Assert.NotEmpty(report.Sha256Seal);
         Assert.Equal(32, Hashing.Fingerprint("test").Length);
     }
+
+    [Fact]
+    public void CausalForensicsEngineFormulatesHypothesisAndInterventions()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "Unreachable Target",
+            Kind = "Service",
+            Environment = TargetEnvironment.Staging,
+            Access = AccessClass.ObserveOnly,
+            BaseAddress = @"D:\non_existent_folder\api",
+            Reachable = false,
+        };
+        _store.Save(target);
+
+        var finding = new Finding
+        {
+            Id = _store.NextId(IdKind.Fault),
+            TargetId = target.Id,
+            Title = "Path not found at probe time",
+            Severity = Severity.High,
+            Actual = "Path not found: D:\\non_existent_folder\\api",
+            Expected = "Valid readable directory path",
+            Fingerprint = "fp_path_not_found_123",
+        };
+        _store.Save(finding);
+
+        var engine = new CausalForensicsEngine(_store);
+        var hyp = engine.Investigate(finding, target);
+
+        Assert.NotNull(hyp);
+        Assert.StartsWith("HYP-", hyp.Id);
+        Assert.Contains("inaccessible", hyp.Claim);
+        Assert.NotEmpty(hyp.Interventions);
+        Assert.Contains(hyp.Interventions, cfx => cfx.Class == InterventionClass.NegativeControl);
+        Assert.Contains(hyp.Interventions, cfx => cfx.Class == InterventionClass.EnvironmentIntervention);
+        Assert.True(hyp.Confidence > 0.4);
+        Assert.NotEqual(CausalStatus.Refuted, hyp.Status);
+    }
+
+    [Fact]
+    public void FixBriefEngineBuildsBoundedRepairContract()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "Core API",
+            Kind = "Service",
+            Environment = TargetEnvironment.Development,
+            Access = AccessClass.Interact,
+            RepositoryPath = @"C:\repos\core_api",
+            BaseAddress = "http://localhost:5000",
+            Reachable = true,
+        };
+        _store.Save(target);
+
+        var finding = new Finding
+        {
+            Id = _store.NextId(IdKind.Fault),
+            TargetId = target.Id,
+            Title = "Session refresh produces HTTP 500",
+            Severity = Severity.Critical,
+            Actual = "HTTP 500 Internal Server Error",
+            Expected = "HTTP 200 with refreshed JWT",
+            Fingerprint = "fp_jwt_refresh_500",
+            NodeId = "node-auth-refresh",
+        };
+        _store.Save(finding);
+
+        var causalEngine = new CausalForensicsEngine(_store);
+        var hyp = causalEngine.Investigate(finding, target);
+
+        var fixEngine = new FixBriefEngine(_store);
+        var brief = fixEngine.Generate(finding, target, hyp);
+
+        Assert.NotNull(brief);
+        Assert.StartsWith("FXB-", brief.Id);
+        Assert.Contains(@"C:\repos\core_api", brief.AllowedScope);
+        Assert.NotEmpty(brief.ForbiddenScope);
+        Assert.Equal(7, brief.RejectionConditions.Count);
+        Assert.Equal(FixBriefStatus.Proposed, brief.Status);
+
+        var md = brief.ToMarkdown();
+        Assert.Contains("# Fix Brief: FXB-", md);
+        Assert.Contains("Mandatory Repair Rejection Conditions", md);
+        Assert.Contains("Minimal Reproduction Sequence", md);
+    }
+
+    [Fact]
+    public async Task RegressionEngineExecutesGuardsAsynchronously()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "Guarded App",
+            Kind = "Application",
+            Environment = TargetEnvironment.Local,
+            Access = AccessClass.Interact,
+            BaseAddress = Environment.GetFolderPath(Environment.SpecialFolder.System),
+            BuildLabel = "1.0.0",
+            Reachable = true,
+        };
+        _store.Save(target);
+
+        var finding = new Finding
+        {
+            Id = _store.NextId(IdKind.Fault),
+            TargetId = target.Id,
+            Title = "Crash on startup",
+            Severity = Severity.Critical,
+            Actual = "Path not found: D:\\missing",
+            Expected = "Target path exists and is readable",
+            Fingerprint = "fp_crash_1",
+            Maturity = FindingMaturity.Verified,
+        };
+        _store.Save(finding);
+
+        var engine = new RegressionEngine(_store);
+        var evaluated = await engine.ExecuteGuardsAsync(target);
+
+        Assert.NotEmpty(evaluated);
+        var events = _store.RecentEvents(10);
+        Assert.Contains(events, e => e.Code is "RGR.PASS" or "RGR.FAIL");
+    }
+
+    [Fact]
+    public void ManifestEngineDiscoversFeaturesAndLatticeNodes()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "System Library",
+            Kind = "Library",
+            Environment = TargetEnvironment.Local,
+            Access = AccessClass.ObserveOnly,
+            BaseAddress = Environment.GetFolderPath(Environment.SpecialFolder.System),
+            Reachable = true,
+        };
+        _store.Save(target);
+
+        var engine = new ManifestEngine(_store);
+        var manifest = engine.Discover(target);
+
+        Assert.NotNull(manifest);
+        Assert.StartsWith("MAN-", manifest.Id);
+        Assert.NotEmpty(manifest.Features);
+
+        var nodes = _store.Nodes(target.Id);
+        Assert.NotEmpty(nodes);
+
+        var events = _store.RecentEvents(10);
+        Assert.Contains(events, e => e.Code == "MAN.DISCOVER.OK");
+    }
+
+    [Fact]
+    public void AlgorithmHarnessSealsReportToEvidenceVault()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "Math Platform",
+            Kind = "Service",
+            Environment = TargetEnvironment.Local,
+            Access = AccessClass.ObserveOnly,
+            Reachable = true,
+        };
+        _store.Save(target);
+
+        var report = AlgorithmHarness.RunSuite();
+        Assert.NotNull(report);
+        Assert.Equal(5, report.Results.Count);
+        Assert.Equal(5, report.PassedCount);
+
+        var evidence = AlgorithmHarness.SealReportToEvidence(_store, target.Id, report);
+        Assert.NotNull(evidence);
+        Assert.True(evidence.Sealed);
+        Assert.Equal("algorithm-proof", evidence.Kind);
+
+        var savedItems = _store.EvidenceItems(target.Id);
+        Assert.Contains(savedItems, e => e.Id == evidence.Id && e.Sealed);
+    }
 }
+

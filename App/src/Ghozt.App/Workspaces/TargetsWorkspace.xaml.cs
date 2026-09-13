@@ -163,6 +163,24 @@ public partial class TargetsWorkspace : UserControl
         Shell.Refresh();
     }
 
+    private void OnDiscoverManifest(object sender, RoutedEventArgs e)
+    {
+        if (Shell.Target is not { } target)
+        {
+            return;
+        }
+
+        Shell.Log("MAN.DISCOVER", $"Scanning target {target.Name} for behavioural contracts...", Severity.Info, related: target.Id.ToString());
+
+        var engine = new ManifestEngine(App.Store);
+        var manifest = engine.Discover(target);
+
+        Shell.Log("MAN.DISCOVER.OK", $"Extracted {manifest.Features.Count} feature contracts into State Lattice.", Severity.Info,
+            related: target.Id.ToString(), detail: $"Manifest ID: {manifest.Id}");
+
+        Shell.Refresh();
+    }
+
     private void OnRemove(object sender, RoutedEventArgs e)
     {
         if (Shell.Target is not { } target)

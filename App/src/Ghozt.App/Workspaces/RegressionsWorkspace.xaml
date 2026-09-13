@@ -21,6 +21,10 @@
                             Click="OnGenerateGuards" x:Name="GenerateButton"
                             ToolTip="Derives automated regression guards from all confirmed deviations and findings"
                             AutomationProperties.Name="Generate regression guards from findings" />
+                    <Button Margin="8,0,0,0" Content="Run Regression Suite"
+                            Click="OnRunSuite" x:Name="RunSuiteButton"
+                            ToolTip="Executes all active regression guards against the target to verify no defects recurred"
+                            AutomationProperties.Name="Execute regression guard suite" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

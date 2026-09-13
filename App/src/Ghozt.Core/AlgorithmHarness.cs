@@ -172,4 +172,56 @@ public static class AlgorithmHarness
             Sha256Digest = digest,
         };
     }
+
+    /// <summary>
+    /// Cryptographically seals an algorithm suite execution report into the target's evidence store.
+    /// </summary>
+    public static Evidence SealReportToEvidence(GhoztStore store, GhoztId targetId, AlgorithmSuiteReport report)
+    {
+        var payload = $"""
+            ALGORITHM SUITE VERIFICATION REPORT
+            Target: {targetId}
+            ExecutedAt: {report.ExecutedAt:O}
+            TotalDuration: {report.TotalDuration.TotalMilliseconds:F2} ms
+            Passed: {report.PassedCount}/{report.Results.Count}
+            Failed: {report.FailedCount}
+            Sha256Digest: {report.Sha256Digest}
+
+            TEST DETAILS:
+            {string.Join("\n", report.Results.Select(r => $"[{r.Id}] {r.Name} ({r.Domain}): {(r.Passed ? "PASS" : "FAIL")}\n  Expected: {r.Expected}\n  Actual:   {r.Actual}\n  Details:  {r.Details}"))}
+            """;
+
+        var evidence = new Evidence
+        {
+            Id = store.NextId(IdKind.Evidence),
+            TargetId = targetId,
+            Kind = "algorithm-proof",
+            Summary = $"Algorithm Suite: {report.PassedCount}/{report.Results.Count} passed",
+            Sha256 = Hashing.Sha256(payload),
+            SizeBytes = System.Text.Encoding.UTF8.GetByteCount(payload),
+            Payload = payload,
+            SourceAdapter = "AlgorithmHarness.RunSuite",
+            CapturedAt = DateTimeOffset.Now,
+            Sealed = true,
+            SealedBy = Environment.UserName,
+        };
+
+        store.Save(evidence);
+
+        store.Append(new LedgerEvent
+        {
+            Id = store.NextId(IdKind.Event),
+            At = DateTimeOffset.Now,
+            Code = "ALG.SEAL",
+            Message = $"Algorithm suite verified and sealed ({report.PassedCount}/{report.Results.Count} invariants).",
+            Severity = Severity.Info,
+            TargetId = targetId,
+            RelatedId = evidence.Id.ToString(),
+            Actor = "AlgorithmHarness",
+            Detail = $"Sha256={evidence.Sha256}; Duration={report.TotalDuration.TotalMilliseconds:F1}ms",
+        });
+
+        return evidence;
+    }
 }
+
