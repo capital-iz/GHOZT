@@ -104,6 +104,10 @@ public partial class MainWindow : Window
         WorkspaceKind.Faults => new FaultsWorkspace { DataContext = _shell },
         WorkspaceKind.Replay => new ReplayWorkspace { DataContext = _shell },
         WorkspaceKind.Evidence => new EvidenceWorkspace { DataContext = _shell },
+        WorkspaceKind.Algorithms => new AlgorithmsWorkspace { DataContext = _shell },
+        WorkspaceKind.Regressions => new RegressionsWorkspace { DataContext = _shell },
+        WorkspaceKind.Reports => new ReportsWorkspace { DataContext = _shell },
+        WorkspaceKind.Clearance => new ClearanceWorkspace { DataContext = _shell },
         WorkspaceKind.Settings => new SettingsWorkspace { DataContext = _shell },
         _ => new PlannedWorkspace(WorkspaceDefinition.For(kind)) { DataContext = _shell },
     };

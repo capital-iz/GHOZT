@@ -439,3 +439,33 @@ installed (use `git` directly; the GitHub credential is cached and pushes work).
 7. **Replay Workspace (`ReplayWorkspace.xaml` & `ReplayWorkspace.xaml.cs`):** Built interactive timeline scrubber with step playback, high-res black-box screenshot rendering, execution telemetry, oracle verdicts, and UI hierarchy inspection. Wired into `MainWindow.xaml.cs`.
 8. **Test Suite (`AutonomousTestingEngineTests.cs`):** 6 new integration tests (149 passing tests total, up from 143), plus mutation testing verification on assertion sensitivity.
 
+---
+
+## 10. 2026-09-13 — Mathematical & Algorithmic Audit + All Workspaces Activated
+
+**By:** Antigravity (Codex/Claude harness parity)  
+**Deliverables Completed:**
+1. **Mathematical Engine Architecture Blueprint:** `App/docs/blueprints/2026-09-13-mathematical-and-algorithmic-audit.md` covering Bayesian Laplace estimators, Wilson score intervals, Shannon information entropy, state-action frontier exploration, cycle detection, and acyclic spanning tree projections.
+2. **Core Mathematical Invariants (`StateSpaceMath.cs`, `Hashing.cs`):**
+   - Replaced naive frequentist ratios with Bayesian Laplace estimator $\hat{p} = \frac{k+1}{n+2}$.
+   - Implemented asymmetric 95% Wilson score confidence intervals for finite-sample reproducibility bounds.
+   - Implemented Shannon information entropy and exploration efficiency $\eta = \frac{H(S)}{\log_2 |S|}$.
+   - Upgraded hash digests to 32-hex character digests ($2^{64}$ collision resistance).
+   - Replaced unbounded recursion with Tarjan cycle detection and BFS acyclic spanning tree projection, eliminating `StackOverflowException` on cyclic UI graphs.
+3. **Four Core Operational Engines (`Ghozt.Core`):**
+   - `ClearanceEngine.cs`: Evaluates 6 release policy gates against real store evidence, renders Gold-seal clearance decisions, and signs certificates.
+   - `AlgorithmHarness.cs`: Runs deterministic invariant test suite against analytical closed-form expectations, seals proof records.
+   - `RegressionEngine.cs`: Derives regression guards from confirmed findings to guard against regressions across builds.
+   - `ReportGenerator.cs`: Compiles technical and executive dossiers with Markdown, HTML, and JSON export capability with SHA-256 seals.
+4. **All 11 Operational Workspaces Activated (`Ghozt.App`):**
+   - `ClearanceWorkspace.xaml/.cs` (`Alt+0`): Policy gate verification, certificate signing, gold authority seals.
+   - `AlgorithmsWorkspace.xaml/.cs` (`Alt+7`): Mathematical invariant proof suite runner and ledger verification.
+   - `RegressionsWorkspace.xaml/.cs` (`Alt+8`): Active regression guard suite, automated run engine, defect history.
+   - `ReportsWorkspace.xaml/.cs` (`Alt+9`): Dossier generator, multi-format export, cryptographic hash display.
+   - `MainWindow.xaml.cs`: Updated navigation switch to instantiate all 11 workspaces. Zero `PlannedWorkspace` instances remain.
+5. **Test Suite:**
+   - `MathematicalInvariantsTests.cs`: 20 unit & property tests covering Laplace prior, Wilson symmetry, Shannon entropy proofs, cycle detection, and collision fuzzing.
+   - `OperationalEnginesTests.cs`: 5 integration tests covering `ClearanceEngine`, `AlgorithmHarness`, `RegressionEngine`, and `ReportGenerator`.
+   - 174 total unit and integration tests passing.
+
+

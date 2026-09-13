@@ -1,0 +1,47 @@
+<UserControl x:Class="Ghozt.App.Workspaces.RegressionsWorkspace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Command Header -->
+        <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource Button.Primary}" Content="Generate Guards"
+                            Click="OnGenerateGuards" x:Name="GenerateButton"
+                            ToolTip="Derives automated regression guards from all confirmed deviations and findings"
+                            AutomationProperties.Name="Generate regression guards from findings" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="GuardSummaryText" Text="Select a target to view active regression guards"
+                               Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Guards List -->
+        <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="GuardsPanel">
+                <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                        BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="Regression Guards &amp; Defect Mitigations" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                        <TextBlock Margin="0,8,0,0" Text="Automated guards derived from confirmed deviations to verify that bugs remain fixed across new builds and releases."
+                                   Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
