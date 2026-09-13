@@ -423,3 +423,19 @@ Environment facts confirmed this session: .NET SDKs 8.0.416 and 10.x; WiX 5.0.2 
 `WixToolset.UI/Util` extensions cached; Python 3.11.9 with `python-docx` 1.2.0, `pillow` 12.1.1,
 `olefile`; **no Word and no LibreOffice** (docx must be read programmatically); `gh` CLI **not**
 installed (use `git` directly; the GitHub credential is cached and pushes work).
+
+---
+
+## 9. 2026-09-13 — Autonomous App Testing & Black-Box Engine Shipped
+
+**By:** Antigravity (Codex/Claude harness parity)  
+**Deliverables Completed:**
+1. **Architecture Blueprint:** `App/docs/blueprints/2026-09-13-autonomous-app-testing-and-blackbox-engine.md` detailing the 5-layer autonomous engine.
+2. **Process Lifecycle & Supervision (`TargetSupervisor.cs`):** Spawns target processes (`LaunchCommand` / `BaseAddress`), streams stdout/stderr asynchronously, awaits main window handle, and performs graceful teardown.
+3. **UI Automation Driver (`UiaDriver.cs`):** MTA dedicated thread architecture, UI element tree discovery (`CaptureTreeAsync`), interactive control discovery, action execution (Invoke, Toggle, Value, Select), and destructive action keyword containment guards.
+4. **Real-time Oracle Engine (`OracleEngine.cs`):** Evaluates target vitality (crash/exit code), unresponsiveness/hangs, modal error popups/unhandled exception dialogs, surface integrity, and action contract failures with normalised fingerprinting for deduplication.
+5. **Black-Box Recorder (`BlackBoxRecorder.cs`):** High-fidelity Win32 window screenshot capture (`PrintWindow`/`BitBlt`), UI JSON hierarchy snapshotting, and cryptographic SHA-256 evidence sealing in SQLite store.
+6. **Autonomous Sweep Engine Integration (`AgenticSweepRunner.cs` & `SweepEngine.cs`):** Added `Autonomous E2E` sweep mode and `Autonomous Exploration` check. Explores target UI graph systematically, updates `LatticeNode` and `LatticeEdge` states, evaluates oracles, logs ledger events, and records deduplicated findings.
+7. **Replay Workspace (`ReplayWorkspace.xaml` & `ReplayWorkspace.xaml.cs`):** Built interactive timeline scrubber with step playback, high-res black-box screenshot rendering, execution telemetry, oracle verdicts, and UI hierarchy inspection. Wired into `MainWindow.xaml.cs`.
+8. **Test Suite (`AutonomousTestingEngineTests.cs`):** 6 new integration tests (149 passing tests total, up from 143), plus mutation testing verification on assertion sensitivity.
+

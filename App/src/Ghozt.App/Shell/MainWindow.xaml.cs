@@ -102,6 +102,7 @@ public partial class MainWindow : Window
         WorkspaceKind.Sweep => new SweepWorkspace { DataContext = _shell },
         WorkspaceKind.StateMap => new StateMapWorkspace { DataContext = _shell },
         WorkspaceKind.Faults => new FaultsWorkspace { DataContext = _shell },
+        WorkspaceKind.Replay => new ReplayWorkspace { DataContext = _shell },
         WorkspaceKind.Evidence => new EvidenceWorkspace { DataContext = _shell },
         WorkspaceKind.Settings => new SettingsWorkspace { DataContext = _shell },
         _ => new PlannedWorkspace(WorkspaceDefinition.For(kind)) { DataContext = _shell },

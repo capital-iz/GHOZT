@@ -43,11 +43,12 @@ public sealed class SweepEngine
         "Changed area" => ["Reachability", "Identity", "Structure", "Integrity"],
         "Full sweep" => ["Reachability", "Identity", "Structure", "Integrity", "Capacity", "Consistency"],
         "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Capacity", "Consistency", "Provenance"],
+        "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Integrity"],
         _ => ["Reachability", "Identity"],
     };
 
     public static IReadOnlyList<string> Modes =>
-        ["Smoke", "Changed area", "Full sweep", "Deep forensic"];
+        ["Smoke", "Changed area", "Full sweep", "Deep forensic", "Autonomous E2E"];
 
     /// <summary>
     /// Executes a sweep, reporting progress as it goes.
@@ -390,6 +391,29 @@ public sealed class SweepEngine
                         $"{unhashed} artefact(s) have no content hash.",
                         "An artefact without a hash cannot support a clearance decision, because it cannot be shown to be unchanged.",
                         Severity.High, 1, "every artefact hashed", $"{unhashed} unhashed");
+            }
+
+            case "Autonomous Exploration":
+            {
+                var exe = AgenticSweepRunner.ResolveExecutablePath(target);
+                if (string.IsNullOrWhiteSpace(exe) || !File.Exists(exe))
+                {
+                    return new CheckResult(false, true,
+                        "Autonomous exploration skipped: target has no valid executable.",
+                        $"Set LaunchCommand or BaseAddress to an .exe path. Configured: '{target.LaunchCommand}', '{target.BaseAddress}'",
+                        Severity.Low, 1);
+                }
+
+                var runner = new AgenticSweepRunner(_store);
+                var subSweep = await runner.RunAgenticSweepAsync(target, sweep, null, cancellation).ConfigureAwait(false);
+
+                return new CheckResult(
+                    Passed: subSweep.DeviationsFound == 0,
+                    Blocked: subSweep.State == RunState.Blocked,
+                    Summary: subSweep.Outcome,
+                    Detail: $"Explored {subSweep.StatesVisited} states, captured {subSweep.EvidenceCaptured} artefacts, found {subSweep.DeviationsFound} deviations.",
+                    Severity: subSweep.DeviationsFound > 0 ? Severity.Medium : Severity.Info,
+                    StatesVisited: Math.Max(1, subSweep.StatesVisited));
             }
 
             default:

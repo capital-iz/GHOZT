@@ -1,0 +1,245 @@
+<UserControl x:Class="Ghozt.App.Workspaces.ReplayWorkspace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shell="clr-namespace:Ghozt.App.Shell">
+
+    <UserControl.Resources>
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <shell:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <shell:SeverityBrushConverter x:Key="SeverityBrush" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Top Control Bar: Sweep Picker, Step Navigation, Play/Pause Scrubber -->
+        <Border Padding="20,10" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Sweep Selector -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SWEEP RUN" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <ComboBox x:Name="SweepPicker" MinWidth="220" Height="28" SelectionChanged="OnSweepSelected"
+                              AutomationProperties.Name="Select sweep run for replay">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" />
+                                    <TextBlock Text=" · " Style="{StaticResource Type.CaptionStyle}" />
+                                    <TextBlock Text="{Binding State}" Style="{StaticResource Type.CaptionStyle}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Button Margin="12,0,0,0" Content="Refresh" Click="OnRefreshClicked" Height="28" Padding="10,0"
+                            ToolTip="Reload completed sweeps from evidence database"
+                            AutomationProperties.Name="Refresh sweeps" />
+                </StackPanel>
+
+                <!-- Center: Scrubber & Timeline Controls -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button x:Name="FirstBtn" Content="|&#x25C0;" Width="32" Height="28" Margin="2,0" Click="OnFirstStep"
+                            ToolTip="Jump to first step" AutomationProperties.Name="First step" />
+                    <Button x:Name="PrevBtn" Content="&#x25C0;" Width="32" Height="28" Margin="2,0" Click="OnPrevStep"
+                            ToolTip="Previous step" AutomationProperties.Name="Previous step" />
+                    <Button x:Name="PlayPauseBtn" Content="Play" Width="68" Height="28" Margin="4,0" Click="OnPlayPause"
+                            ToolTip="Play/Pause automatic timeline playback" AutomationProperties.Name="Play or pause replay" />
+                    <Button x:Name="NextBtn" Content="&#x25B6;" Width="32" Height="28" Margin="2,0" Click="OnNextStep"
+                            ToolTip="Next step" AutomationProperties.Name="Next step" />
+                    <Button x:Name="LastBtn" Content="&#x25B6;|" Width="32" Height="28" Margin="2,0" Click="OnLastStep"
+                            ToolTip="Jump to last step" AutomationProperties.Name="Last step" />
+
+                    <Slider x:Name="StepSlider" Width="200" Margin="14,0,8,0" Minimum="0" Maximum="0" SmallChange="1" LargeChange="1"
+                            IsSnapToTickEnabled="True" TickFrequency="1" ValueChanged="OnSliderValueChanged"
+                            VerticalAlignment="Center" AutomationProperties.Name="Timeline scrubber slider" />
+
+                    <TextBlock x:Name="StepCounterText" Text="0 / 0" Style="{StaticResource Type.MonoStyle}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                </StackPanel>
+
+                <!-- Right: Outcome & Verification Seal Indicator -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="OutcomeBadge" Padding="10,4" CornerRadius="4" BorderThickness="1"
+                            BorderBrush="{DynamicResource Border.Subtle}" Background="{DynamicResource Surface.Card}">
+                        <TextBlock x:Name="OutcomeText" Text="NO SWEEP SELECTED" Style="{StaticResource Type.MicroLabelStyle}" />
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Workspace Body: Split View -->
+        <Grid Grid.Row="1">
+            <!-- Empty State when no sweep or no steps exist -->
+            <StackPanel x:Name="EmptyNotice" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
+                <TextBlock Text="" FontFamily="Segoe Fluent Icons" FontSize="42" HorizontalAlignment="Center"
+                           Foreground="{DynamicResource Text.Muted}" />
+                <TextBlock Text="No Replay Data Available" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" Margin="0,12,0,4" />
+                <TextBlock Text="Select a completed sweep run above, or execute an Autonomous E2E examination in the Sweep workspace to record black-box screenshots and step telemetry."
+                           Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Active Replay Content -->
+            <Grid x:Name="ReplayContent" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="420" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Column: Black-box Screenshot & Visual Surface -->
+                <Border Margin="16,14,8,14" Background="{DynamicResource Surface.Deep}"
+                        BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Screenshot Header Overlay -->
+                        <Border Padding="12,8" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="StepActionHeader" Text="Step 0: Initial State" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" />
+                                    <TextBlock Text=" · " Style="{StaticResource Type.CaptionStyle}" />
+                                    <TextBlock x:Name="StepTimestampText" Text="" Style="{StaticResource Type.CaptionStyle}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock Text="SEAL: " Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SealShaText" Text="" Style="{StaticResource Type.MonoStyle}" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Screenshot Canvas -->
+                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image x:Name="ScreenshotImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                                <TextBlock x:Name="NoScreenshotNotice" Text="No visual frame captured for this step."
+                                           Style="{StaticResource Type.CaptionStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="Collapsed" />
+                            </Grid>
+                        </ScrollViewer>
+
+                        <!-- Screenshot Footer: State signature & transition edge -->
+                        <Border Grid.Row="2" Padding="12,8" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="STATE: " Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" />
+                                <TextBlock x:Name="StateIdText" Text="state:root" Style="{StaticResource Type.MonoStyle}" VerticalAlignment="Center" />
+                                <TextBlock Text=" · " Style="{StaticResource Type.CaptionStyle}" />
+                                <TextBlock x:Name="TransitionText" Text="Target launched" Style="{StaticResource Type.CaptionStyle}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Right Column: Inspector Tabs (Action Details, Oracles, UI Tree) -->
+                <Border Grid.Column="1" Margin="8,14,16,14" Background="{DynamicResource Surface.Card}"
+                        BorderBrush="{DynamicResource Border.Card}" BorderThickness="1" CornerRadius="6">
+                    <TabControl Background="Transparent" BorderThickness="0">
+                        <!-- Tab 1: Step Details -->
+                        <TabItem Header="Action &amp; Telemetry">
+                            <ScrollViewer Padding="14,12" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="ACTION EXECUTED" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <TextBlock x:Name="ActionDescText" Text="None" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                            <TextBlock x:Name="ActionTargetText" Margin="0,4,0,0" Text="Target: None" Style="{StaticResource Type.CaptionStyle}" />
+                                            <TextBlock x:Name="ActionKindText" Margin="0,2,0,0" Text="Kind: None" Style="{StaticResource Type.CaptionStyle}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="EXECUTION OUTCOME" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <TextBlock x:Name="ActionResultStatus" Text="Success" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" />
+                                            <TextBlock x:Name="ActionResultDuration" Margin="0,4,0,0" Text="Duration: 0ms" Style="{StaticResource Type.MonoStyle}" />
+                                            <TextBlock x:Name="ActionResultError" Margin="0,4,0,0" Text="" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" Foreground="{DynamicResource State.Critical}" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="CRYPTOGRAPHIC EVIDENCE" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <TextBlock Text="Screenshot SHA-256:" Style="{StaticResource Type.CaptionStyle}" />
+                                            <TextBlock x:Name="EvidenceScreenshotSha" Text="" Style="{StaticResource Type.MonoStyle}" TextWrapping="Wrap" FontSize="11" Margin="0,2,0,6" />
+                                            <TextBlock Text="UI Tree SHA-256:" Style="{StaticResource Type.CaptionStyle}" />
+                                            <TextBlock x:Name="EvidenceTreeSha" Text="" Style="{StaticResource Type.MonoStyle}" TextWrapping="Wrap" FontSize="11" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- Tab 2: Oracle Invariants & Deviations -->
+                        <TabItem Header="Oracles &amp; Deviations">
+                            <ScrollViewer Padding="14,12" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="STEP ORACLE VERDICTS" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <ItemsControl x:Name="OracleList" Margin="0,6,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,0,0,8" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                                    <StackPanel>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Title}" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                            <Border Grid.Column="1" Padding="6,2" CornerRadius="3"
+                                                                    Background="{Binding Severity, Converter={StaticResource SeverityBrush}}">
+                                                                <TextBlock Text="{Binding Severity}" Foreground="Black" FontSize="9" FontWeight="Bold" />
+                                                            </Border>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Expected}" Margin="0,4,0,0" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding Actual}" Margin="0,2,0,0" Style="{StaticResource Type.CaptionStyle}" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource State.Critical}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock x:Name="AllOraclesPassedText" Text="All automated oracles passed for this step."
+                                               Style="{StaticResource Type.CaptionStyle}" Margin="0,8,0,0" Foreground="{DynamicResource State.Verified}" Visibility="Collapsed" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- Tab 3: UI Element Snapshot -->
+                        <TabItem Header="UI Tree Hierarchy">
+                            <ScrollViewer Padding="14,12" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="SNAPSHOT ELEMENTS" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <TreeView x:Name="UiElementTree" Margin="0,6,0,0" Background="Transparent" BorderThickness="0">
+                                        <TreeView.ItemTemplate>
+                                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="{Binding ControlType}" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,0,6,0" />
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Id, StringFormat=' (id: {0})'}" Style="{StaticResource Type.CaptionStyle}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                        </TreeView.ItemTemplate>
+                                    </TreeView>
+                                    <TextBlock x:Name="NoTreeText" Text="No UI tree recorded for this step." Style="{StaticResource Type.CaptionStyle}" Margin="0,8,0,0" Visibility="Collapsed" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -9,5 +9,5 @@ Format:
     - next: <what is still open>
 
 ## 2026-09-13 - Antigravity
-- did: Initialized .agent-memory (CONTEXT.md seeded from HANDOFF.md, SESSIONS.md initialized); added .agent-memory to iterate.ps1 explicit staging list; marked DIR-20260820-006 superseded by 2026-09-11 Language Policy amendment in AGENTS.md, HANDOFF.md, and docs/suite-rules/README.md; added estate pointers (.agent-memory, shared skills root, catalog.py, ui-ux-pro-max, sandboxed isolation) to AGENTS.md.
-- next: Capture 6 implemented workspaces and 24-palette catalogue; present visual analysis and UI questions aligned with Universal Design System v2.0 and Menial v.2 command picker specifications.
+- did: Implemented end-to-end autonomous application testing engine, UI Automation driver (UiaDriver.cs) on dedicated MTA worker thread, process lifecycle supervisor (TargetSupervisor.cs), real-time invariant and crash/popup oracle engine (OracleEngine.cs), cryptographic black-box screenshot & UI snapshot recorder (BlackBoxRecorder.cs), autonomous exploration sweep runner (AgenticSweepRunner.cs), and interactive Replay workspace (ReplayWorkspace.xaml/.cs) with timeline scrubber and visual telemetry. Authored patent-standard architecture blueprint (2026-09-13-autonomous-app-testing-and-blackbox-engine.md). Expanded test suite to 149 passing unit tests with mutation testing verified.
+- next: Package MSI via iterate.ps1, publish to VPS registry when slug is approved, and implement remaining workspaces (Algorithms, Regressions, Reports, Clearance).

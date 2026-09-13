@@ -7,10 +7,18 @@
   -->
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <RootNamespace>Ghozt.Core</RootNamespace>
     <AssemblyName>Ghozt.Core</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Include="System.IO.Path" Alias="Path" />
+    <Using Include="System.IO.Directory" Alias="Directory" />
+    <Using Include="System.IO.File" Alias="File" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
