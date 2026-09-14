@@ -297,4 +297,83 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("OnLaunchTarget", xaml);
         Assert.Contains("OnExploreTargetLattice", xaml);
     }
+
+    [Fact]
+    public void GhoztStore_DatabaseStatistics_And_IntegrityCheck_Pass()
+    {
+        var stats = _store.GetDatabaseStatistics();
+        Assert.NotNull(stats);
+        Assert.Equal(_tempDbPath, stats.DatabasePath);
+        Assert.True(stats.MainSizeBytes > 0);
+        Assert.True(stats.TargetCount >= 0);
+
+        var integrity = _store.VerifyIntegrity();
+        Assert.NotNull(integrity);
+        Assert.Equal("ok", integrity.Trim(), ignoreCase: true);
+    }
+
+    [Fact]
+    public void GhoztStore_VacuumAndBackup_ProducesValidSqliteSnapshot()
+    {
+        _store.VacuumAndOptimize();
+
+        var tempBackup = Path.Combine(Path.GetTempPath(), $"ghozt_test_bak_{Guid.NewGuid():N}.bak");
+        try
+        {
+            var savedPath = _store.BackupDatabase(tempBackup);
+            Assert.True(File.Exists(savedPath));
+            Assert.True(new FileInfo(savedPath).Length > 0);
+        }
+        finally
+        {
+            if (File.Exists(tempBackup))
+            {
+                File.Delete(tempBackup);
+            }
+        }
+    }
+
+    [Fact]
+    public void AlgorithmHarness_MathematicalDossier_GeneratesCompleteMarkdown()
+    {
+        var report = AlgorithmHarness.RunSuite();
+        Assert.NotNull(report);
+        Assert.Equal(7, report.Results.Count);
+        Assert.Equal(7, report.PassedCount);
+        Assert.Equal(0, report.FailedCount);
+
+        Assert.Contains(report.Results, r => r.Id == "ALG.PHANTOM_GATE" && r.Passed);
+        Assert.Contains(report.Results, r => r.Id == "ALG.IEEE754_HYGIENE" && r.Passed);
+
+        var dossier = AlgorithmHarness.GenerateMathematicalDossier(report);
+        Assert.Contains("Mathematical & Algorithmic Invariant Verification Dossier", dossier);
+        Assert.Contains("ALG.PHANTOM_GATE", dossier);
+        Assert.Contains("ALG.IEEE754_HYGIENE", dossier);
+        Assert.Contains(report.Sha256Digest, dossier);
+    }
+
+    [Fact]
+    public void Workspaces_HaveCompleteFeatureEndpoints_InMarkup()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+
+        var settingsXaml = File.ReadAllText(Path.Combine(basePath, "SettingsWorkspace.xaml"));
+        Assert.Contains("OnVerifyIntegrity", settingsXaml);
+        Assert.Contains("OnVacuumOptimize", settingsXaml);
+        Assert.Contains("OnBackupDatabase", settingsXaml);
+        Assert.Contains("OnDestructiveGateChanged", settingsXaml);
+
+        var evidenceXaml = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml"));
+        Assert.Contains("OnVerifyAll", evidenceXaml);
+        Assert.Contains("OnExportArtefact", evidenceXaml);
+        Assert.Contains("KindFilter", evidenceXaml);
+
+        var regressionsXaml = File.ReadAllText(Path.Combine(basePath, "RegressionsWorkspace.xaml"));
+        Assert.Contains("OnExportSuite", regressionsXaml);
+
+        var algorithmsXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
+        Assert.Contains("OnExportDossier", algorithmsXaml);
+        Assert.Contains("DomainFilter", algorithmsXaml);
+    }
 }
+

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -25,10 +26,54 @@ public partial class AlgorithmsWorkspace : UserControl
             _lastReport = AlgorithmHarness.RunSuite();
             RenderReport(_lastReport);
             SealButton.IsEnabled = Shell?.Target is not null;
+            ExportDossierButton.IsEnabled = true;
         }
         finally
         {
             RunButton.IsEnabled = true;
+        }
+    }
+
+    private void OnDomainFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_lastReport is not null)
+        {
+            RenderReport(_lastReport);
+        }
+    }
+
+    private void OnExportDossier(object sender, RoutedEventArgs e)
+    {
+        if (_lastReport is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var dossier = AlgorithmHarness.GenerateMathematicalDossier(_lastReport);
+            var exportDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz",
+                "Ghozt",
+                "AlgorithmReports");
+            Directory.CreateDirectory(exportDir);
+
+            var filePath = Path.Combine(exportDir, $"ALG_DOSSIER_{DateTime.UtcNow:yyyyMMdd_HHmmss}.md");
+            File.WriteAllText(filePath, dossier);
+
+            Shell?.Log("ALG.DOSSIER.EXPORT", $"Mathematical dossier exported to {filePath}", Severity.Info,
+                detail: $"sha256={_lastReport.Sha256Digest}; passed={_lastReport.PassedCount}/{_lastReport.Results.Count}");
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("ALG.DOSSIER.ERR", $"Failed to export mathematical dossier: {ex.Message}", Severity.High);
         }
     }
 
@@ -37,7 +82,13 @@ public partial class AlgorithmsWorkspace : UserControl
         ResultsPanel.Children.Clear();
         SuiteSummaryText.Text = $"{report.PassedCount}/{report.Results.Count} invariants verified · {report.FailedCount} failed · {report.TotalDuration.TotalMilliseconds:F1}ms";
 
-        foreach (var r in report.Results)
+        var selectedDomain = (DomainFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        var filterDomain = string.IsNullOrEmpty(selectedDomain) || selectedDomain == "All Domains" ? null : selectedDomain;
+
+        var items = report.Results.Where(r =>
+            filterDomain is null || r.Domain.Contains(filterDomain, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        foreach (var r in items)
         {
             var card = new Border
             {

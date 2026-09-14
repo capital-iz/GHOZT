@@ -792,6 +792,86 @@ public sealed class GhoztStore : IDisposable
         return Convert.ToInt32(command.ExecuteScalar(), CultureInfo.InvariantCulture);
     }
 
+    // ---------------------------------------------------------------- database maintenance & telemetry
+
+    public DatabaseStatistics GetDatabaseStatistics()
+    {
+        lock (_gate)
+        {
+            var mainSize = File.Exists(DatabasePath) ? new FileInfo(DatabasePath).Length : 0;
+            var walPath = DatabasePath + "-wal";
+            var walSize = File.Exists(walPath) ? new FileInfo(walPath).Length : 0;
+
+            int Count(string table)
+            {
+                using var cmd = _connection.CreateCommand();
+                cmd.CommandText = $"SELECT COUNT(*) FROM {table};";
+                return Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            return new DatabaseStatistics
+            {
+                DatabasePath = DatabasePath,
+                MainSizeBytes = mainSize,
+                WalSizeBytes = walSize,
+                TargetCount = Count("Targets"),
+                SweepCount = Count("Sweeps"),
+                NodeCount = Count("LatticeNodes"),
+                EdgeCount = Count("LatticeEdges"),
+                FindingCount = Count("Findings"),
+                EvidenceCount = Count("Evidence"),
+                EventCount = Count("Events"),
+            };
+        }
+    }
+
+    public string VerifyIntegrity()
+    {
+        lock (_gate)
+        {
+            using var cmd = _connection.CreateCommand();
+            cmd.CommandText = "PRAGMA integrity_check;";
+            using var reader = cmd.ExecuteReader();
+            var results = new List<string>();
+            while (reader.Read())
+            {
+                results.Add(reader.GetString(0));
+            }
+            return string.Join("; ", results);
+        }
+    }
+
+    public void VacuumAndOptimize()
+    {
+        lock (_gate)
+        {
+            Execute("PRAGMA wal_checkpoint(TRUNCATE);");
+            Execute("VACUUM;");
+        }
+    }
+
+    public string BackupDatabase(string? destinationPath = null)
+    {
+        lock (_gate)
+        {
+            var backupDir = Path.Combine(Path.GetDirectoryName(DatabasePath) ?? "", "Backups");
+            Directory.CreateDirectory(backupDir);
+            var targetFile = destinationPath ?? Path.Combine(backupDir, $"ghozt_backup_{DateTime.UtcNow:yyyyMMdd_HHmmss}.bak");
+
+            if (File.Exists(targetFile))
+            {
+                File.Delete(targetFile);
+            }
+
+            using var cmd = _connection.CreateCommand();
+            cmd.CommandText = "VACUUM INTO $dest;";
+            cmd.Parameters.AddWithValue("$dest", targetFile);
+            cmd.ExecuteNonQuery();
+
+            return targetFile;
+        }
+    }
+
     public void Dispose()
     {
         _connection.Close();
@@ -799,3 +879,21 @@ public sealed class GhoztStore : IDisposable
         SqliteConnection.ClearAllPools();
     }
 }
+
+/// <summary>
+/// Telemetry statistics describing the SQLite database on disk and row counts across primary planes.
+/// </summary>
+public sealed record DatabaseStatistics
+{
+    public required string DatabasePath { get; init; }
+    public required long MainSizeBytes { get; init; }
+    public required long WalSizeBytes { get; init; }
+    public required int TargetCount { get; init; }
+    public required int SweepCount { get; init; }
+    public required int NodeCount { get; init; }
+    public required int EdgeCount { get; init; }
+    public required int FindingCount { get; init; }
+    public required int EvidenceCount { get; init; }
+    public required int EventCount { get; init; }
+}
+

@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,6 +11,7 @@ namespace Ghozt.App.Workspaces;
 
 public partial class RegressionsWorkspace : UserControl
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private bool _attached;
 
     public RegressionsWorkspace()
@@ -53,12 +56,52 @@ public partial class RegressionsWorkspace : UserControl
         var engine = new RegressionEngine(App.Store);
         var guards = engine.GenerateGuards(target.Id);
 
+        _currentGuards = guards;
+        ExportSuiteButton.IsEnabled = guards.Count > 0;
         RenderGuards(guards);
     }
+
+    private IReadOnlyList<RegressionGuard> _currentGuards = [];
 
     private void OnGenerateGuards(object sender, RoutedEventArgs e)
     {
         Refresh();
+    }
+
+    private void OnExportSuite(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null || _currentGuards.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var exportDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz",
+                "Ghozt",
+                "Guards");
+            Directory.CreateDirectory(exportDir);
+
+            var filePath = Path.Combine(exportDir, $"REG_SUITE_{target.Id}.json");
+            var json = JsonSerializer.Serialize(_currentGuards, JsonOptions);
+            File.WriteAllText(filePath, json);
+
+            Shell?.Log("REG.EXPORT", $"Regression guard suite exported to {filePath}", Severity.Info,
+                detail: $"count={_currentGuards.Count}", related: target.Id.ToString());
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("REG.EXPORT.ERR", $"Failed to export regression suite: {ex.Message}", Severity.High);
+        }
     }
 
     private async void OnRunSuite(object sender, RoutedEventArgs e)
@@ -77,6 +120,8 @@ public partial class RegressionsWorkspace : UserControl
         {
             var engine = new RegressionEngine(App.Store);
             var evaluated = await engine.ExecuteGuardsAsync(target).ConfigureAwait(true);
+            _currentGuards = evaluated;
+            ExportSuiteButton.IsEnabled = evaluated.Count > 0;
             RenderGuards(evaluated);
             Shell?.Refresh();
         }

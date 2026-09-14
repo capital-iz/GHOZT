@@ -25,6 +25,10 @@
                             Click="OnRunSuite" x:Name="RunSuiteButton"
                             ToolTip="Executes all active regression guards against the target to verify no defects recurred"
                             AutomationProperties.Name="Execute regression guard suite" />
+                    <Button Margin="8,0,0,0" Content="Export Suite (.json)"
+                            Click="OnExportSuite" x:Name="ExportSuiteButton"
+                            ToolTip="Exports regression guards as machine-readable JSON to %LOCALAPPDATA%\Capital-Iz\Ghozt\Guards"
+                            AutomationProperties.Name="Export regression guard suite as JSON" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

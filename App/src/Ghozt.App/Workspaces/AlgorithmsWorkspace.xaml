@@ -22,10 +22,25 @@
                             Click="OnRunSuite" x:Name="RunButton"
                             ToolTip="Executes all deterministic algorithm invariant tests and analytical proofs"
                             AutomationProperties.Name="Run algorithm invariant test suite" />
+                    <Button Margin="8,0,0,0" Content="Export Dossier (.md)" Click="OnExportDossier"
+                            x:Name="ExportDossierButton" IsEnabled="False"
+                            ToolTip="Exports comprehensive mathematical verification dossier to %LOCALAPPDATA%\Capital-Iz\Ghozt\AlgorithmReports"
+                            AutomationProperties.Name="Export mathematical verification dossier" />
                     <Button Margin="8,0,0,0" Content="Seal to Evidence" Click="OnSealEvidence"
                             x:Name="SealButton" IsEnabled="False"
                             ToolTip="Records verified algorithm suite report into the SQLite evidence plane"
                             AutomationProperties.Name="Seal verification report into evidence store" />
+                    <ComboBox x:Name="DomainFilter" Width="170" Margin="14,0,0,0" Height="26"
+                              SelectionChanged="OnDomainFilterChanged"
+                              AutomationProperties.Name="Filter invariants by mathematical domain">
+                        <ComboBoxItem Content="All Domains" IsSelected="True" />
+                        <ComboBoxItem Content="Stochastic Estimators" />
+                        <ComboBoxItem Content="Inferential Statistics" />
+                        <ComboBoxItem Content="Information Theory" />
+                        <ComboBoxItem Content="Graph Theory" />
+                        <ComboBoxItem Content="Applied Cryptography" />
+                        <ComboBoxItem Content="Numerical Stability" />
+                    </ComboBox>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

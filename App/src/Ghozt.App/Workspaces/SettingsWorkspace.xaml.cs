@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -178,6 +179,9 @@ public partial class SettingsWorkspace : UserControl
         UpdateFinishValues();
         UpdateDigest();
 
+        RefreshStorageInfo();
+        LoadSafetyAndBudgetSettings();
+
         _loading = false;
     }
 
@@ -281,4 +285,175 @@ public partial class SettingsWorkspace : UserControl
         Theme.Motion = System.Enum.Parse<MotionLevel>(tag);
         UpdateDigest();
     }
+
+    // ================================================================== STORAGE & DATABASE MAINTENANCE
+
+    private void RefreshStorageInfo()
+    {
+        try
+        {
+            var stats = App.Store.GetDatabaseStatistics();
+            DbPathText.Text = stats.DatabasePath;
+
+            var mainMb = stats.MainSizeBytes / (1024.0 * 1024.0);
+            var walKb = stats.WalSizeBytes / 1024.0;
+            DbSizeText.Text = $"{mainMb:F2} MB (WAL: {walKb:F0} KB)";
+
+            DbCountsText.Text = $"{stats.TargetCount} Targets · {stats.SweepCount} Sweeps · "
+                + $"{stats.NodeCount} Nodes · {stats.EdgeCount} Edges · "
+                + $"{stats.FindingCount} Findings · {stats.EvidenceCount} Evidence · {stats.EventCount} Events";
+        }
+        catch (Exception ex)
+        {
+            DbPathText.Text = App.Store.DatabasePath;
+            DbSizeText.Text = "Error reading storage";
+            DbCountsText.Text = ex.Message;
+        }
+    }
+
+    private void OnVerifyIntegrity(object sender, RoutedEventArgs e)
+    {
+        VerifyIntegrityButton.IsEnabled = false;
+        try
+        {
+            var result = App.Store.VerifyIntegrity();
+            var ok = string.Equals(result.Trim(), "ok", StringComparison.OrdinalIgnoreCase);
+            MaintenanceStatusText.Text = ok
+                ? "Database integrity verified: All b-trees, page headers, and foreign key constraints passed."
+                : $"INTEGRITY ISSUES DETECTED: {result}";
+
+            Shell?.Log(
+                ok ? "DB.INTEGRITY.OK" : "DB.INTEGRITY.FAIL",
+                $"Database integrity check: {result}",
+                ok ? Core.Severity.Info : Core.Severity.Critical);
+        }
+        catch (Exception ex)
+        {
+            MaintenanceStatusText.Text = $"Integrity check failed: {ex.Message}";
+        }
+        finally
+        {
+            VerifyIntegrityButton.IsEnabled = true;
+        }
+    }
+
+    private void OnVacuumOptimize(object sender, RoutedEventArgs e)
+    {
+        VacuumButton.IsEnabled = false;
+        try
+        {
+            App.Store.VacuumAndOptimize();
+            RefreshStorageInfo();
+            MaintenanceStatusText.Text = "Database vacuumed and WAL checkpointed successfully.";
+            Shell?.Log("DB.VACUUM.OK", "SQLite database vacuum and WAL truncation complete.", Core.Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            MaintenanceStatusText.Text = $"Vacuum failed: {ex.Message}";
+        }
+        finally
+        {
+            VacuumButton.IsEnabled = true;
+        }
+    }
+
+    private void OnBackupDatabase(object sender, RoutedEventArgs e)
+    {
+        BackupButton.IsEnabled = false;
+        try
+        {
+            var path = App.Store.BackupDatabase();
+            MaintenanceStatusText.Text = $"Database backup created: {Path.GetFileName(path)}";
+            Shell?.Log("DB.BACKUP.OK", $"Database snapshot saved to {path}", Core.Severity.Info, detail: path);
+        }
+        catch (Exception ex)
+        {
+            MaintenanceStatusText.Text = $"Backup failed: {ex.Message}";
+        }
+        finally
+        {
+            BackupButton.IsEnabled = true;
+        }
+    }
+
+    // ================================================================== EXECUTION & SAFETY BOUNDARIES
+
+    private void LoadSafetyAndBudgetSettings()
+    {
+        var isolation = App.Store.GetSetting("execution.isolation") ?? "IsolatedProcess";
+        IsolationProcess.IsChecked = isolation == "IsolatedProcess";
+        IsolationAttached.IsChecked = isolation == "AttachedMonitor";
+        IsolationPassive.IsChecked = isolation == "PassiveObserver";
+
+        var destructive = App.Store.GetSetting("execution.destructive_interlock");
+        DestructiveInterlockToggle.IsChecked = destructive != "false"; // Default true for safety
+
+        if (int.TryParse(App.Store.GetSetting("sweep.max_states"), CultureInfo.InvariantCulture, out var maxStates))
+        {
+            MaxStatesSlider.Value = Math.Clamp(maxStates, 10, 500);
+        }
+        else
+        {
+            MaxStatesSlider.Value = 100;
+        }
+        MaxStatesValue.Text = ((int)MaxStatesSlider.Value).ToString(CultureInfo.CurrentCulture);
+
+        if (int.TryParse(App.Store.GetSetting("sweep.max_depth"), CultureInfo.InvariantCulture, out var maxDepth))
+        {
+            MaxDepthSlider.Value = Math.Clamp(maxDepth, 1, 50);
+        }
+        else
+        {
+            MaxDepthSlider.Value = 10;
+        }
+        MaxDepthValue.Text = ((int)MaxDepthSlider.Value).ToString(CultureInfo.CurrentCulture);
+    }
+
+    private void OnIsolationChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading || sender is not RadioButton { Tag: string tag })
+        {
+            return;
+        }
+
+        App.Store.SetSetting("execution.isolation", tag);
+        Shell?.Log("EXEC.ISOLATION", $"Execution isolation set to {tag}.", Core.Severity.Info);
+    }
+
+    private void OnDestructiveGateChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading)
+        {
+            return;
+        }
+
+        var isEnabled = DestructiveInterlockToggle.IsChecked == true;
+        App.Store.SetSetting("execution.destructive_interlock", isEnabled ? "true" : "false");
+        Shell?.Log("EXEC.SAFETY", $"Destructive action gate interlock {(isEnabled ? "ENABLED" : "DISABLED")}.", Core.Severity.Medium);
+    }
+
+    private void OnBudgetChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        if (MaxStatesValue is not null && MaxStatesSlider is not null)
+        {
+            MaxStatesValue.Text = ((int)MaxStatesSlider.Value).ToString(CultureInfo.CurrentCulture);
+        }
+
+        if (MaxDepthValue is not null && MaxDepthSlider is not null)
+        {
+            MaxDepthValue.Text = ((int)MaxDepthSlider.Value).ToString(CultureInfo.CurrentCulture);
+        }
+
+        if (!_loading && MaxStatesSlider is not null && MaxDepthSlider is not null)
+        {
+            App.Store.SetSetting("sweep.max_states", ((int)MaxStatesSlider.Value).ToString(CultureInfo.InvariantCulture));
+            App.Store.SetSetting("sweep.max_depth", ((int)MaxDepthSlider.Value).ToString(CultureInfo.InvariantCulture));
+        }
+    }
 }
+

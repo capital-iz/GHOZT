@@ -220,6 +220,110 @@
                                Text="Recorded alongside screenshots and reports, so an image can be reproduced exactly. It carries the inputs, not the generated table — a digest holding the table would go stale the moment the generator improved." />
                 </StackPanel>
             </Border>
+
+            <!-- ============ STORAGE & DATABASE MAINTENANCE ============ -->
+            <TextBlock Style="{StaticResource Type.SectionStyle}" Margin="0,10,0,0" Text="Storage &amp; Database Maintenance" />
+            <TextBlock Style="{StaticResource Type.CaptionStyle}" Margin="0,4,0,0"
+                       Text="Live SQLite Write-Ahead Log (WAL) forensics plane storing targets, sweeps, lattice topology, findings, evidence artefacts, and ledger events." />
+
+            <Border Margin="0,14,0,0" Padding="16"
+                    Background="{DynamicResource Surface.Card}"
+                    BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.CardLarge}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SQLITE WAL DATA PLANE" />
+                            <TextBlock x:Name="DbPathText" Style="{StaticResource Type.MonoStyle}" FontSize="11" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Padding="8,4" CornerRadius="4" Background="{DynamicResource Surface.Inset}">
+                            <TextBlock x:Name="DbSizeText" Style="{StaticResource Type.MonoStyle}" FontSize="11" />
+                        </Border>
+                    </Grid>
+
+                    <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="6" Background="{DynamicResource Surface.Inset}">
+                        <TextBlock x:Name="DbCountsText" Style="{StaticResource Type.MonoStyle}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" />
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button x:Name="VerifyIntegrityButton" Style="{StaticResource Button.Primary}" Content="Verify Integrity" MinWidth="130"
+                                Click="OnVerifyIntegrity"
+                                ToolTip="Executes PRAGMA integrity_check across all b-trees and indexes"
+                                AutomationProperties.Name="Verify SQLite database integrity" />
+                        <Button x:Name="VacuumButton" Margin="8,0,0,0" Content="Vacuum &amp; Optimize" MinWidth="140"
+                                Click="OnVacuumOptimize"
+                                ToolTip="Reclaims unused disk space and truncates write-ahead log (WAL)"
+                                AutomationProperties.Name="Vacuum and optimize database WAL" />
+                        <Button x:Name="BackupButton" Margin="8,0,0,0" Content="Backup Database" MinWidth="130"
+                                Click="OnBackupDatabase"
+                                ToolTip="Creates a safe, timestamped atomic snapshot of the database in %LOCALAPPDATA%\Capital-Iz\Ghozt\Backups"
+                                AutomationProperties.Name="Backup database to archive" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="MaintenanceStatusText" Margin="0,10,0,0" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Secondary}" />
+                </StackPanel>
+            </Border>
+
+            <!-- ============ EXECUTION SAFETY BOUNDARIES ============ -->
+            <TextBlock Style="{StaticResource Type.SectionStyle}" Margin="0,24,0,0" Text="Execution &amp; Safety Boundaries" />
+            <TextBlock Style="{StaticResource Type.CaptionStyle}" Margin="0,4,0,0"
+                       Text="Runtime isolation levels, destructive action gates, and autonomous exploration state-space budgets." />
+
+            <Border Margin="0,14,0,24" Padding="16"
+                    Background="{DynamicResource Surface.Card}"
+                    BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.CardLarge}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="EXECUTION ISOLATION LEVEL" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <RadioButton x:Name="IsolationProcess" Style="{StaticResource Toggle.Pill}" GroupName="Isolation"
+                                     Content="Isolated Process" MinWidth="130" Checked="OnIsolationChanged" Tag="IsolatedProcess" />
+                        <RadioButton x:Name="IsolationAttached" Style="{StaticResource Toggle.Pill}" GroupName="Isolation"
+                                     Margin="6,0,0,0" Content="Attached Monitor" MinWidth="130" Checked="OnIsolationChanged" Tag="AttachedMonitor" />
+                        <RadioButton x:Name="IsolationPassive" Style="{StaticResource Toggle.Pill}" GroupName="Isolation"
+                                     Margin="6,0,0,0" Content="Passive Observer" MinWidth="130" Checked="OnIsolationChanged" Tag="PassiveObserver" />
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,6" Text="DESTRUCTIVE ACTION GATE" />
+                    <CheckBox x:Name="DestructiveInterlockToggle"
+                              Content="Require typed interlock before invoking actions with destructive keywords (Delete, Format, Drop, Purge)"
+                              Click="OnDestructiveGateChanged"
+                              Foreground="{DynamicResource Text.Body}" />
+
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,6" Text="EXPLORATION STATE BUDGET" />
+                    <Grid MaxWidth="560" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="60" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Default Max States" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
+                        <Slider Grid.Column="1" x:Name="MaxStatesSlider" Minimum="10" Maximum="500"
+                                IsSnapToTickEnabled="True" TickFrequency="10" ValueChanged="OnBudgetChanged"
+                                AutomationProperties.Name="Default max states budget" />
+                        <TextBlock Grid.Column="2" x:Name="MaxStatesValue" Style="{StaticResource Type.MonoStyle}"
+                                   VerticalAlignment="Center" TextAlignment="Right" />
+
+                        <TextBlock Grid.Row="1" Text="Default Max Depth" Style="{StaticResource Type.CaptionStyle}"
+                                   VerticalAlignment="Center" Margin="0,10,0,0" />
+                        <Slider Grid.Row="1" Grid.Column="1" x:Name="MaxDepthSlider" Minimum="1" Maximum="50"
+                                Margin="0,10,0,0" IsSnapToTickEnabled="True" TickFrequency="1"
+                                ValueChanged="OnBudgetChanged"
+                                AutomationProperties.Name="Default max depth budget" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" x:Name="MaxDepthValue" Margin="0,10,0,0"
+                                   Style="{StaticResource Type.MonoStyle}" VerticalAlignment="Center" TextAlignment="Right" />
+                    </Grid>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

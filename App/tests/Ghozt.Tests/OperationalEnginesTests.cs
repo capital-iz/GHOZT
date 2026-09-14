@@ -369,8 +369,8 @@ public sealed class OperationalEnginesTests : IDisposable
 
         var report = AlgorithmHarness.RunSuite();
         Assert.NotNull(report);
-        Assert.Equal(5, report.Results.Count);
-        Assert.Equal(5, report.PassedCount);
+        Assert.Equal(7, report.Results.Count);
+        Assert.Equal(7, report.PassedCount);
 
         var evidence = AlgorithmHarness.SealReportToEvidence(_store, target.Id, report);
         Assert.NotNull(evidence);

@@ -23,24 +23,47 @@
 
                 <StackPanel Orientation="Horizontal">
                     <Button x:Name="SealButton" Style="{StaticResource Button.Approval}"
-                            Content="Seal artefact" MinWidth="140" Click="OnSeal" IsEnabled="False"
+                            Content="Seal artefact" MinWidth="130" Click="OnSeal" IsEnabled="False"
                             ToolTip="Verifies the hash and records you as the reviewer"
                             AutomationProperties.Name="Seal the selected evidence artefact" />
-                    <Button Margin="8,0,0,0" x:Name="VerifyButton" Content="Verify hash"
+                    <Button Margin="6,0,0,0" x:Name="VerifyButton" Content="Verify hash"
                             Click="OnVerify" IsEnabled="False"
                             ToolTip="Recomputes the content hash and compares it with the recorded value"
                             AutomationProperties.Name="Verify the artefact hash" />
-                    <Button Margin="8,0,0,0" x:Name="RedactButton" Content="Redact"
+                    <Button Margin="6,0,0,0" x:Name="VerifyAllButton" Content="Verify all"
+                            Click="OnVerifyAll"
+                            ToolTip="Recomputes hashes for all artefacts captured against this target"
+                            AutomationProperties.Name="Verify all evidence hashes" />
+                    <Button Margin="6,0,0,0" x:Name="ExportArtefactButton" Content="Export payload"
+                            Click="OnExportArtefact" IsEnabled="False"
+                            ToolTip="Exports raw payload data to %LOCALAPPDATA%\Capital-Iz\Ghozt\EvidenceExport"
+                            AutomationProperties.Name="Export evidence payload to file" />
+                    <Button Margin="6,0,0,0" x:Name="RedactButton" Content="Redact"
                             Click="OnRedact" IsEnabled="False"
                             ToolTip="Masks the payload while preserving the original under permission"
                             AutomationProperties.Name="Redact the artefact payload" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SEARCH" />
-                    <TextBox x:Name="Search" MaxWidth="320" HorizontalAlignment="Left" Height="26"
-                             TextChanged="OnSearch"
-                             AutomationProperties.Name="Search evidence by summary, kind or hash" />
+                <StackPanel Grid.Column="1" Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SEARCH" />
+                        <TextBox x:Name="Search" Width="200" HorizontalAlignment="Left" Height="26"
+                                 TextChanged="OnSearch"
+                                 AutomationProperties.Name="Search evidence by summary, kind or hash" />
+                    </StackPanel>
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="KIND" />
+                        <ComboBox x:Name="KindFilter" Width="130" Height="26" SelectionChanged="OnKindFilterChanged"
+                                  AutomationProperties.Name="Filter evidence by kind">
+                            <ComboBoxItem Content="All Kinds" IsSelected="True" />
+                            <ComboBoxItem Content="ui-tree" />
+                            <ComboBoxItem Content="action-frame" />
+                            <ComboBoxItem Content="stdout" />
+                            <ComboBoxItem Content="stderr" />
+                            <ComboBoxItem Content="check" />
+                            <ComboBoxItem Content="algorithm-proof" />
+                        </ComboBox>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Center">

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Ghozt.App.Shell;
@@ -47,19 +48,34 @@ public partial class EvidenceWorkspace : UserControl
 
     private void OnSearch(object sender, TextChangedEventArgs e) => Refresh();
 
+    private void OnKindFilterChanged(object sender, SelectionChangedEventArgs e) => Refresh();
+
     private void Refresh()
     {
         var target = Shell?.Target;
         var all = target is null ? [] : App.Store.EvidenceItems(target.Id);
 
-        var query = Search.Text.Trim();
-        var shown = string.IsNullOrWhiteSpace(query)
-            ? all
-            : all.Where(a =>
-                a.Summary.Contains(query, StringComparison.OrdinalIgnoreCase)
+        var selectedKindItem = (KindFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        var filterKind = string.IsNullOrEmpty(selectedKindItem) || selectedKindItem == "All Kinds" ? null : selectedKindItem;
+
+        var query = Search?.Text.Trim() ?? "";
+        var shown = all.Where(a =>
+        {
+            if (filterKind is not null && !string.Equals(a.Kind, filterKind, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return true;
+            }
+
+            return a.Summary.Contains(query, StringComparison.OrdinalIgnoreCase)
                 || a.Kind.Contains(query, StringComparison.OrdinalIgnoreCase)
                 || a.Sha256.Contains(query, StringComparison.OrdinalIgnoreCase)
-                || a.Id.ToString().Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+                || a.Id.ToString().Contains(query, StringComparison.OrdinalIgnoreCase);
+        }).ToList();
 
         Items.ItemsSource = shown;
         EmptyPanel.Visibility = shown.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -102,6 +118,7 @@ public partial class EvidenceWorkspace : UserControl
         Shell.InspectorSubject = artefact;
 
         VerifyButton.IsEnabled = artefact is not null;
+        ExportArtefactButton.IsEnabled = artefact is not null && !string.IsNullOrWhiteSpace(artefact.Payload);
         RedactButton.IsEnabled = artefact is not null && !artefact.Redacted;
 
         // Sealing is gated on the hash having been verified in this session, not merely on an
@@ -118,6 +135,86 @@ public partial class EvidenceWorkspace : UserControl
     }
 
     private readonly HashSet<GhoztId> _verified = [];
+
+    private void OnVerifyAll(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            return;
+        }
+
+        var all = App.Store.EvidenceItems(target.Id);
+        int matched = 0;
+        int failed = 0;
+
+        foreach (var artefact in all)
+        {
+            var recomputed = Hashing.Sha256(artefact.Payload);
+            if (string.Equals(recomputed, artefact.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                _verified.Add(artefact.Id);
+                matched++;
+            }
+            else
+            {
+                _verified.Remove(artefact.Id);
+                failed++;
+            }
+        }
+
+        Shell.Log(
+            failed == 0 ? "EVD.VERIFY.ALL" : "EVD.VERIFY.FAIL",
+            $"{matched}/{all.Count} evidence hashes verified intact. {(failed > 0 ? $"{failed} MISMATCHES DETECTED!" : "")}",
+            failed == 0 ? Severity.Info : Severity.Critical,
+            related: target.Id.ToString());
+
+        UpdateActionGates();
+        Refresh();
+        Shell.Refresh();
+    }
+
+    private void OnExportArtefact(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } artefact)
+        {
+            return;
+        }
+
+        try
+        {
+            var exportDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz",
+                "Ghozt",
+                "EvidenceExport");
+            Directory.CreateDirectory(exportDir);
+
+            var ext = artefact.Kind.Contains("json", StringComparison.OrdinalIgnoreCase) ? "json"
+                : artefact.Kind.Contains("tree", StringComparison.OrdinalIgnoreCase) ? "txt"
+                : "txt";
+            var fileName = $"{artefact.Id}_{artefact.Kind.Replace('/', '_')}.{ext}";
+            var fullPath = Path.Combine(exportDir, fileName);
+
+            File.WriteAllText(fullPath, artefact.Payload);
+
+            Shell.Log("EVD.EXPORT", $"Artefact {artefact.Id} exported to {fullPath}.", Severity.Info,
+                detail: $"sha256={artefact.Sha256}; size={artefact.SizeBytes} bytes",
+                related: artefact.Id.ToString());
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = fullPath,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Shell.Log("EVD.EXPORT.ERR", $"Failed to export artefact {artefact.Id}: {ex.Message}", Severity.High,
+                related: artefact.Id.ToString());
+        }
+    }
+
 
     /// <summary>
     /// Recomputes the artefact's hash and compares it with the recorded value.
