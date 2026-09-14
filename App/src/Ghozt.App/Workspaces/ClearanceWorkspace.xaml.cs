@@ -323,5 +323,178 @@ public partial class ClearanceWorkspace : UserControl
             Shell?.Log("CLR.CERT.VERIFY_FAIL", $"Error verifying certificate: {ex.Message}", Severity.Medium);
         }
     }
+
+    private async void OnRunSelfTest(object sender, RoutedEventArgs e)
+    {
+        ClearanceSummaryText.Text = "Running autonomous self-test examination across 12 domains…";
+        Shell?.Log("CLR.SELFTEST.START", "Initiated Ghozt autonomous self-test suite (Patent §40).", Severity.Info);
+
+        try
+        {
+            var engine = new SelfTestEngine(App.Store);
+            var cert = await engine.RunFullSelfTestAsync().ConfigureAwait(true);
+
+            RenderSelfTestCertificate(cert);
+
+            ClearanceSummaryText.Text = $"Self-Test: {cert.Verdict} · {cert.PassedDomains}/{cert.TotalDomains} domains passed · SHA-256: {cert.Sha256Digest[..12]}…";
+            Shell?.Log(
+                cert.Verdict == "SELF_HOST_QUALIFIED" ? "CLR.SELFTEST.PASS" : "CLR.SELFTEST.FAIL",
+                $"Autonomous self-test complete: {cert.PassedDomains}/{cert.TotalDomains} domains verified. Verdict: {cert.Verdict}.",
+                cert.Verdict == "SELF_HOST_QUALIFIED" ? Severity.Info : Severity.Critical,
+                detail: $"Certificate: {cert.CertificateId}; Sha256={cert.Sha256Digest}");
+        }
+        catch (System.Exception ex)
+        {
+            ClearanceSummaryText.Text = $"Self-test error: {ex.Message}";
+            Shell?.Log("CLR.SELFTEST.ERROR", $"Exception during self-test: {ex.Message}", Severity.High);
+        }
+    }
+
+    private void RenderSelfTestCertificate(GhoztSelfTestCertificate cert)
+    {
+        ClearanceContainer.Children.Clear();
+        var isQualified = cert.Verdict == "SELF_HOST_QUALIFIED";
+
+        // Master Certificate Card
+        var certCard = new Border
+        {
+            Background = (Brush)TryFindResource("Surface.Card"),
+            BorderBrush = (Brush)(isQualified ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(24),
+            Margin = new Thickness(0, 0, 0, 16),
+        };
+
+        var stack = new StackPanel();
+
+        var headerGrid = new Grid();
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var titleStack = new StackPanel();
+        titleStack.Children.Add(new TextBlock
+        {
+            Text = "Ghozt Self-Hosting Quality Certificate",
+            FontSize = 20,
+            FontWeight = FontWeights.Bold,
+            Foreground = (Brush)TryFindResource("Authority.Clearance"),
+        });
+        titleStack.Children.Add(new TextBlock
+        {
+            Text = $"ID: {cert.CertificateId} · Product: v{cert.ProductVersion} · Evaluated: {cert.Timestamp:yyyy-MM-dd HH:mm:ss}",
+            Style = (Style)TryFindResource("Type.CaptionStyle"),
+            Foreground = (Brush)TryFindResource("Text.Muted"),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+        Grid.SetColumn(titleStack, 0);
+        headerGrid.Children.Add(titleStack);
+
+        var badge = new Border
+        {
+            Background = (Brush)(isQualified ? TryFindResource("Authority.Soft") : TryFindResource("State.FaultSoft")),
+            BorderBrush = (Brush)(isQualified ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(16, 6, 16, 6),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        badge.Child = new TextBlock
+        {
+            Text = cert.Verdict,
+            FontWeight = FontWeights.Bold,
+            FontSize = 13,
+            Foreground = (Brush)(isQualified ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+        };
+        Grid.SetColumn(badge, 1);
+        headerGrid.Children.Add(badge);
+        stack.Children.Add(headerGrid);
+
+        // Digest & Signer Info
+        var digestPanel = new StackPanel { Margin = new Thickness(0, 16, 0, 0) };
+        digestPanel.Children.Add(new TextBlock
+        {
+            Text = $"Cryptographic SHA-256 Digest: {cert.Sha256Digest}",
+            FontFamily = new FontFamily("Consolas, Courier New"),
+            FontSize = 12,
+            Foreground = (Brush)TryFindResource("Text.Secondary"),
+        });
+        digestPanel.Children.Add(new TextBlock
+        {
+            Text = $"Signed Authority: {cert.SignedBy} · Domains: {cert.PassedDomains}/{cert.TotalDomains} Verified",
+            Style = (Style)TryFindResource("Type.CaptionStyle"),
+            Foreground = (Brush)TryFindResource("Text.Muted"),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+        stack.Children.Add(digestPanel);
+
+        certCard.Child = stack;
+        ClearanceContainer.Children.Add(certCard);
+
+        // Render 12 Domain Results
+        var domainsLabel = new TextBlock
+        {
+            Text = "Self-Test Domain Verification Matrix (Patent §40, Table 78)",
+            Style = (Style)TryFindResource("Type.HeadingStyle"),
+            FontSize = 15,
+            Margin = new Thickness(0, 8, 0, 12),
+        };
+        ClearanceContainer.Children.Add(domainsLabel);
+
+        foreach (var d in cert.DomainVerdicts)
+        {
+            var dBorder = new Border
+            {
+                Background = (Brush)TryFindResource("Surface.Card"),
+                BorderBrush = (Brush)TryFindResource("Border.Card"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(16, 12, 16, 12),
+                Margin = new Thickness(0, 0, 0, 8),
+            };
+
+            var dGrid = new Grid();
+            dGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            dGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var dText = new StackPanel();
+            dText.Children.Add(new TextBlock
+            {
+                Text = $"{d.Domain} · {d.ChecksEvaluated} check(s) ({d.Duration.TotalMilliseconds:F1}ms)",
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)TryFindResource("Text.Primary"),
+            });
+            dText.Children.Add(new TextBlock
+            {
+                Text = d.Summary,
+                Style = (Style)TryFindResource("Type.CaptionStyle"),
+                Foreground = (Brush)TryFindResource("Text.Muted"),
+                Margin = new Thickness(0, 2, 0, 0),
+            });
+            Grid.SetColumn(dText, 0);
+            dGrid.Children.Add(dText);
+
+            var dBadge = new Border
+            {
+                Background = (Brush)(d.Passed ? TryFindResource("Authority.Soft") : TryFindResource("State.FaultSoft")),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(10, 4, 10, 4),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            dBadge.Child = new TextBlock
+            {
+                Text = d.Passed ? "PASS" : "FAIL",
+                FontSize = 11,
+                FontWeight = FontWeights.Bold,
+                Foreground = (Brush)(d.Passed ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+            };
+            Grid.SetColumn(dBadge, 1);
+            dGrid.Children.Add(dBadge);
+
+            dBorder.Child = dGrid;
+            ClearanceContainer.Children.Add(dBorder);
+        }
+    }
 }
+
 

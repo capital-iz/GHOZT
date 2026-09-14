@@ -33,6 +33,10 @@
                             x:Name="VerifyCertButton"
                             ToolTip="Verifies certificate cryptographic seal and audits evidence plane against tampering"
                             AutomationProperties.Name="Verify release certificate integrity" />
+                    <Button Margin="8,0,0,0" Content="Self-Test Engine" Click="OnRunSelfTest"
+                            x:Name="SelfTestButton"
+                            ToolTip="Runs Ghozt autonomous 12-domain self-test suite and issues a Self-Hosting Quality Certificate"
+                            AutomationProperties.Name="Run Ghozt autonomous self-test suite" />
                 </StackPanel>
 
 
