@@ -366,12 +366,17 @@ public sealed class RealExecutionTests : IDisposable
         var evidenceXaml = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml"));
         Assert.Contains("OnVerifyAll", evidenceXaml);
         Assert.Contains("OnExportArtefact", evidenceXaml);
+        Assert.Contains("OnRedactAll", evidenceXaml);
         Assert.Contains("KindFilter", evidenceXaml);
         Assert.Contains("VerifyAllButton", evidenceXaml);
         Assert.Contains("ExportArtefactButton", evidenceXaml);
+        Assert.Contains("RedactAllButton", evidenceXaml);
 
         var regressionsXaml = File.ReadAllText(Path.Combine(basePath, "RegressionsWorkspace.xaml"));
         Assert.Contains("OnExportSuite", regressionsXaml);
+        Assert.Contains("OnRunMutationAssays", regressionsXaml);
+        Assert.Contains("MutationAssaysButton", regressionsXaml);
+        Assert.Contains("MutationScoreBadge", regressionsXaml);
 
         var algorithmsXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
         Assert.Contains("OnExportDossier", algorithmsXaml);

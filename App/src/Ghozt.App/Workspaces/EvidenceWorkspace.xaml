@@ -42,6 +42,10 @@
                             Click="OnRedact" IsEnabled="False"
                             ToolTip="Masks the payload while preserving the original under permission"
                             AutomationProperties.Name="Redact the artefact payload" />
+                    <Button Margin="6,0,0,0" x:Name="RedactAllButton" Content="Redact secrets"
+                            Click="OnRedactAll"
+                            ToolTip="Scans all artefacts for sensitive tokens, passwords and keys, replacing them with redaction markers"
+                            AutomationProperties.Name="Redact sensitive data in all artefacts" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -125,6 +129,11 @@
                                     <TextBlock Text="{Binding Kind}" Style="{StaticResource Type.IdentifierStyle}" />
                                     <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
                                     <TextBlock Text="{Binding SourceAdapter}" Style="{StaticResource Type.IdentifierStyle}" />
+                                    <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="3" VerticalAlignment="Center"
+                                            Visibility="{Binding Redacted, Converter={StaticResource BoolToVisibility}}"
+                                            Background="{DynamicResource Surface.CardStrong}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1">
+                                        <TextBlock Text="REDACTED" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource Text.Muted}" />
+                                    </Border>
                                 </StackPanel>
                                 <TextBlock Text="{Binding Sha256}" Margin="0,4,0,0"
                                            Style="{StaticResource Type.IdentifierStyle}"

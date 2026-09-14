@@ -137,6 +137,10 @@ public partial class EvidenceWorkspace : UserControl
         VerifyButton.IsEnabled = artefact is not null;
         ExportArtefactButton.IsEnabled = artefact is not null && !string.IsNullOrWhiteSpace(artefact.Payload);
         RedactButton.IsEnabled = artefact is not null && !artefact.Redacted;
+        if (RedactAllButton is not null)
+        {
+            RedactAllButton.IsEnabled = Shell?.Target is not null;
+        }
 
         // Sealing is gated on the hash having been verified in this session, not merely on an
         // artefact being selected. A seal is an assertion that the content is unchanged; making it
@@ -301,9 +305,8 @@ public partial class EvidenceWorkspace : UserControl
 
         var gate = new DestructiveGate(
             title: "Redact artefact",
-            effect: $"This masks the payload of {artefact.Id} in every view and export. The recorded "
-                    + "hash still refers to the original content, so the artefact remains verifiable "
-                    + "but its payload will no longer be readable here.",
+            effect: $"This masks credentials, secrets, tokens, and PII in {artefact.Id} while preserving "
+                    + "telemetry integrity and audit lineage. A new cryptographic hash will seal the sanitized payload.",
             typeToConfirm: artefact.Id.ToString(),
             confirmLabel: "Redact")
         {
@@ -315,15 +318,29 @@ public partial class EvidenceWorkspace : UserControl
             return;
         }
 
-        App.Store.Save(artefact with
-        {
-            Redacted = true,
-            Summary = artefact.Summary,
-            Payload = "[REDACTED]",
-        });
+        RedactionEngine.RedactEvidence(artefact, App.Store, Environment.UserName);
 
-        Shell.Log("EVD.REDACT", $"{artefact.Id} redacted by {Environment.UserName}.", Severity.Medium,
-            detail: $"Original hash retained: {artefact.Sha256}", related: artefact.Id.ToString());
+        Refresh();
+        Shell.Refresh();
+    }
+
+    private void OnRedactAll(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            return;
+        }
+
+        var count = RedactionEngine.RedactTargetEvidence(App.Store, target.Id, Environment.UserName);
+
+        Shell.Log(
+            "EVD.REDACT.ALL",
+            count > 0
+                ? $"{count} evidence artefacts containing sensitive secrets were redacted."
+                : "No unredacted sensitive secrets were detected across evidence artefacts.",
+            Severity.Info,
+            related: target.Id.ToString());
 
         Refresh();
         Shell.Refresh();

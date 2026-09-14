@@ -44,20 +44,31 @@ public partial class RegressionsWorkspace : UserControl
 
     private void Refresh()
     {
+        if (MutationScoreBadge is not null)
+        {
+            MutationScoreBadge.Visibility = Visibility.Collapsed;
+        }
+
         var target = Shell?.Target;
         if (target is null)
         {
             GuardsPanel.Children.Clear();
             GuardsPanel.Children.Add(EmptyState);
             GuardSummaryText.Text = "No target selected";
+            if (RunSuiteButton is not null) RunSuiteButton.IsEnabled = false;
+            if (MutationAssaysButton is not null) MutationAssaysButton.IsEnabled = false;
+            if (ExportSuiteButton is not null) ExportSuiteButton.IsEnabled = false;
             return;
         }
+
+        if (RunSuiteButton is not null) RunSuiteButton.IsEnabled = true;
+        if (MutationAssaysButton is not null) MutationAssaysButton.IsEnabled = true;
 
         var engine = new RegressionEngine(App.Store);
         var guards = engine.GenerateGuards(target.Id);
 
         _currentGuards = guards;
-        ExportSuiteButton.IsEnabled = guards.Count > 0;
+        if (ExportSuiteButton is not null) ExportSuiteButton.IsEnabled = guards.Count > 0;
         RenderGuards(guards);
     }
 
@@ -128,6 +139,49 @@ public partial class RegressionsWorkspace : UserControl
         finally
         {
             RunSuiteButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnRunMutationAssays(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            GuardSummaryText.Text = "No target selected";
+            return;
+        }
+
+        if (MutationAssaysButton is not null) MutationAssaysButton.IsEnabled = false;
+        GuardSummaryText.Text = "Executing mutation assays...";
+
+        try
+        {
+            var engine = new RegressionEngine(App.Store);
+            var report = await engine.VerifyGuardEfficacyAsync(target).ConfigureAwait(true);
+
+            if (MutationScoreBadge is not null && MutationScoreText is not null)
+            {
+                MutationScoreBadge.Visibility = Visibility.Visible;
+                var isPassable = report.MutationScore >= 0.80;
+
+                var brushKey = isPassable ? "State.Verified" : "State.Fault";
+                var softBrushKey = isPassable ? "State.VerifiedSoft" : "State.FaultSoft";
+
+                MutationScoreBadge.BorderBrush = (Brush)TryFindResource(brushKey);
+                MutationScoreBadge.Background = (Brush)TryFindResource(softBrushKey);
+                MutationScoreText.Foreground = (Brush)TryFindResource(brushKey);
+                MutationScoreText.Text = $"μ = {report.MutationScore:P0} ({report.MutantsKilled}/{report.TotalMutants} killed)";
+            }
+
+            GuardSummaryText.Text = report.IneffectiveGuardIds.Count == 0
+                ? $"All {report.TotalGuards} guards verified effective against artificial mutations"
+                : $"{report.IneffectiveGuardIds.Count} guard(s) flagged ineffective / false-confidence!";
+
+            Shell?.Refresh();
+        }
+        finally
+        {
+            if (MutationAssaysButton is not null) MutationAssaysButton.IsEnabled = true;
         }
     }
 
