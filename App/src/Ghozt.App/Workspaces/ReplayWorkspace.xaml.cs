@@ -34,6 +34,8 @@ public partial class ReplayWorkspace : UserControl
     private int _currentStepIndex;
     private bool _isPlaying;
     private bool _attached;
+    private Sweep? _currentSweep;
+    private Sweep? _compareSweep;
 
     public ReplayWorkspace()
     {
@@ -80,21 +82,109 @@ public partial class ReplayWorkspace : UserControl
         var sweeps = target is null ? [] : App.Store.Sweeps(target.Id);
 
         SweepPicker.ItemsSource = sweeps;
+        ComparePicker.ItemsSource = sweeps;
+
         if (sweeps.Count > 0)
         {
             SweepPicker.SelectedIndex = 0;
+            _currentSweep = sweeps[0];
+            if (sweeps.Count > 1)
+            {
+                ComparePicker.SelectedIndex = 1;
+                _compareSweep = sweeps[1];
+            }
+            else
+            {
+                ComparePicker.SelectedItem = null;
+                _compareSweep = null;
+            }
         }
         else
         {
             SweepPicker.SelectedItem = null;
+            ComparePicker.SelectedItem = null;
+            _currentSweep = null;
+            _compareSweep = null;
             LoadSweep(null);
         }
+
+        UpdateComparison();
     }
 
     private void OnSweepSelected(object sender, SelectionChangedEventArgs e)
     {
-        var sweep = SweepPicker.SelectedItem as Sweep;
-        LoadSweep(sweep);
+        _currentSweep = SweepPicker.SelectedItem as Sweep;
+        LoadSweep(_currentSweep);
+        UpdateComparison();
+    }
+
+    private void OnCompareSelected(object sender, SelectionChangedEventArgs e)
+    {
+        _compareSweep = ComparePicker.SelectedItem as Sweep;
+        UpdateComparison();
+    }
+
+    private void UpdateComparison()
+    {
+        if (ComparisonHeader is null) return;
+
+        if (_currentSweep is null || _compareSweep is null)
+        {
+            ComparisonHeader.Text = "No baseline run selected for comparison";
+            ComparisonSubheader.Text = "Select a secondary sweep run above to compute step-by-step diffs.";
+            RunAMetricsText.Text = _currentSweep is not null ? $"{_steps.Count} steps" : "—";
+            RunBMetricsText.Text = "—";
+            StepDeltaText.Text = "—";
+            DurationDeltaText.Text = "—";
+            ComparisonDivergenceText.Text = "Comparison requires two distinct sweep runs.";
+            return;
+        }
+
+        var runA = _currentSweep;
+        var runB = _compareSweep;
+
+        var allEvA = App.Store.EvidenceItems(runA.TargetId).Where(ev => ev.SweepId == runA.Id).ToList();
+        var allEvB = App.Store.EvidenceItems(runB.TargetId).Where(ev => ev.SweepId == runB.Id).ToList();
+
+        var stepsA = allEvA.Count(ev => ev.Kind == "ui:screenshot/png");
+        var stepsB = allEvB.Count(ev => ev.Kind == "ui:screenshot/png");
+        var stepDelta = stepsA - stepsB;
+
+        var findingsA = App.Store.Findings(runA.TargetId).Where(f => f.SweepId == runA.Id).ToList();
+        var findingsB = App.Store.Findings(runB.TargetId).Where(f => f.SweepId == runB.Id).ToList();
+
+        ComparisonHeader.Text = $"Run {runA.Id} vs Run {runB.Id}";
+        ComparisonSubheader.Text = $"Active: {runA.Name} ({runA.State}) | Baseline: {runB.Name} ({runB.State})";
+
+        RunAMetricsText.Text = $"{stepsA} steps · {findingsA.Count} finding(s) · {allEvA.Count} artefacts";
+        RunBMetricsText.Text = $"{stepsB} steps · {findingsB.Count} finding(s) · {allEvB.Count} artefacts";
+
+        StepDeltaText.Text = stepDelta >= 0 ? $"+{stepDelta} steps" : $"{stepDelta} steps";
+        DurationDeltaText.Text = $"Run A: {runA.MaxSeconds}s budget · Run B: {runB.MaxSeconds}s budget";
+
+        var newDeviations = findingsA.Where(fa => !findingsB.Any(fb => fb.Fingerprint == fa.Fingerprint)).ToList();
+        var resolvedDeviations = findingsB.Where(fb => !findingsA.Any(fa => fa.Fingerprint == fb.Fingerprint)).ToList();
+
+        var sb = new System.Text.StringBuilder();
+        if (newDeviations.Count > 0)
+        {
+            sb.AppendLine($"[REGRESSION] {newDeviations.Count} new deviation(s) observed in Run A:");
+            foreach (var nd in newDeviations.Take(3))
+            {
+                sb.AppendLine($"  • {nd.Title} ({nd.Severity})");
+            }
+        }
+        else
+        {
+            sb.AppendLine("[PARITY] No new deviations introduced in Run A compared to Run B.");
+        }
+
+        if (resolvedDeviations.Count > 0)
+        {
+            sb.AppendLine($"\n[RESOLVED] {resolvedDeviations.Count} deviation(s) from Run B did not recur in Run A.");
+        }
+
+        ComparisonDivergenceText.Text = sb.ToString().TrimEnd();
     }
 
     private void LoadSweep(Sweep? sweep)

@@ -25,6 +25,10 @@
                             x:Name="SignButton" IsEnabled="False"
                             ToolTip="Issues a signed release decision sealed into the evidence plane"
                             AutomationProperties.Name="Sign and seal release decision" />
+                    <Button Margin="8,0,0,0" Content="Export Certificate" Click="OnExportCertificate"
+                            x:Name="ExportCertButton" IsEnabled="False"
+                            ToolTip="Exports cryptographically sealed release certificate to disk"
+                            AutomationProperties.Name="Export release certificate" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

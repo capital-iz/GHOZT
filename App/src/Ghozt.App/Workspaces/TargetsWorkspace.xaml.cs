@@ -12,9 +12,118 @@ public partial class TargetsWorkspace : UserControl
 {
     private static readonly HttpClient Probe = new() { Timeout = TimeSpan.FromSeconds(4) };
 
-    public TargetsWorkspace() => InitializeComponent();
+    public TargetsWorkspace()
+    {
+        InitializeComponent();
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is ShellViewModel shell)
+            {
+                shell.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName is nameof(ShellViewModel.Targets))
+                    {
+                        ApplyFilter();
+                    }
+                };
+            }
+            ApplyFilter();
+        };
+        Loaded += (_, _) => ApplyFilter();
+    }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
+
+    private void OnSearchChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
+    private void OnKindFilterChanged(object sender, SelectionChangedEventArgs e) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        if (Shell is null || TargetsList is null) return;
+
+        var query = SearchBox?.Text?.Trim() ?? "";
+        var kind = (KindFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All Kinds";
+
+        var filtered = Shell.Targets.Where(t =>
+        {
+            var matchQuery = string.IsNullOrWhiteSpace(query)
+                             || t.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+                             || t.BaseAddress.Contains(query, StringComparison.OrdinalIgnoreCase)
+                             || t.Id.ToString().Contains(query, StringComparison.OrdinalIgnoreCase);
+
+            var matchKind = kind is "All Kinds" || t.Kind.Equals(kind, StringComparison.OrdinalIgnoreCase);
+
+            return matchQuery && matchKind;
+        }).ToList();
+
+        TargetsList.ItemsSource = filtered;
+    }
+
+    private void OnLaunchTarget(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: Target target }) return;
+
+        Shell.Target = target;
+
+        var exe = AgenticSweepRunner.ResolveExecutablePath(target);
+        if (target.BaseAddress.StartsWith("process:", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(target.BaseAddress["process:".Length..], out var pid))
+        {
+            try
+            {
+                var proc = System.Diagnostics.Process.GetProcessById(pid);
+                Shell.Log("TGT.PROCESS", $"Target {target.Name} is running (PID {pid}, {proc.ProcessName}).", Severity.Info, related: target.Id.ToString());
+            }
+            catch (Exception ex)
+            {
+                Shell.Log("TGT.PROCESS", $"Target {target.Name} process PID {pid} is not active: {ex.Message}", Severity.Medium, related: target.Id.ToString());
+            }
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(exe) && File.Exists(exe))
+        {
+            try
+            {
+                var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = exe,
+                    WorkingDirectory = Path.GetDirectoryName(exe) ?? "",
+                    UseShellExecute = true,
+                });
+                Shell.Log("TGT.LAUNCH", $"Launched process for target '{target.Name}': {exe} (PID: {p?.Id}).", Severity.Info, related: target.Id.ToString());
+                var updated = target with { Reachable = true };
+                App.Store.Save(updated);
+                Shell.ReloadTargets();
+            }
+            catch (Exception ex)
+            {
+                Shell.Log("TGT.LAUNCH.FAIL", $"Failed to launch '{target.Name}': {ex.Message}", Severity.High, related: target.Id.ToString());
+            }
+        }
+        else
+        {
+            Shell.Log("TGT.LAUNCH.SKIP", $"Cannot launch target '{target.Name}': No executable binary found at '{target.BaseAddress}'.", Severity.Medium, related: target.Id.ToString());
+        }
+    }
+
+    private void OnExploreTargetLattice(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: Target target })
+        {
+            Shell.Target = target;
+            Shell.Workspace = WorkspaceKind.StateMap;
+        }
+    }
+
+    private void OnSweepTarget(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: Target target })
+        {
+            Shell.Target = target;
+            Shell.Workspace = WorkspaceKind.Sweep;
+        }
+    }
 
     private void OnSelectTarget(object sender, MouseButtonEventArgs e)
     {

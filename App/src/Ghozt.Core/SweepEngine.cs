@@ -749,12 +749,21 @@ public sealed class SweepEngine
             case "Autonomous Exploration":
             {
                 var exe = AgenticSweepRunner.ResolveExecutablePath(target);
-                if (string.IsNullOrWhiteSpace(exe) || !File.Exists(exe))
+                var isAttached = !string.IsNullOrWhiteSpace(target.BaseAddress) &&
+                    (target.BaseAddress.StartsWith("process:", StringComparison.OrdinalIgnoreCase) ||
+                     int.TryParse(target.BaseAddress.Trim(), out _));
+
+                if (!isAttached && (string.IsNullOrWhiteSpace(exe) || !File.Exists(exe)))
                 {
-                    return new CheckResult(false, true,
-                        "Autonomous exploration skipped: target has no valid executable.",
-                        $"Set LaunchCommand or BaseAddress to an .exe path. Configured: '{target.LaunchCommand}', '{target.BaseAddress}'",
-                        Severity.Low, 1);
+                    var active = TargetSupervisor.GetActiveDesktopProcesses()
+                        .FirstOrDefault(p => p.ProcessName.Equals(target.Name, StringComparison.OrdinalIgnoreCase));
+                    if (active is null)
+                    {
+                        return new CheckResult(false, true,
+                            "Autonomous exploration skipped: target has no valid executable or running process.",
+                            $"Set LaunchCommand or BaseAddress to an .exe path or attach an active process. Configured: '{target.LaunchCommand}', '{target.BaseAddress}'",
+                            Severity.Low, 1);
+                    }
                 }
 
                 var runner = new AgenticSweepRunner(_store);

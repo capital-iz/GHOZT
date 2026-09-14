@@ -40,9 +40,27 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <Button Margin="12,0,0,0" Content="Refresh" Click="OnRefreshClicked" Height="28" Padding="10,0"
+                    <Button Margin="10,0,0,0" Content="Refresh" Click="OnRefreshClicked" Height="28" Padding="10,0"
                             ToolTip="Reload completed sweeps from evidence database"
                             AutomationProperties.Name="Refresh sweeps" />
+
+                    <Rectangle Width="1" Height="16" Fill="{DynamicResource Border.Subtle}" Margin="12,0" VerticalAlignment="Center" />
+
+                    <!-- Compare Run Selector -->
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="COMPARE" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox x:Name="ComparePicker" MinWidth="180" Height="28" SelectionChanged="OnCompareSelected"
+                              ToolTip="Select secondary baseline sweep run for comparative diffing"
+                              AutomationProperties.Name="Select comparison sweep">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource Type.BodyStyle}" />
+                                    <TextBlock Text=" · " Style="{StaticResource Type.CaptionStyle}" />
+                                    <TextBlock Text="{Binding State}" Style="{StaticResource Type.CaptionStyle}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
 
                 <!-- Center: Scrubber & Timeline Controls -->
@@ -234,6 +252,67 @@
                                         </TreeView.ItemTemplate>
                                     </TreeView>
                                     <TextBlock x:Name="NoTreeText" Text="No UI tree recorded for this step." Style="{StaticResource Type.CaptionStyle}" Margin="0,8,0,0" Visibility="Collapsed" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- Tab 4: Run Comparison -->
+                        <TabItem Header="Run Comparison">
+                            <ScrollViewer Padding="14,12" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="RUN COMPARISON FORENSICS" Style="{StaticResource Type.MicroLabelStyle}" />
+
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <TextBlock x:Name="ComparisonHeader" Text="Select a comparison sweep above" Style="{StaticResource Type.BodyStyle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                            <TextBlock x:Name="ComparisonSubheader" Margin="0,4,0,0" Text="Compares step count, execution time, and deviation emergence between runs." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="EXECUTION METRICS COMPARISON" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Run A (Active):" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="RunAMetricsText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <Grid Margin="0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Run B (Baseline):" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="RunBMetricsText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Step Count Delta:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="StepDeltaText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Duration Delta:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="DurationDeltaText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="DEVIATION DIVERGENCE &amp; REGRESSIONS" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <TextBlock x:Name="ComparisonDivergenceText" Text="No baseline run selected for comparison." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>

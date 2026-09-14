@@ -31,6 +31,7 @@ public partial class ClearanceWorkspace : UserControl
 
         RenderDecision(_currentDecision);
         SignButton.IsEnabled = true;
+        ExportCertButton.IsEnabled = true;
     }
 
     private void RenderDecision(ClearanceDecision decision)
@@ -231,5 +232,33 @@ public partial class ClearanceWorkspace : UserControl
 
         SignButton.IsEnabled = false;
         SignButton.Content = "Signed & Sealed";
+        ExportCertButton.IsEnabled = true;
+    }
+
+    private void OnExportCertificate(object sender, RoutedEventArgs e)
+    {
+        if (_currentDecision is null || Shell?.Target is null) return;
+
+        var target = Shell.Target;
+        try
+        {
+            var dir = System.IO.Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz", "Ghozt", "Certificates");
+            System.IO.Directory.CreateDirectory(dir);
+
+            var certPath = System.IO.Path.Combine(dir, $"CERT-{target.Id}-{_currentDecision.BuildLabel}.json");
+            var json = System.Text.Json.JsonSerializer.Serialize(_currentDecision, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            System.IO.File.WriteAllText(certPath, json);
+
+            ClearanceSummaryText.Text = $"Certificate exported to {certPath}";
+            Shell.Log("CLR.CERT.EXPORT", $"Exported release clearance certificate to {certPath}.", Severity.Info,
+                related: target.Id.ToString(), detail: $"Verdict: {_currentDecision.Outcome}");
+        }
+        catch (System.Exception ex)
+        {
+            ClearanceSummaryText.Text = $"Export error: {ex.Message}";
+            Shell.Log("CLR.CERT.FAIL", $"Failed to export certificate: {ex.Message}", Severity.Medium);
+        }
     }
 }

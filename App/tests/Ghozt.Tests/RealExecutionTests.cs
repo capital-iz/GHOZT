@@ -199,4 +199,102 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("Attach Process", xaml);
         Assert.Contains("Register Local System", xaml);
     }
+
+    [Fact]
+    public void AgenticSweepRunner_ResolvesAttachedProcessPids_Correctly()
+    {
+        var targetWithPrefix = new Target
+        {
+            Id = GhoztId.Parse("TGT-000101"),
+            Name = "Attached Notepad",
+            Kind = "Desktop application",
+            Environment = TargetEnvironment.Local,
+            Access = AccessClass.ObserveOnly,
+            Owner = "tester",
+            BaseAddress = "process:4321",
+            LaunchCommand = "",
+            BuildLabel = "1.0",
+            AuthorityNote = "Test authority",
+        };
+
+        var resolvedPrefix = AgenticSweepRunner.ResolveExecutablePath(targetWithPrefix);
+        Assert.Equal("process:4321", resolvedPrefix);
+
+        var targetWithRawPid = targetWithPrefix with { BaseAddress = "9876" };
+        var resolvedRaw = AgenticSweepRunner.ResolveExecutablePath(targetWithRawPid);
+        Assert.Equal("process:9876", resolvedRaw);
+    }
+
+    [Fact]
+    public void FixBrief_ToMarkdown_GeneratesCompleteBoundedContract()
+    {
+        var targetId = GhoztId.Parse("TGT-000001");
+        var findingId = GhoztId.Parse("FLT-000042");
+
+        var brief = new FixBrief
+        {
+            Id = "FXB-00001",
+            TargetId = targetId,
+            FindingId = findingId,
+            Title = "Repair state transition debounce in navigation rail",
+            RootMechanism = "Event handler re-entrance during rapid click sequences.",
+            AllowedScope = ["App/src/Ghozt.App/Shell/NavigationRail.xaml.cs"],
+            ForbiddenScope = ["App/src/Ghozt.Core/*"],
+            MinimalReproSequence = ["Click item 1", "Click item 2 under 5ms"],
+            RequiredEvidence = ["Screenshot proof of final selection state"],
+            RegressionGuardSpecification = "GRD-00042: State transitions must complete under 50ms without dropped frames.",
+            RejectionConditions = ["Do not introduce thread sleeps", "Do not alter token namespaces"],
+        };
+
+        var markdown = brief.ToMarkdown();
+        Assert.NotNull(markdown);
+        Assert.Contains("FXB-00001", markdown);
+        Assert.Contains("Repair state transition debounce", markdown);
+        Assert.Contains("NavigationRail.xaml.cs", markdown);
+        Assert.Contains("Do not introduce thread sleeps", markdown);
+        Assert.Contains("GRD-00042", markdown);
+    }
+
+    [Fact]
+    public void ClearanceDecision_CanBeSignedAndSerialized_WithSha256Digest()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "Clearance Evaluation Target",
+            Kind = "Desktop application",
+            Environment = TargetEnvironment.Local,
+            Access = AccessClass.Interact,
+            Owner = "tester",
+            BaseAddress = "notepad.exe",
+            LaunchCommand = "",
+            BuildLabel = "1.0.0",
+            AuthorityNote = "Test clearance grant",
+        };
+        _store.Save(target);
+
+        var engine = new ClearanceEngine(_store);
+        var decision = engine.EvaluateTarget(target, "test-operator");
+
+        Assert.NotNull(decision);
+        Assert.NotEmpty(decision.Gates);
+        Assert.NotNull(decision.EvidenceDigest);
+
+        var json = System.Text.Json.JsonSerializer.Serialize(decision);
+        Assert.Contains("TargetId", json);
+        Assert.Contains("EvidenceDigest", json);
+    }
+
+    [Fact]
+    public void TargetsWorkspace_HasSearchFilterAndLaunchActions()
+    {
+        var xamlPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces", "TargetsWorkspace.xaml"));
+        Assert.True(File.Exists(xamlPath));
+
+        var xaml = File.ReadAllText(xamlPath);
+        Assert.Contains("OnSearchChanged", xaml);
+        Assert.Contains("OnKindFilterChanged", xaml);
+        Assert.Contains("OnLaunchTarget", xaml);
+        Assert.Contains("OnExploreTargetLattice", xaml);
+    }
 }

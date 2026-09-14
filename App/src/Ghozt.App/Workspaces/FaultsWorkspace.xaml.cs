@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -205,6 +206,50 @@ public partial class FaultsWorkspace : UserControl
         catch (System.Runtime.InteropServices.COMException)
         {
             // Clipboard access may fail in sandboxed/headless scenarios
+        }
+    }
+
+    private void OnExportFixBrief(object sender, RoutedEventArgs e)
+    {
+        if (_currentFixBrief is null) return;
+
+        try
+        {
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz", "Ghozt", "FixBriefs");
+            Directory.CreateDirectory(folder);
+
+            var path = Path.Combine(folder, $"{_currentFixBrief.Id}.md");
+            File.WriteAllText(path, _currentFixBrief.ToMarkdown());
+
+            Shell.Log("FXB.EXPORT", $"Exported Fix Brief {_currentFixBrief.Id} to {path}.", Severity.Info,
+                related: _currentFixBrief.FindingId.ToString());
+        }
+        catch (Exception ex)
+        {
+            Shell.Log("FXB.EXPORT.FAIL", $"Failed to export Fix Brief {_currentFixBrief.Id}: {ex.Message}", Severity.Medium);
+        }
+    }
+
+    private void OnDeriveGuard(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding || Shell.Target is not { } target) return;
+
+        var engine = new RegressionEngine(App.Store);
+        var guards = engine.GenerateGuards(target.Id);
+        var matchingGuard = guards.FirstOrDefault(g => g.FindingId == finding.Id);
+
+        Shell.Log("REG.GUARD.DERIVE",
+            $"Derived regression guard {(matchingGuard != null ? matchingGuard.Id : "GRD-DEFECT")} for finding {finding.Id}.",
+            Severity.Info, related: finding.Id.ToString(),
+            detail: $"Expected: {matchingGuard?.ExpectedBehavior ?? "No deviation"}");
+
+        if (finding.Maturity < FindingMaturity.CauseSupported)
+        {
+            App.Store.Save(finding with { Maturity = FindingMaturity.CauseSupported });
+            Refresh();
+            Shell.Refresh();
         }
     }
 

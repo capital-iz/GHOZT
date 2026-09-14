@@ -146,30 +146,45 @@ public partial class ReportsWorkspace : UserControl
 
     private string? _lastExportedPath;
 
+    private static string GetReportsDirectory()
+    {
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Capital-Iz", "Ghozt", "Reports");
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
     private void OnExportMarkdown(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
-        _lastExportedPath = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.md");
+        _lastExportedPath = Path.Combine(GetReportsDirectory(), $"{_currentReport.ReportId}.md");
         File.WriteAllText(_lastExportedPath, _currentReport.MarkdownContent);
         StatusText.Text = $"Exported to {_lastExportedPath}";
+        Shell?.Log("RPT.EXPORT.MD", $"Exported markdown dossier {_currentReport.ReportId} to disk.", Severity.Info,
+            detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         OpenViewerButton.IsEnabled = true;
     }
 
     private void OnExportHtml(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
-        _lastExportedPath = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.html");
+        _lastExportedPath = Path.Combine(GetReportsDirectory(), $"{_currentReport.ReportId}.html");
         File.WriteAllText(_lastExportedPath, _currentReport.HtmlContent);
         StatusText.Text = $"Exported to {_lastExportedPath}";
+        Shell?.Log("RPT.EXPORT.HTML", $"Exported HTML dossier {_currentReport.ReportId} to disk.", Severity.Info,
+            detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         OpenViewerButton.IsEnabled = true;
     }
 
     private void OnExportJson(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
-        _lastExportedPath = Path.Combine(Path.GetTempPath(), $"{_currentReport.ReportId}.json");
+        _lastExportedPath = Path.Combine(GetReportsDirectory(), $"{_currentReport.ReportId}.json");
         File.WriteAllText(_lastExportedPath, _currentReport.JsonContent);
         StatusText.Text = $"Exported to {_lastExportedPath}";
+        Shell?.Log("RPT.EXPORT.JSON", $"Exported JSON dataset {_currentReport.ReportId} to disk.", Severity.Info,
+            detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         OpenViewerButton.IsEnabled = true;
     }
 

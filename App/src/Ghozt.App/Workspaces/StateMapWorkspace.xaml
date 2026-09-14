@@ -9,7 +9,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+        <Border Padding="20,10" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -17,52 +17,102 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="VIEW" VerticalAlignment="Center"
                                Margin="0,0,8,0" />
                     <RadioButton x:Name="ViewGraph" Style="{StaticResource Toggle.Pill}" GroupName="View"
-                                 Content="Lattice" MinWidth="86" IsChecked="True" Checked="OnViewChanged" />
+                                 Content="Lattice" MinWidth="74" Height="26" IsChecked="True" Checked="OnViewChanged" />
                     <RadioButton x:Name="ViewTree" Style="{StaticResource Toggle.Pill}" GroupName="View"
-                                 Margin="6,0,0,0" Content="Tree" MinWidth="86" Checked="OnViewChanged"
+                                 Margin="6,0,0,0" Content="Tree" MinWidth="74" Height="26" Checked="OnViewChanged"
                                  ToolTip="The same graph as a keyboard-navigable tree" />
+
+                    <Rectangle Width="1" Height="16" Fill="{DynamicResource Border.Subtle}" Margin="12,0" VerticalAlignment="Center" />
+
+                    <!-- Zoom Controls -->
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="ZOOM" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <Button x:Name="BtnZoomOut" Content="−" Width="26" Height="26" Padding="0" Click="OnZoomOut"
+                            ToolTip="Zoom Out" AutomationProperties.Name="Zoom Out" />
+                    <TextBlock x:Name="ZoomLevelText" Text="100%" Style="{StaticResource Type.MonoStyle}"
+                               VerticalAlignment="Center" Margin="6,0" MinWidth="38" TextAlignment="Center" />
+                    <Button x:Name="BtnZoomIn" Content="+" Width="26" Height="26" Padding="0" Click="OnZoomIn"
+                            ToolTip="Zoom In" AutomationProperties.Name="Zoom In" />
+                    <Button x:Name="BtnZoomReset" Content="1:1" Height="26" Padding="6,0" Margin="4,0,0,0" Click="OnZoomReset"
+                            ToolTip="Reset Zoom to 100%" AutomationProperties.Name="Reset Zoom" />
+                    <Button x:Name="BtnZoomFit" Content="Fit" Height="26" Padding="6,0" Margin="4,0,0,0" Click="OnZoomFit"
+                            ToolTip="Fit graph into viewport" AutomationProperties.Name="Fit Zoom" />
+
+                    <Rectangle Width="1" Height="16" Fill="{DynamicResource Border.Subtle}" Margin="12,0" VerticalAlignment="Center" />
+
+                    <!-- State and Kind Filters -->
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="STATE" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <ComboBox x:Name="StateFilter" Width="96" Height="26" SelectionChanged="OnFilterChanged" VerticalAlignment="Center">
+                        <ComboBoxItem Content="All" IsSelected="True" />
+                        <ComboBoxItem Content="Verified" />
+                        <ComboBoxItem Content="Observed" />
+                        <ComboBoxItem Content="Deviation" />
+                        <ComboBoxItem Content="Fault" />
+                        <ComboBoxItem Content="Untested" />
+                    </ComboBox>
+
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="KIND" VerticalAlignment="Center" Margin="8,0,6,0" />
+                    <ComboBox x:Name="KindFilter" Width="96" Height="26" SelectionChanged="OnFilterChanged" VerticalAlignment="Center">
+                        <ComboBoxItem Content="All" IsSelected="True" />
+                        <ComboBoxItem Content="System" />
+                        <ComboBoxItem Content="Feature" />
+                        <ComboBoxItem Content="Action" />
+                        <ComboBoxItem Content="Endpoint" />
+                        <ComboBoxItem Content="DataState" />
+                    </ComboBox>
                 </StackPanel>
 
                 <!-- The legend. A graph whose colours are not explained is decoration. -->
-                <WrapPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                <WrapPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
                         <Ellipse Width="8" Height="8" Fill="{DynamicResource State.Verified}" VerticalAlignment="Center" />
-                        <TextBlock Text="Verified" Margin="5,0,0,0" Style="{StaticResource Type.MutedStyle}" />
+                        <TextBlock Text="Verified" Margin="4,0,0,0" Style="{StaticResource Type.MutedStyle}" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
                         <Ellipse Width="8" Height="8" Fill="{DynamicResource Ghozt.Live}" VerticalAlignment="Center" />
-                        <TextBlock Text="Observed" Margin="5,0,0,0" Style="{StaticResource Type.MutedStyle}" />
+                        <TextBlock Text="Observed" Margin="4,0,0,0" Style="{StaticResource Type.MutedStyle}" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
                         <Ellipse Width="8" Height="8" Fill="{DynamicResource State.Warning}" VerticalAlignment="Center" />
-                        <TextBlock Text="Deviation" Margin="5,0,0,0" Style="{StaticResource Type.MutedStyle}" />
+                        <TextBlock Text="Deviation" Margin="4,0,0,0" Style="{StaticResource Type.MutedStyle}" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
                         <Ellipse Width="8" Height="8" Fill="{DynamicResource State.Fault}" VerticalAlignment="Center" />
-                        <TextBlock Text="Fault" Margin="5,0,0,0" Style="{StaticResource Type.MutedStyle}" />
+                        <TextBlock Text="Fault" Margin="4,0,0,0" Style="{StaticResource Type.MutedStyle}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="8" Height="8" Stroke="{DynamicResource Text.Muted}" StrokeThickness="1"
                                  VerticalAlignment="Center" />
-                        <TextBlock Text="Untested" Margin="5,0,0,0" Style="{StaticResource Type.MutedStyle}" />
+                        <TextBlock Text="Untested" Margin="4,0,0,0" Style="{StaticResource Type.MutedStyle}" />
                     </StackPanel>
                 </WrapPanel>
 
                 <TextBlock Grid.Column="2" x:Name="Coverage" Style="{StaticResource Type.MonoStyle}"
-                           VerticalAlignment="Center" />
+                           VerticalAlignment="Center" Margin="16,0,0,0" />
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
-            <!-- The lattice canvas. Every node here resolves to a check that actually ran; nothing
-                 is drawn to make the graph look busier than the evidence supports. -->
+        <Grid Grid.Row="1" ClipToBounds="True">
+            <!-- The lattice canvas. Interactive vector canvas with zoom and pan. -->
             <ScrollViewer x:Name="GraphScroll" HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
-                <Canvas x:Name="Lattice" Width="1200" Height="700" Background="Transparent" />
+                <Grid x:Name="CanvasContainer" Background="Transparent"
+                      MouseWheel="OnCanvasMouseWheel"
+                      MouseDown="OnCanvasMouseDown"
+                      MouseMove="OnCanvasMouseMove"
+                      MouseUp="OnCanvasMouseUp">
+                    <Canvas x:Name="Lattice" Width="1300" Height="750" Background="Transparent">
+                        <Canvas.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="LatticeScale" ScaleX="1.0" ScaleY="1.0" />
+                                <TranslateTransform x:Name="LatticeTranslate" X="0" Y="0" />
+                            </TransformGroup>
+                        </Canvas.RenderTransform>
+                    </Canvas>
+                </Grid>
             </ScrollViewer>
 
             <!-- The synchronised tree. The blueprint requires a keyboard-navigable representation of

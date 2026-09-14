@@ -15,37 +15,61 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar. Exactly one accent-filled control: the screen's primary action. -->
-        <Border Grid.Row="0" Padding="20,12"
+        <Border Grid.Row="0" Padding="20,10"
                 BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal">
-                <Button Style="{StaticResource Button.Primary}" Content="Register target"
-                        Click="OnRegister"
-                        AutomationProperties.Name="Register a new target" />
-                <Button Margin="8,0,0,0" Content="Probe capability" Click="OnProbe"
-                        IsEnabled="{Binding HasTarget}"
-                        ToolTip="Check whether the selected target is reachable and record the result"
-                        AutomationProperties.Name="Probe the selected target" />
-                <Button Margin="8,0,0,0" Content="Discover Manifest" Click="OnDiscoverManifest"
-                        IsEnabled="{Binding HasTarget}"
-                        ToolTip="Scans the target repository/address for feature manifests and maps them into the State Lattice"
-                        AutomationProperties.Name="Discover target behavioural manifest" />
-                <Button Margin="8,0,0,0" Content="Attach Process" Click="OnAttachProcess"
-                        ToolTip="Select and attach an active Windows desktop application process as a target"
-                        AutomationProperties.Name="Attach an active desktop process" />
-                <Button Margin="8,0,0,0" Content="Register Local System" Click="OnRegisterLocalHost"
-                        ToolTip="Registers Ghozt's local evidence store and host subsystem as an operational target"
-                        AutomationProperties.Name="Register local system target" />
-                <Button Style="{StaticResource Button.Destructive}" Margin="24,0,0,0"
-                        Content="Remove target" Click="OnRemove"
-                        IsEnabled="{Binding HasTarget}"
-                        ToolTip="Permanently removes the target and everything recorded against it"
-                        AutomationProperties.Name="Remove the selected target and its records" />
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource Button.Primary}" Content="Register target"
+                            Click="OnRegister"
+                            AutomationProperties.Name="Register a new target" />
+                    <Button Margin="8,0,0,0" Content="Probe capability" Click="OnProbe"
+                            IsEnabled="{Binding HasTarget}"
+                            ToolTip="Check whether the selected target is reachable and record the result"
+                            AutomationProperties.Name="Probe the selected target" />
+                    <Button Margin="8,0,0,0" Content="Discover Manifest" Click="OnDiscoverManifest"
+                            IsEnabled="{Binding HasTarget}"
+                            ToolTip="Scans the target repository/address for feature manifests and maps them into the State Lattice"
+                            AutomationProperties.Name="Discover target behavioural manifest" />
+                    <Button Margin="8,0,0,0" Content="Attach Process" Click="OnAttachProcess"
+                            ToolTip="Select and attach an active Windows desktop application process as a target"
+                            AutomationProperties.Name="Attach an active desktop process" />
+                    <Button Margin="8,0,0,0" Content="Register Local System" Click="OnRegisterLocalHost"
+                            ToolTip="Registers Ghozt's local evidence store and host subsystem as an operational target"
+                            AutomationProperties.Name="Register local system target" />
+                    <Button Style="{StaticResource Button.Destructive}" Margin="20,0,0,0"
+                            Content="Remove target" Click="OnRemove"
+                            IsEnabled="{Binding HasTarget}"
+                            ToolTip="Permanently removes the target and everything recorded against it"
+                            AutomationProperties.Name="Remove the selected target and its records" />
+                </StackPanel>
+
+                <!-- Search and Filter on the right -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="FILTER" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <TextBox x:Name="SearchBox" Width="130" Height="26" Margin="0,0,8,0"
+                             TextChanged="OnSearchChanged"
+                             ToolTip="Filter targets by name or address"
+                             AutomationProperties.Name="Filter targets" />
+                    <ComboBox x:Name="KindFilter" Width="120" Height="26"
+                              SelectionChanged="OnKindFilterChanged" VerticalAlignment="Center"
+                              AutomationProperties.Name="Filter by kind">
+                        <ComboBoxItem Content="All Kinds" IsSelected="True" />
+                        <ComboBoxItem Content="Desktop application" />
+                        <ComboBoxItem Content="SQLite database" />
+                        <ComboBoxItem Content="API service" />
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <ScrollViewer Grid.Row="1" Padding="20,16">
             <Grid>
-                <ItemsControl ItemsSource="{Binding Targets}">
+                <ItemsControl x:Name="TargetsList" ItemsSource="{Binding Targets}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel />
@@ -55,7 +79,7 @@
                         <DataTemplate>
                             <!-- A target card. Every reading that gates what may be done is on the
                                  card, not behind a click: environment, access class, authority. -->
-                            <Border Width="330" Margin="0,0,14,14" Padding="14"
+                            <Border Width="340" Margin="0,0,14,14" Padding="14"
                                     Background="{DynamicResource Surface.Card}"
                                     BorderBrush="{DynamicResource Border.Card}"
                                     BorderThickness="1"
@@ -100,13 +124,39 @@
                                                     <Setter Property="Text" Value="{Binding AuthorityNote}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding AuthorityNote}" Value="">
-                                                            <Setter Property="Text" Value="No authority grant recorded — Ghozt will observe only." />
-                                                            <Setter Property="Foreground" Value="{DynamicResource State.Warning}" />
+                                                             <Setter Property="Text" Value="No authority grant recorded — Ghozt will observe only." />
+                                                             <Setter Property="Foreground" Value="{DynamicResource State.Warning}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
+                                    </Border>
+
+                                    <!-- Direct Target Control & Navigation Actions -->
+                                    <Border Margin="0,12,0,0" Padding="0,10,0,0" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Launch" Height="26" Padding="8,0" Margin="0,0,6,0"
+                                                        Click="OnLaunchTarget" ToolTip="Launch target executable or verify running process"
+                                                        AutomationProperties.Name="Launch target" />
+                                                <Button Content="State Lattice" Height="26" Padding="8,0" Margin="0,0,6,0"
+                                                        Click="OnExploreTargetLattice" ToolTip="Jump to State Lattice for this target"
+                                                        AutomationProperties.Name="Open State Lattice" />
+                                                <Button Content="Sweep" Height="26" Padding="8,0"
+                                                        Click="OnSweepTarget" ToolTip="Open sweep runner for this target"
+                                                        AutomationProperties.Name="Open sweep runner" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1" VerticalAlignment="Center" Padding="6,2" CornerRadius="{StaticResource Radius.Chip}"
+                                                    Background="{DynamicResource Surface.Inset}">
+                                                <TextBlock Text="{Binding Reachable, StringFormat='Reachable: {0}'}" FontSize="9"
+                                                           Foreground="{DynamicResource Text.Secondary}" />
+                                            </Border>
+                                        </Grid>
                                     </Border>
                                 </StackPanel>
                             </Border>

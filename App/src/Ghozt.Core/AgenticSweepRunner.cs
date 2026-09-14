@@ -30,9 +30,41 @@ public sealed class AgenticSweepRunner
         CancellationToken cancellationToken)
     {
         var clock = Stopwatch.StartNew();
+
+        int? attachedPid = null;
+        if (!string.IsNullOrWhiteSpace(target.BaseAddress))
+        {
+            var trimmed = target.BaseAddress.Trim();
+            if (trimmed.StartsWith("process:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (int.TryParse(trimmed["process:".Length..].Trim(), out var p))
+                {
+                    attachedPid = p;
+                }
+            }
+            else if (int.TryParse(trimmed, out var numPid))
+            {
+                attachedPid = numPid;
+            }
+        }
+
+        var isAttachedProcess = attachedPid.HasValue;
         var executablePath = ResolveExecutablePath(target);
 
-        if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
+        if (!isAttachedProcess && (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath)))
+        {
+            var activeProcesses = TargetSupervisor.GetActiveDesktopProcesses();
+            var match = activeProcesses.FirstOrDefault(p =>
+                p.ProcessName.Equals(target.Name, StringComparison.OrdinalIgnoreCase) ||
+                p.MainWindowTitle.Contains(target.Name, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+            {
+                attachedPid = match.ProcessId;
+                isAttachedProcess = true;
+            }
+        }
+
+        if (!isAttachedProcess && (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath)))
         {
             var blockedSweep = sweep with
             {
@@ -64,12 +96,16 @@ public sealed class AgenticSweepRunner
         };
         _store.Save(currentSweep);
 
+        var startDetail = isAttachedProcess
+            ? $"Attached PID: {attachedPid.Value}"
+            : $"Executable: {executablePath}";
+
         _store.Append(new LedgerEvent
         {
             Id = _store.NextId(IdKind.Event),
             At = DateTimeOffset.Now,
             Code = "SWP.START",
-            Message = $"Autonomous examination started for target '{target.Name}' using '{executablePath}'",
+            Message = $"Autonomous examination started for target '{target.Name}' ({startDetail})",
             Severity = Severity.Info,
             TargetId = target.Id,
             SweepId = sweep.Id,
@@ -86,15 +122,34 @@ public sealed class AgenticSweepRunner
 
         try
         {
-            progress?.Report(new SweepProgress("Launching", 0, sweep.MaxStates, 0, 0, clock.Elapsed, $"Launching {Path.GetFileName(executablePath)}…"));
+            IntPtr windowHandle = IntPtr.Zero;
 
-            var launched = await supervisor.LaunchAsync(executablePath, "", Path.GetDirectoryName(executablePath) ?? "", cancellationToken).ConfigureAwait(false);
-            if (!launched)
+            if (isAttachedProcess && attachedPid.HasValue)
             {
-                throw new InvalidOperationException($"Failed to spawn target process: {executablePath}");
+                progress?.Report(new SweepProgress("Attaching", 0, sweep.MaxStates, 0, 0, clock.Elapsed, $"Attaching to process PID {attachedPid.Value}…"));
+                var attached = supervisor.Attach(attachedPid.Value);
+                if (!attached)
+                {
+                    throw new InvalidOperationException($"Failed to attach to target process PID {attachedPid.Value}. The process may have exited.");
+                }
+                windowHandle = supervisor.MainWindowHandle;
+                if (windowHandle == IntPtr.Zero)
+                {
+                    windowHandle = await supervisor.WaitForMainWindowAsync(TimeSpan.FromSeconds(4), cancellationToken).ConfigureAwait(false);
+                }
             }
+            else
+            {
+                progress?.Report(new SweepProgress("Launching", 0, sweep.MaxStates, 0, 0, clock.Elapsed, $"Launching {Path.GetFileName(executablePath)}…"));
 
-            var windowHandle = await supervisor.WaitForMainWindowAsync(TimeSpan.FromSeconds(8), cancellationToken).ConfigureAwait(false);
+                var launched = await supervisor.LaunchAsync(executablePath, "", Path.GetDirectoryName(executablePath) ?? "", cancellationToken).ConfigureAwait(false);
+                if (!launched)
+                {
+                    throw new InvalidOperationException($"Failed to spawn target process: {executablePath}");
+                }
+
+                windowHandle = await supervisor.WaitForMainWindowAsync(TimeSpan.FromSeconds(8), cancellationToken).ConfigureAwait(false);
+            }
 
             // Step 0: Initial State Capture
             visitedStates++;
@@ -296,8 +351,11 @@ public sealed class AgenticSweepRunner
         }
         finally
         {
-            // Graceful teardown
-            await supervisor.TerminateAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            // Graceful teardown only for spawned processes (never terminate external attached processes)
+            if (!isAttachedProcess)
+            {
+                await supervisor.TerminateAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+            }
         }
 
         var finalRunState = cancellationToken.IsCancellationRequested
@@ -391,20 +449,29 @@ public sealed class AgenticSweepRunner
 
     public static string ResolveExecutablePath(Target target)
     {
+        if (!string.IsNullOrWhiteSpace(target.BaseAddress))
+        {
+            var trimmed = target.BaseAddress.Trim();
+            if (trimmed.StartsWith("process:", StringComparison.OrdinalIgnoreCase))
+            {
+                return trimmed;
+            }
+            if (int.TryParse(trimmed, out var pid))
+            {
+                return $"process:{pid}";
+            }
+            if (File.Exists(trimmed))
+            {
+                return trimmed;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(target.LaunchCommand))
         {
             var parts = target.LaunchCommand.Split(' ', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length > 0 && File.Exists(parts[0]))
             {
                 return parts[0];
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(target.BaseAddress))
-        {
-            if (File.Exists(target.BaseAddress))
-            {
-                return target.BaseAddress;
             }
         }
 

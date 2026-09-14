@@ -35,6 +35,13 @@ public partial class StateMapWorkspace : UserControl
     }
 
     private bool _attached;
+    private double _zoom = 1.0;
+    private bool _isPanning;
+    private Point _lastPanPoint;
+    private LatticeNode? _selectedNode;
+    private readonly List<(LatticeEdge Edge, Line Line)> _renderedEdges = [];
+    private readonly List<(LatticeNode Node, FrameworkElement Element)> _renderedNodes = [];
+    private IReadOnlyList<LatticeEdge> _currentEdges = [];
 
     private void Attach()
     {
@@ -69,20 +76,106 @@ public partial class StateMapWorkspace : UserControl
         Tree.Visibility = graph ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    private void OnFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IsLoaded)
+        {
+            Refresh();
+        }
+    }
+
+    private void OnZoomIn(object sender, RoutedEventArgs e) => SetZoom(_zoom + 0.15);
+    private void OnZoomOut(object sender, RoutedEventArgs e) => SetZoom(_zoom - 0.15);
+    private void OnZoomReset(object sender, RoutedEventArgs e)
+    {
+        SetZoom(1.0);
+        LatticeTranslate.X = 0;
+        LatticeTranslate.Y = 0;
+    }
+
+    private void OnZoomFit(object sender, RoutedEventArgs e)
+    {
+        var actualW = GraphScroll.ActualWidth;
+        var actualH = GraphScroll.ActualHeight;
+        if (actualW > 50 && actualH > 50)
+        {
+            var fitX = actualW / (Lattice.Width + 40);
+            var fitY = actualH / (Lattice.Height + 40);
+            var fitZoom = Math.Min(fitX, fitY);
+            SetZoom(Math.Max(0.25, Math.Min(3.0, fitZoom)));
+            LatticeTranslate.X = Math.Max(0, (actualW - (Lattice.Width * _zoom)) / 2);
+            LatticeTranslate.Y = Math.Max(0, (actualH - (Lattice.Height * _zoom)) / 2);
+        }
+    }
+
+    private void SetZoom(double zoom)
+    {
+        _zoom = Math.Clamp(zoom, 0.25, 4.0);
+        LatticeScale.ScaleX = _zoom;
+        LatticeScale.ScaleY = _zoom;
+        ZoomLevelText.Text = $"{(int)Math.Round(_zoom * 100)}%";
+    }
+
+    private void OnCanvasMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var delta = e.Delta > 0 ? 0.12 : -0.12;
+        SetZoom(_zoom + delta);
+        e.Handled = true;
+    }
+
+    private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton is MouseButton.Middle or MouseButton.Left)
+        {
+            _isPanning = true;
+            _lastPanPoint = e.GetPosition(GraphScroll);
+            CanvasContainer.CaptureMouse();
+
+            if (e.OriginalSource is Canvas || e.OriginalSource is Grid)
+            {
+                HighlightNode(null);
+            }
+        }
+    }
+
+    private void OnCanvasMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isPanning)
+        {
+            var current = e.GetPosition(GraphScroll);
+            var deltaX = current.X - _lastPanPoint.X;
+            var deltaY = current.Y - _lastPanPoint.Y;
+            LatticeTranslate.X += deltaX;
+            LatticeTranslate.Y += deltaY;
+            _lastPanPoint = current;
+        }
+    }
+
+    private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isPanning)
+        {
+            _isPanning = false;
+            CanvasContainer.ReleaseMouseCapture();
+        }
+    }
+
     private Brush B(string token) => (Brush?)TryFindResource(token) ?? Brushes.Gray;
 
     private void Refresh()
     {
         Lattice.Children.Clear();
         Tree.Items.Clear();
+        _renderedEdges.Clear();
+        _renderedNodes.Clear();
 
         var target = Shell?.Target;
-        var nodes = target is null ? [] : App.Store.Nodes(target.Id);
-        var edges = target is null ? [] : App.Store.Edges(target.Id);
+        var allNodes = target is null ? [] : App.Store.Nodes(target.Id);
+        var allEdges = target is null ? [] : App.Store.Edges(target.Id);
 
-        EmptyPanel.Visibility = nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyPanel.Visibility = allNodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        if (nodes.Count == 0)
+        if (allNodes.Count == 0)
         {
             if (target is null)
             {
@@ -101,14 +194,32 @@ public partial class StateMapWorkspace : UserControl
             return;
         }
 
+        // Apply State and Kind Filters
+        var selectedState = (StateFilter.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All";
+        var selectedKind = (KindFilter.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All";
+
+        var filteredNodes = allNodes.Where(n =>
+        {
+            if (n.Kind == NodeKind.System) return true; // Always retain system anchor
+
+            var matchesState = selectedState is "All" || n.State.Equals(selectedState, StringComparison.OrdinalIgnoreCase);
+            var matchesKind = selectedKind is "All" || n.Kind.ToString().Equals(selectedKind, StringComparison.OrdinalIgnoreCase);
+
+            return matchesState && matchesKind;
+        }).ToList();
+
+        var activeNodeIds = filteredNodes.Select(n => n.Id).ToHashSet(StringComparer.Ordinal);
+        var filteredEdges = allEdges.Where(e => activeNodeIds.Contains(e.FromId) && activeNodeIds.Contains(e.ToId)).ToList();
+        _currentEdges = filteredEdges;
+
         // Coverage is counted, not estimated. Untested is its own category: it is an absence of
         // observation, and equating it with a pass is how coverage debt hides.
-        var verified = nodes.Count(n => n.State == "Verified");
-        Coverage.Text = $"{verified}/{nodes.Count} verified · {nodes.Count(n => n.State == "Deviation")} deviation · "
-                        + $"{nodes.Count(n => n.State is "Untested")} untested";
+        var verified = allNodes.Count(n => n.State == "Verified");
+        Coverage.Text = $"{verified}/{allNodes.Count} verified · {allNodes.Count(n => n.State == "Deviation")} deviation · "
+                        + $"{allNodes.Count(n => n.State is "Untested")} untested";
 
-        LayOut(nodes, edges);
-        BuildTree(nodes, edges);
+        LayOut(filteredNodes, filteredEdges);
+        BuildTree(filteredNodes, filteredEdges);
     }
 
     /// <summary>
@@ -122,8 +233,8 @@ public partial class StateMapWorkspace : UserControl
     /// </remarks>
     private void LayOut(IReadOnlyList<LatticeNode> nodes, IReadOnlyList<LatticeEdge> edges)
     {
-        var w = double.IsNaN(Lattice.Width) || Lattice.Width <= 0 ? 1200.0 : Lattice.Width;
-        var h = double.IsNaN(Lattice.Height) || Lattice.Height <= 0 ? 800.0 : Lattice.Height;
+        var w = double.IsNaN(Lattice.Width) || Lattice.Width <= 0 ? 1300.0 : Lattice.Width;
+        var h = double.IsNaN(Lattice.Height) || Lattice.Height <= 0 ? 750.0 : Lattice.Height;
         var centre = new Point(w / 2, h / 2);
         var positions = new Dictionary<string, Point>(StringComparer.Ordinal);
 
@@ -169,6 +280,7 @@ public partial class StateMapWorkspace : UserControl
             }
 
             Lattice.Children.Add(line);
+            _renderedEdges.Add((edge, line));
         }
 
         foreach (var node in nodes)
@@ -184,6 +296,82 @@ public partial class StateMapWorkspace : UserControl
             Canvas.SetLeft(element, position.X - (element.DesiredSize.Width / 2));
             Canvas.SetTop(element, position.Y - (element.DesiredSize.Height / 2));
             Lattice.Children.Add(element);
+            _renderedNodes.Add((node, element));
+        }
+    }
+
+    private void HighlightNode(LatticeNode? selected)
+    {
+        _selectedNode = selected;
+
+        if (selected is null)
+        {
+            foreach (var (edge, line) in _renderedEdges)
+            {
+                line.StrokeThickness = 1;
+                line.Opacity = 0.7;
+                line.Stroke = edge.Relationship == "counterfactual" ? B("Ghozt.Counterfactual") : B("Border.Default");
+            }
+
+            foreach (var (node, element) in _renderedNodes)
+            {
+                element.Opacity = node.State == "Untested" ? 0.55 : 1.0;
+                if (element is Border b)
+                {
+                    var state = System.Enum.TryParse<GhoztState>(node.State, true, out var parsed) ? parsed : GhoztState.Untested;
+                    b.BorderBrush = state == GhoztState.Untested ? B("Text.Muted") : B(state.TokenName());
+                    b.BorderThickness = new Thickness(state == GhoztState.Untested ? 1 : 2);
+                }
+            }
+            return;
+        }
+
+        // Highlight connected edges (Traversal Trail)
+        var connectedNodeIds = new HashSet<string>(StringComparer.Ordinal) { selected.Id };
+
+        foreach (var (edge, line) in _renderedEdges)
+        {
+            var isIncident = edge.FromId == selected.Id || edge.ToId == selected.Id;
+            if (isIncident)
+            {
+                connectedNodeIds.Add(edge.FromId);
+                connectedNodeIds.Add(edge.ToId);
+                line.StrokeThickness = 2.5;
+                line.Opacity = 1.0;
+                line.Stroke = edge.Relationship == "counterfactual" ? B("Ghozt.Counterfactual") : B("Ghozt.Live");
+            }
+            else
+            {
+                line.StrokeThickness = 1;
+                line.Opacity = 0.2;
+                line.Stroke = B("Border.Subtle");
+            }
+        }
+
+        // Highlight selected node and immediate neighbours
+        foreach (var (node, element) in _renderedNodes)
+        {
+            if (node.Id == selected.Id)
+            {
+                element.Opacity = 1.0;
+                if (element is Border b)
+                {
+                    b.BorderBrush = B("Authority.Fill");
+                    b.BorderThickness = new Thickness(3);
+                }
+            }
+            else if (connectedNodeIds.Contains(node.Id))
+            {
+                element.Opacity = 1.0;
+                if (element is Border b)
+                {
+                    b.BorderThickness = new Thickness(2);
+                }
+            }
+            else
+            {
+                element.Opacity = 0.3;
+            }
         }
     }
 
@@ -256,7 +444,12 @@ public partial class StateMapWorkspace : UserControl
         });
 
         border.Child = stack;
-        border.MouseLeftButtonUp += (_, _) => Shell.InspectorSubject = node;
+        border.MouseLeftButtonUp += (_, e) =>
+        {
+            Shell.InspectorSubject = node;
+            HighlightNode(node);
+            e.Handled = true;
+        };
 
         return border;
     }
@@ -305,6 +498,7 @@ public partial class StateMapWorkspace : UserControl
         if (e.NewValue is TreeViewItem { Tag: LatticeNode node })
         {
             Shell.InspectorSubject = node;
+            HighlightNode(node);
         }
     }
 }
