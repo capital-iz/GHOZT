@@ -172,6 +172,46 @@ public sealed class ClearanceEngine
                 : $"{failingGuards} of {guards.Count} regression guard(s) currently failing.",
         });
 
+        // Gate 9: Performance Stability & Resilience (Patent §21)
+        var leakFindings = findings.Count(f =>
+            f.Severity >= Severity.High &&
+            (f.Title.Contains("Resource Drift", StringComparison.OrdinalIgnoreCase) ||
+             f.Title.Contains("Deterministic Leak", StringComparison.OrdinalIgnoreCase) ||
+             f.Actual.Contains("resource growth", StringComparison.OrdinalIgnoreCase)));
+        var soakPassed = leakFindings == 0;
+        gates.Add(new ClearanceGate
+        {
+            Id = "GATE.PERFORMANCE_SOAK",
+            Name = "Performance Stability & Bounded Resource Drift",
+            Requirement = "Zero unmitigated deterministic memory leaks (slope >= 0.05 MB/s), handle leaks, or thread leaks.",
+            PolicySource = "Patent §21 Soak and Resilience Performance Canon",
+            Mandatory = true,
+            Passed = soakPassed,
+            Result = soakPassed ? "Passed" : $"Failed ({leakFindings} leak defect{(leakFindings == 1 ? "" : "s")})",
+            EvidenceNote = soakPassed
+                ? "Zero critical or high resource drift defects detected in active soak telemetry."
+                : $"{leakFindings} deterministic resource leak defect(s) require remediation before release clearance.",
+        });
+
+        // Gate 10: Anti-Gaming Evidence Integrity (Patent §33)
+        var hasValidSweeps = sweeps.Count > 0 && sweeps.All(s => s.StatesVisited > 0 || s.State != RunState.Completed);
+        var tamperedEvidence = evidence.Count(e => !string.IsNullOrWhiteSpace(e.Payload) && !string.IsNullOrWhiteSpace(e.Sha256) && e.Sha256 != Hashing.Sha256(e.Payload));
+        var antiGamingPassed = hasValidSweeps && tamperedEvidence == 0;
+        gates.Add(new ClearanceGate
+        {
+            Id = "GATE.ANTI_GAMING",
+            Name = "Anti-Gaming Evidence Integrity",
+            Requirement = "Authentic non-zero exploration state traversal and 100% cryptographic evidence payload match.",
+            PolicySource = "Patent §33 Anti-Gaming Verification Specification",
+            Mandatory = true,
+            Passed = antiGamingPassed,
+            Result = antiGamingPassed ? "Passed" : (tamperedEvidence > 0 ? $"Failed ({tamperedEvidence} tampered)" : "Failed (Empty sweeps)"),
+            EvidenceNote = antiGamingPassed
+                ? $"Verified {evidence.Count} cryptographic evidence items and {sweeps.Count} authentic sweep traversals."
+                : (tamperedEvidence > 0 ? $"{tamperedEvidence} evidence item(s) have invalid SHA-256 payload checksums." : "Clearance rejected: all sweeps traversed 0 authentic states."),
+        });
+
+
         // Compute Outcome
         var mandatoryFailed = gates.Any(g => g.Mandatory && !g.Passed);
         var optionalFailed = gates.Any(g => !g.Mandatory && !g.Passed);

@@ -29,7 +29,12 @@
                             x:Name="ExportCertButton" IsEnabled="False"
                             ToolTip="Exports cryptographically sealed release certificate to disk"
                             AutomationProperties.Name="Export release certificate" />
+                    <Button Margin="8,0,0,0" Content="Verify Certificate" Click="OnVerifyCertificate"
+                            x:Name="VerifyCertButton"
+                            ToolTip="Verifies certificate cryptographic seal and audits evidence plane against tampering"
+                            AutomationProperties.Name="Verify release certificate integrity" />
                 </StackPanel>
+
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <TextBlock x:Name="ClearanceSummaryText" Text="Select target to evaluate release policy gates"

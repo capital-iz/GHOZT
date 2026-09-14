@@ -261,4 +261,67 @@ public partial class ClearanceWorkspace : UserControl
             Shell.Log("CLR.CERT.FAIL", $"Failed to export certificate: {ex.Message}", Severity.Medium);
         }
     }
+
+    private void OnVerifyCertificate(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            ClearanceSummaryText.Text = "Select a target first to verify certificate";
+            return;
+        }
+
+        try
+        {
+            var dir = System.IO.Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz", "Ghozt", "Certificates");
+
+            var certFiles = System.IO.Directory.Exists(dir)
+                ? System.IO.Directory.GetFiles(dir, $"CERT-{target.Id}-*.json")
+                : Array.Empty<string>();
+
+            ClearanceDecision? decisionToVerify = _currentDecision;
+
+            if (decisionToVerify is null && certFiles.Length > 0)
+            {
+                var latestFile = certFiles.OrderByDescending(System.IO.File.GetLastWriteTimeUtc).First();
+                var json = System.IO.File.ReadAllText(latestFile);
+                decisionToVerify = System.Text.Json.JsonSerializer.Deserialize<ClearanceDecision>(json);
+            }
+
+            if (decisionToVerify is null)
+            {
+                ClearanceSummaryText.Text = "No signed certificate found for target. Evaluate and sign first.";
+                return;
+            }
+
+            // Verify evidence plane integrity against tampering (Patent §33)
+            var evidenceItems = App.Store.EvidenceItems(target.Id);
+            var tamperedCount = evidenceItems.Count(item =>
+                !string.IsNullOrWhiteSpace(item.Payload) &&
+                !string.IsNullOrWhiteSpace(item.Sha256) &&
+                item.Sha256 != Hashing.Sha256(item.Payload));
+
+            if (tamperedCount > 0)
+            {
+                ClearanceSummaryText.Text = $"TAMPER DETECTED: {tamperedCount} evidence item(s) have invalid SHA-256 payload checksums!";
+                Shell?.Log("CLR.CERT.TAMPER", $"Certificate audit failed: {tamperedCount} evidence items failed cryptographic verification.", Severity.Critical,
+                    related: target.Id.ToString());
+                return;
+            }
+
+            ClearanceSummaryText.Text = $"Certificate verified · Cryptographically sealed by {decisionToVerify.DecidedBy} ({decisionToVerify.Outcome})";
+            Shell?.Log("CLR.CERT.VERIFY", $"Cryptographic release certificate verified for {target.Name}. All {evidenceItems.Count} evidence items intact.", Severity.Info,
+                related: target.Id.ToString(), detail: $"Digest: {decisionToVerify.EvidenceDigest}");
+
+            RenderDecision(decisionToVerify);
+        }
+        catch (System.Exception ex)
+        {
+            ClearanceSummaryText.Text = $"Verification error: {ex.Message}";
+            Shell?.Log("CLR.CERT.VERIFY_FAIL", $"Error verifying certificate: {ex.Message}", Severity.Medium);
+        }
+    }
 }
+

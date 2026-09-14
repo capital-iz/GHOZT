@@ -315,7 +315,7 @@ public sealed class ValidationAndInterventionTests : IDisposable
 
         var driver = runs[0].GetProperty("tool").GetProperty("driver");
         Assert.Equal("Ghozt - Dev Tester", driver.GetProperty("name").GetString());
-        Assert.Equal("0.2.7", driver.GetProperty("version").GetString());
+        Assert.Equal(ReportGenerator.GetProductVersion(), driver.GetProperty("version").GetString());
 
         var rules = driver.GetProperty("rules");
         Assert.Equal(2, rules.GetArrayLength());

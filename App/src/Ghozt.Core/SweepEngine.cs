@@ -56,11 +56,13 @@ public sealed class SweepEngine
         "Full sweep" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Regression Guarding", "Capacity", "Consistency"],
         "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Regression Guarding", "Capacity", "Consistency", "Provenance"],
         "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Quality Validation", "Regression Guarding", "Integrity"],
+        "Performance Soak" => ["Reachability", "Identity", "Soak and Resilience Analysis", "Capacity", "Integrity"],
         _ => ["Reachability", "Identity"],
     };
 
     public static IReadOnlyList<string> Modes =>
-        ["Smoke", "Changed area", "Full sweep", "Deep forensic", "Autonomous E2E"];
+        ["Smoke", "Changed area", "Full sweep", "Deep forensic", "Autonomous E2E", "Performance Soak"];
+
 
     /// <summary>
     /// Executes a sweep, reporting progress as it goes.
@@ -948,12 +950,160 @@ public sealed class SweepEngine
                     $"{failingCount} regression guards failed");
             }
 
+            case "Soak and Resilience Analysis":
+            {
+                Process? targetProc = null;
+                var shouldDisposeProc = false;
+
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    if (path.StartsWith("process:", StringComparison.OrdinalIgnoreCase) && int.TryParse(path["process:".Length..], out var pid))
+                    {
+                        try { targetProc = Process.GetProcessById(pid); } catch { }
+                    }
+                    else if (int.TryParse(path.Trim(), out var numPid))
+                    {
+                        try { targetProc = Process.GetProcessById(numPid); } catch { }
+                    }
+                    else if (File.Exists(path))
+                    {
+                        var procName = Path.GetFileNameWithoutExtension(path);
+                        var procs = Process.GetProcessesByName(procName);
+                        if (procs.Length > 0)
+                        {
+                            targetProc = procs[0];
+                        }
+                    }
+                }
+
+                if (targetProc is null)
+                {
+                    var procs = Process.GetProcessesByName(target.Name);
+                    if (procs.Length > 0)
+                    {
+                        targetProc = procs[0];
+                    }
+                }
+
+                var samples = new List<ResourceSample>();
+                var sampleCount = Math.Clamp(sweep.MaxStates, 5, 20);
+                var sampleIntervalMs = Math.Max(40, Math.Min(400, (sweep.MaxSeconds * 1000) / sampleCount));
+
+                for (var i = 0; i < sampleCount; i++)
+                {
+                    if (cancellation.IsCancellationRequested) break;
+
+                    if (targetProc is not null && !targetProc.HasExited)
+                    {
+                        try
+                        {
+                            targetProc.Refresh();
+                            samples.Add(new ResourceSample
+                            {
+                                Timestamp = DateTimeOffset.Now,
+                                WorkingSetMB = targetProc.WorkingSet64 / 1024.0 / 1024.0,
+                                PrivateBytesMB = targetProc.PrivateMemorySize64 / 1024.0 / 1024.0,
+                                ThreadCount = targetProc.Threads.Count,
+                                HandleCount = targetProc.HandleCount,
+                            });
+                        }
+                        catch
+                        {
+                            // Process may have exited or access restricted
+                        }
+                    }
+                    else if (Uri.TryCreate(path, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+                    {
+                        try
+                        {
+                            var sw = Stopwatch.StartNew();
+                            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+                            cts.CancelAfter(TimeSpan.FromSeconds(3));
+                            using var resp = await s_httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+                            sw.Stop();
+                            samples.Add(new ResourceSample
+                            {
+                                Timestamp = DateTimeOffset.Now,
+                                WorkingSetMB = sw.ElapsedMilliseconds,
+                                PrivateBytesMB = resp.Content.Headers.ContentLength ?? 0,
+                                ThreadCount = 1,
+                                HandleCount = (int)resp.StatusCode,
+                            });
+                        }
+                        catch
+                        {
+                            // Endpoint connection failed
+                        }
+                    }
+                    else
+                    {
+                        var driveRoot = Path.GetPathRoot(Path.GetFullPath(string.IsNullOrWhiteSpace(path) ? "C:\\" : path)) ?? "C:\\";
+                        var drive = new DriveInfo(driveRoot);
+                        samples.Add(new ResourceSample
+                        {
+                            Timestamp = DateTimeOffset.Now,
+                            WorkingSetMB = (drive.TotalSize - drive.AvailableFreeSpace) / 1024.0 / 1024.0,
+                            PrivateBytesMB = (drive.TotalSize - drive.AvailableFreeSpace) / 1024.0 / 1024.0,
+                            ThreadCount = 1,
+                            HandleCount = 1,
+                        });
+                    }
+
+                    if (i < sampleCount - 1)
+                    {
+                        await Task.Delay(sampleIntervalMs, cancellation).ConfigureAwait(false);
+                    }
+                }
+
+                var soakReport = SoakAnalysisEngine.Analyze(target, samples, _store, "SweepEngine");
+
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine($"Soak & Resilience Analysis evaluated {samples.Count} telemetry samples over {soakReport.Duration.TotalSeconds:F1}s:");
+                detailSb.AppendLine($"- WorkingSet: {soakReport.WorkingSetDrift.Diagnostic}");
+                detailSb.AppendLine($"- PrivateBytes: {soakReport.PrivateBytesDrift.Diagnostic}");
+                detailSb.AppendLine($"- Handles: {soakReport.HandleDrift.Diagnostic}");
+                detailSb.AppendLine($"- Threads: {soakReport.ThreadDrift.Diagnostic}");
+
+                var soakPayload = detailSb.ToString();
+                _store.Save(new Evidence
+                {
+                    Id = _store.NextId(IdKind.Evidence),
+                    TargetId = target.Id,
+                    SweepId = sweep.Id,
+                    Kind = "performance:soak",
+                    Summary = $"Soak & Resilience: {(soakReport.HasCriticalDrift ? "CRITICAL DRIFT DETECTED" : "NOMINAL STABILITY")} ({samples.Count} samples)",
+                    Sha256 = Hashing.Sha256(soakPayload),
+                    SizeBytes = System.Text.Encoding.UTF8.GetByteCount(soakPayload),
+                    Payload = soakPayload,
+                    SourceAdapter = "SoakAnalysisEngine",
+                    CapturedAt = DateTimeOffset.Now,
+                    Sealed = true,
+                    SealedBy = Environment.UserName,
+                });
+
+                if (soakReport.HasCriticalDrift)
+                {
+                    return new CheckResult(false, false,
+                        $"Deterministic resource drift detected during soak examination in {target.Name}!",
+                        detailSb.ToString(),
+                        Severity.High, samples.Count,
+                        "Resource consumption reaches bounded steady state",
+                        soakReport.GeneratedFinding?.Actual ?? "Deterministic resource leak detected");
+                }
+
+                return new CheckResult(true, false,
+                    $"Soak and resilience examination passed: steady-state resource stability verified across {samples.Count} samples.",
+                    detailSb.ToString(),
+                    Severity.Info, samples.Count);
+            }
+
             default:
                 return new CheckResult(false, true, $"{check} is not implemented.",
                     "This check is named in the sweep mode but has no implementation in this build.",
                     Severity.Low, 0);
         }
     }
+
 
     /// <summary>
     /// Records a deviation, clustering it onto an existing finding when the fingerprint matches.

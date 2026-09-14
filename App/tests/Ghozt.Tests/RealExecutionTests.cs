@@ -378,9 +378,17 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("MutationAssaysButton", regressionsXaml);
         Assert.Contains("MutationScoreBadge", regressionsXaml);
 
+        var clearanceXaml = File.ReadAllText(Path.Combine(basePath, "ClearanceWorkspace.xaml"));
+        Assert.Contains("OnEvaluate", clearanceXaml);
+        Assert.Contains("OnSignDecision", clearanceXaml);
+        Assert.Contains("OnExportCertificate", clearanceXaml);
+        Assert.Contains("OnVerifyCertificate", clearanceXaml);
+        Assert.Contains("VerifyCertButton", clearanceXaml);
+
         var algorithmsXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
         Assert.Contains("OnExportDossier", algorithmsXaml);
         Assert.Contains("DomainFilter", algorithmsXaml);
+
 
         var replayXaml = File.ReadAllText(Path.Combine(basePath, "ReplayWorkspace.xaml"));
         Assert.Contains("OnMinimiseSequenceClicked", replayXaml);
