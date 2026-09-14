@@ -103,12 +103,20 @@ public partial class FaultsWorkspace : UserControl
         if (finding is null || Shell.Target is null)
         {
             NoSelectionBox.Visibility = Visibility.Visible;
+            MaturityCard.Visibility = Visibility.Collapsed;
+            FingerprintCard.Visibility = Visibility.Collapsed;
             CausalCard.Visibility = Visibility.Collapsed;
             FixBriefCard.Visibility = Visibility.Collapsed;
             return;
         }
 
         NoSelectionBox.Visibility = Visibility.Collapsed;
+
+        // Render Maturity Lifecycle (Table 45)
+        RenderMaturityCard(finding);
+
+        // Render Fault Fingerprint & Duplicate Decision (Table 46 & 47)
+        RenderFingerprintCard(finding, Shell.Target);
 
         // Automatically formulate initial causal hypothesis
         var causalEngine = new CausalForensicsEngine(App.Store);
@@ -338,7 +346,8 @@ public partial class FaultsWorkspace : UserControl
 
     private static FindingMaturity? NextMaturity(Finding f) => f.Maturity switch
     {
-        FindingMaturity.New => FindingMaturity.Confirming,
+        FindingMaturity.New => f.IsPhantom ? FindingMaturity.Phantom : FindingMaturity.Confirming,
+        FindingMaturity.Phantom => f.ReproSuccesses > 0 ? FindingMaturity.Reproduced : null,
         FindingMaturity.Confirming => f.ReproSuccesses > 0 ? FindingMaturity.Reproduced : null,
         FindingMaturity.Reproduced => FindingMaturity.CauseSupported,
         FindingMaturity.CauseSupported => FindingMaturity.FixReady,
@@ -407,14 +416,30 @@ public partial class FaultsWorkspace : UserControl
             return;
         }
 
-        App.Store.Save(finding with { Maturity = next, LastSeenAt = DateTimeOffset.Now });
+        var evidence = new TransitionEvidence
+        {
+            CausalHypothesisSupported = _currentHypothesis != null && _currentHypothesis.Confidence >= 0.70,
+            CausalConfidence = _currentHypothesis?.Confidence ?? 0.0,
+            FixBriefApproved = _currentFixBrief != null,
+            FixBriefId = _currentFixBrief?.Id ?? "",
+            RepairApplied = true,
+            RepairVerified = finding.EvidenceCount > 0,
+            SealedEvidenceCount = finding.EvidenceCount,
+        };
 
-        Shell.Log("FLT.MATURITY", $"{finding.Id} advanced from {finding.Maturity} to {next}.",
-            Severity.Info, related: finding.Id.ToString(),
-            detail: $"Advanced by {Environment.UserName}.");
+        if (!FaultFingerprintEngine.CanTransition(finding, next, evidence, out var failureReason))
+        {
+            MessageBox.Show(failureReason, "Maturity Preconditions Not Met (Patent Table 45)", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
-        Refresh();
-        Shell.Refresh();
+        if (Shell.Target is { } target)
+        {
+            var updated = FaultFingerprintEngine.AdvanceMaturity(finding, next, evidence, App.Store, target);
+            Refresh();
+            Shell.Refresh();
+            RenderMaturityCard(updated);
+        }
     }
 
     private void OnAssign(object sender, RoutedEventArgs e)
@@ -432,4 +457,162 @@ public partial class FaultsWorkspace : UserControl
 
         Refresh();
     }
+
+    private void RenderMaturityCard(Finding finding)
+    {
+        MaturityCard.Visibility = Visibility.Visible;
+        MaturityBadgeText.Text = finding.Maturity.ToString().ToUpperInvariant();
+        var index = (int)finding.Maturity + 1;
+        MaturityStepCountText.Text = $"Stage {index} of 10";
+
+        var next = NextMaturity(finding);
+        var pre = next switch
+        {
+            FindingMaturity.Confirming => "Preconditions: Observation registered; ready for confirmation replays.",
+            FindingMaturity.Phantom => "Preconditions: Intermittent occurrence rate (<50%); reproduction envelope incomplete.",
+            FindingMaturity.Reproduced => $"Preconditions: {(finding.ReproSuccesses > 0 ? "Satisfied (reproduced successfully)" : "Awaiting successful reproduction")}.",
+            FindingMaturity.CauseSupported => $"Preconditions: {(_currentHypothesis != null && _currentHypothesis.Confidence >= 0.70 ? "Satisfied (Causal confidence " + _currentHypothesis.Confidence.ToString("P0") + ")" : "Requires causal hypothesis with >= 70% confidence")}.",
+            FindingMaturity.FixReady => $"Preconditions: {(_currentFixBrief != null ? "Satisfied (Fix Brief approved)" : "Requires approved Fix Brief contract")}.",
+            FindingMaturity.ReTest => "Preconditions: Code repair applied; awaiting verification execution.",
+            FindingMaturity.Verified => $"Preconditions: {(finding.EvidenceCount > 0 ? "Satisfied (Sealed evidence attached)" : "Requires sealed post-repair evidence")}.",
+            _ => "Terminal state or awaiting operator action.",
+        };
+        MaturityPreconditionText.Text = pre;
+    }
+
+    private void RenderFingerprintCard(Finding finding, Target target)
+    {
+        FingerprintCard.Visibility = Visibility.Visible;
+
+        var payload = new FaultFingerprintPayload
+        {
+            ExceptionSignature = finding.Actual,
+            SemanticCategory = finding.SemanticCategory ?? SemanticCategory.Other,
+            Expected = finding.Expected,
+            Actual = finding.Actual,
+            NodeId = finding.NodeId,
+            Environment = target.Environment,
+            OsFamily = "Windows",
+            Architecture = "x64",
+            ActionSequence = [$"action:{finding.NodeId}"],
+        };
+
+        var fp = string.IsNullOrWhiteSpace(finding.Fingerprint)
+            ? FaultFingerprintEngine.ComputeCompositeFingerprint(payload)
+            : finding.Fingerprint;
+
+        FingerprintIdText.Text = fp;
+
+        var existingFindings = App.Store.Findings(target.Id).Where(f => f.Id != finding.Id).ToList();
+        var decision = FaultFingerprintEngine.ClassifyDuplicate(finding, payload, existingFindings, target);
+
+        DuplicateBadgeText.Text = decision.Outcome switch
+        {
+            DuplicateOutcome.SameFault => "SAME FAULT",
+            DuplicateOutcome.Variant => "VARIANT",
+            DuplicateOutcome.Related => "RELATED",
+            DuplicateOutcome.Independent => "INDEPENDENT",
+            _ => "NEW",
+        };
+
+        DuplicateBadgeText.Foreground = decision.Outcome switch
+        {
+            DuplicateOutcome.SameFault => (Brush)TryFindResource("State.Fault"),
+            DuplicateOutcome.Variant => (Brush)TryFindResource("Accent.Text"),
+            DuplicateOutcome.Related => (Brush)TryFindResource("Authority.Clearance"),
+            _ => (Brush)TryFindResource("State.Verified"),
+        };
+
+        DuplicateRationaleText.Text = decision.Rationale;
+
+        FingerprintFeaturesList.Children.Clear();
+        var features = new[]
+        {
+            ("F1 (Exception)", FaultFingerprintEngine.NormalizeExceptionSignature(payload.ExceptionSignature)),
+            ("F2 (Semantic Diff)", $"Category: {payload.SemanticCategory}"),
+            ("F3 (Lattice Node)", string.IsNullOrWhiteSpace(finding.NodeId) ? "<root>" : finding.NodeId),
+            ("F4 (Action Sketch)", payload.ActionSequence.Count > 0 ? string.Join(", ", payload.ActionSequence) : "<implicit>"),
+            ("F5 (State Delta)", string.IsNullOrWhiteSpace(finding.Actual) ? "<none>" : "actual_hash:" + Hashing.Sha256(finding.Actual)[..8]),
+            ("F6 (Dependency)", "<local_process>"),
+            ("F7 (Environment)", $"{target.Environment} / Windows x64"),
+        };
+
+        foreach (var (label, val) in features)
+        {
+            var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 1, 0, 1) };
+            sp.Children.Add(new TextBlock
+            {
+                Text = label + ": ",
+                FontSize = 10,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)TryFindResource("Text.Secondary"),
+                Width = 110,
+            });
+            sp.Children.Add(new TextBlock
+            {
+                Text = val,
+                FontSize = 10,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = (Brush)TryFindResource("Text.Primary"),
+                MaxWidth = 230,
+            });
+            FingerprintFeaturesList.Children.Add(sp);
+        }
+    }
+
+    private void OnCopyFingerprint(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(FingerprintIdText.Text))
+        {
+            Clipboard.SetText(FingerprintIdText.Text);
+            Shell.Log("FLT.COPY", $"Copied fingerprint {FingerprintIdText.Text} to clipboard.", Severity.Info);
+        }
+    }
+
+    private void OnWaiveFinding(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding || Shell.Target is not { } target) return;
+
+        var evidence = new TransitionEvidence
+        {
+            WaivedBy = Environment.UserName,
+            WaiverReason = "Operational risk accepted by operator waiver.",
+            WaivedUntil = DateTimeOffset.Now.AddDays(30),
+        };
+
+        try
+        {
+            var updated = FaultFingerprintEngine.AdvanceMaturity(finding, FindingMaturity.Waived, evidence, App.Store, target);
+            Refresh();
+            Shell.Refresh();
+            RenderMaturityCard(updated);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Waiver Rejected", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OnRejectFinding(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding || Shell.Target is not { } target) return;
+
+        var evidence = new TransitionEvidence
+        {
+            RejectionReason = "Determined as test artifact / invalid oracle assertion.",
+        };
+
+        try
+        {
+            var updated = FaultFingerprintEngine.AdvanceMaturity(finding, FindingMaturity.Rejected, evidence, App.Store, target);
+            Refresh();
+            Shell.Refresh();
+            RenderMaturityCard(updated);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Rejection Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
 }
+

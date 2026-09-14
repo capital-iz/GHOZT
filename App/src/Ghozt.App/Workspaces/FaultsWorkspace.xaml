@@ -173,6 +173,62 @@
                                        Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" />
                         </Border>
 
+                        <!-- 10-State Maturity Lifecycle Card (Patent Table 45) -->
+                        <Border x:Name="MaturityCard" Background="{DynamicResource Surface.Card}"
+                                BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="14" Margin="0,0,0,14" Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                               Foreground="{DynamicResource State.Verified}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Maturity Lifecycle (Table 45)" Style="{StaticResource Type.HeadingStyle}" FontSize="13" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
+                                    <Border Padding="8,3" CornerRadius="{StaticResource Radius.Chip}" Background="{DynamicResource Surface.Elevated}"
+                                            BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1">
+                                        <TextBlock x:Name="MaturityBadgeText" FontWeight="Bold" FontSize="10" Foreground="{DynamicResource Accent.Text}" />
+                                    </Border>
+                                    <TextBlock x:Name="MaturityStepCountText" Style="{StaticResource Type.IdentifierStyle}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                </StackPanel>
+
+                                <TextBlock x:Name="MaturityPreconditionText" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" Margin="0,4,0,8" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Button Content="Advance State" Click="OnAdvance" Margin="0,0,6,0" ToolTip="Advance to next verified lifecycle state" />
+                                    <Button Content="Waive Risk" Click="OnWaiveFinding" Margin="0,0,6,0" ToolTip="Formally waive finding under named authority" />
+                                    <Button Content="Reject" Click="OnRejectFinding" ToolTip="Mark as rejected / test error" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Composite Fault Fingerprint Card (Patent Table 46 & 47) -->
+                        <Border x:Name="FingerprintCard" Background="{DynamicResource Surface.Card}"
+                                BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="14" Margin="0,0,0,14" Visibility="Collapsed">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource Font.Icon}" FontSize="13"
+                                               Foreground="{DynamicResource Accent.Text}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Fault Fingerprint (Table 46)" Style="{StaticResource Type.HeadingStyle}" FontSize="13" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
+                                    <TextBlock x:Name="FingerprintIdText" Style="{StaticResource Type.MonoStyle}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Accent.Text}" VerticalAlignment="Center" />
+                                    <Border x:Name="DuplicateBadge" Margin="8,0,0,0" Padding="6,2" CornerRadius="{StaticResource Radius.Chip}" Background="{DynamicResource Surface.Elevated}">
+                                        <TextBlock x:Name="DuplicateBadgeText" FontSize="9" FontWeight="SemiBold" />
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock x:Name="DuplicateRationaleText" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" Margin="0,2,0,8" />
+
+                                <TextBlock Text="7-Feature Decomposition:" FontWeight="SemiBold" FontSize="10" Margin="0,6,0,4" Foreground="{DynamicResource Text.Secondary}" />
+                                <StackPanel x:Name="FingerprintFeaturesList" />
+
+                                <Button Content="Copy Fingerprint" Click="OnCopyFingerprint" Margin="0,8,0,0" HorizontalAlignment="Left" ToolTip="Copy 32-character SHA-256 fingerprint digest" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Causal Forensics Card -->
                         <Border x:Name="CausalCard" Background="{DynamicResource Surface.Card}"
                                 BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"

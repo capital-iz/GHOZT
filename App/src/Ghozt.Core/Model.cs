@@ -51,10 +51,11 @@ public enum Severity
     Critical,
 }
 
-/// <summary>Where a finding sits in its lifecycle. Maturity is not severity.</summary>
+/// <summary>Where a finding sits in its lifecycle (Patent Table 45). Maturity is not severity.</summary>
 public enum FindingMaturity
 {
     New,
+    Phantom,
     Confirming,
     Reproduced,
     CauseSupported,
@@ -63,6 +64,30 @@ public enum FindingMaturity
     Verified,
     Waived,
     Rejected,
+}
+
+/// <summary>Duplicate decision classifier outcome (Patent Table 47).</summary>
+public enum DuplicateOutcome
+{
+    SameFault,
+    Variant,
+    Related,
+    Independent,
+}
+
+/// <summary>Semantic category for difference classification (Patent Table 46).</summary>
+public enum SemanticCategory
+{
+    StatusCodeMismatch,
+    UiStateCorruption,
+    SchemaViolation,
+    ContractViolation,
+    ResourceDrift,
+    CrashFatalExit,
+    UnresponsiveWindow,
+    AuthenticationDenied,
+    InvariantBroken,
+    Other,
 }
 
 /// <summary>The verdict a release policy can issue.</summary>
@@ -277,6 +302,15 @@ public sealed record Finding
     /// A Phantom is a finding that has been seen but does not reliably return, validated through Wilson score intervals.
     /// </summary>
     public bool IsPhantom => StateSpaceMath.IsPhantomDefect(ReproSuccesses, ReproAttempts);
+
+    /// <summary>Optional reference to a parent finding if this finding is a variant (Patent Table 47).</summary>
+    public GhoztId? VariantOf { get; init; }
+
+    /// <summary>Optional reference to a related candidate finding (Patent Table 47).</summary>
+    public GhoztId? RelatedCandidateId { get; init; }
+
+    /// <summary>Optional semantic difference category (Patent Table 46).</summary>
+    public SemanticCategory? SemanticCategory { get; init; }
 }
 
 /// <summary>A captured artefact, bound to the finding or event it proves something about.</summary>
