@@ -39,6 +39,10 @@
                     <Button Margin="8,0,0,0" Content="Open in Viewer" Click="OnOpenViewer"
                             x:Name="OpenViewerButton" IsEnabled="False"
                             ToolTip="Opens the exported dossier in the system's default viewer" />
+                    <Button Margin="8,0,0,0" Content="Portfolio Rollup" Click="OnPortfolioRollup"
+                            x:Name="PortfolioRollupButton"
+                            ToolTip="Generates an executive multi-target quality report across the entire Capital-Iz estate (Patent §41)"
+                            AutomationProperties.Name="Generate portfolio quality rollup" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

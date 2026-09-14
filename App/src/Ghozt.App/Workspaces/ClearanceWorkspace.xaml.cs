@@ -242,18 +242,21 @@ public partial class ClearanceWorkspace : UserControl
         var target = Shell.Target;
         try
         {
-            var dir = System.IO.Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz", "Ghozt", "Certificates");
-            System.IO.Directory.CreateDirectory(dir);
+            var dossierEngine = new ClearanceDossierEngine(App.Store);
+            var certificate = dossierEngine.IssueCertificate(target, _currentDecision.DecidedBy);
 
-            var certPath = System.IO.Path.Combine(dir, $"CERT-{target.Id}-{_currentDecision.BuildLabel}.json");
-            var json = System.Text.Json.JsonSerializer.Serialize(_currentDecision, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-            System.IO.File.WriteAllText(certPath, json);
+            ClearanceSummaryText.Text = $"Certificate {certificate.Digest.ClearanceId} exported ({certificate.Digest.Decision}). Merkle: {certificate.MerkleRoot[..8]}...";
+            Shell.Log("CLR.CERT.EXPORT", $"Exported release clearance certificate to {certificate.SavedFilePath}.", Severity.Info,
+                related: target.Id.ToString(), detail: $"Verdict: {certificate.Digest.Decision}; Merkle: {certificate.MerkleRoot}");
 
-            ClearanceSummaryText.Text = $"Certificate exported to {certPath}";
-            Shell.Log("CLR.CERT.EXPORT", $"Exported release clearance certificate to {certPath}.", Severity.Info,
-                related: target.Id.ToString(), detail: $"Verdict: {_currentDecision.Outcome}");
+            if (!string.IsNullOrWhiteSpace(certificate.SavedFilePath) && System.IO.File.Exists(certificate.SavedFilePath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = certificate.SavedFilePath,
+                    UseShellExecute = true,
+                });
+            }
         }
         catch (System.Exception ex)
         {

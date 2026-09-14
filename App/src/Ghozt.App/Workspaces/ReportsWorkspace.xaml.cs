@@ -232,5 +232,223 @@ public partial class ReportsWorkspace : UserControl
             // Fallback if no association exists
         }
     }
+
+    private void OnPortfolioRollup(object sender, RoutedEventArgs e)
+    {
+        var rollupEngine = new PortfolioRollupEngine(App.Store);
+        var rollup = rollupEngine.GenerateRollup();
+
+        RenderPortfolioRollup(rollup);
+
+        Shell?.Log("RPT.PORTFOLIO.ROLLUP",
+            $"Generated estate portfolio rollup for {rollup.TotalTargets} targets across estate. Readiness Index: {rollup.EstateReadinessIndex}",
+            rollup.EstateReadinessIndex == "QUALIFIED" ? Severity.Info : Severity.High);
+    }
+
+    private void RenderPortfolioRollup(PortfolioRollupReport rollup)
+    {
+        ReportContainer.Children.Clear();
+        StatusText.Text = $"Estate Rollup · Status: {rollup.EstateReadinessIndex} · {rollup.TotalTargets} targets";
+
+        var isQualified = rollup.EstateReadinessIndex == "QUALIFIED";
+        var isBlocked = rollup.EstateReadinessIndex == "BLOCKED";
+
+        var summaryCard = new Border
+        {
+            Background = (Brush)TryFindResource("Surface.Card"),
+            BorderBrush = (Brush)(isQualified
+                ? TryFindResource("Authority.Clearance")
+                : (isBlocked ? TryFindResource("State.Fault") : TryFindResource("State.Warning"))),
+            BorderThickness = new Thickness(isQualified || isBlocked ? 2 : 1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(20),
+            Margin = new Thickness(0, 0, 0, 16),
+        };
+
+        var stack = new StackPanel();
+
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var titlePanel = new StackPanel();
+        titlePanel.Children.Add(new TextBlock
+        {
+            Text = "Capital-Iz Estate Quality & Release Readiness Rollup",
+            FontSize = 18,
+            FontWeight = FontWeights.Bold,
+            Foreground = (Brush)TryFindResource("Text.Primary"),
+        });
+        titlePanel.Children.Add(new TextBlock
+        {
+            Text = $"Generated: {rollup.GeneratedAt:yyyy-MM-dd HH:mm:ss} · Patent §41 Multi-Target Portfolio Governance",
+            Style = (Style)TryFindResource("Type.CaptionStyle"),
+            Foreground = (Brush)TryFindResource("Text.Muted"),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+        Grid.SetColumn(titlePanel, 0);
+        header.Children.Add(titlePanel);
+
+        var readinessBadge = new Border
+        {
+            Background = (Brush)(isQualified
+                ? TryFindResource("Authority.Soft")
+                : (isBlocked ? TryFindResource("State.FaultSoft") : TryFindResource("State.WarningSoft"))),
+            BorderBrush = (Brush)(isQualified
+                ? TryFindResource("Authority.Clearance")
+                : (isBlocked ? TryFindResource("State.Fault") : TryFindResource("State.Warning"))),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(12, 6, 12, 6),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        readinessBadge.Child = new TextBlock
+        {
+            Text = rollup.EstateReadinessIndex,
+            FontWeight = FontWeights.Bold,
+            FontSize = 12,
+            Foreground = (Brush)(isQualified
+                ? TryFindResource("Authority.Clearance")
+                : (isBlocked ? TryFindResource("State.Fault") : TryFindResource("State.Warning"))),
+        };
+        Grid.SetColumn(readinessBadge, 1);
+        header.Children.Add(readinessBadge);
+
+        stack.Children.Add(header);
+
+        // Metrics row
+        var metricsRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 16, 0, 0) };
+        AddMetric(metricsRow, "Total Targets", rollup.TotalTargets.ToString());
+        AddMetric(metricsRow, "Production", rollup.ProductionTargets.ToString());
+        AddMetric(metricsRow, "Cleared", rollup.ClearedTargets.ToString());
+        AddMetric(metricsRow, "Blocked/Denied", rollup.DeniedOrBlockedTargets.ToString());
+        AddMetric(metricsRow, "Avg Coverage", $"{rollup.AverageCoverage}%");
+        AddMetric(metricsRow, "Avg Unknown Risk", $"{rollup.AverageUnknownRisk}%");
+        AddMetric(metricsRow, "Critical Findings", rollup.TotalCriticalFindings.ToString());
+        stack.Children.Add(metricsRow);
+
+        summaryCard.Child = stack;
+        ReportContainer.Children.Add(summaryCard);
+
+        // Risk warnings card
+        if (rollup.StrategicRiskWarnings.Count > 0)
+        {
+            var warningCard = new Border
+            {
+                Background = (Brush)TryFindResource("State.FaultSoft"),
+                BorderBrush = (Brush)TryFindResource("State.Fault"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(16),
+                Margin = new Thickness(0, 0, 0, 16),
+            };
+
+            var warnStack = new StackPanel();
+            warnStack.Children.Add(new TextBlock
+            {
+                Text = "STRATEGIC ESTATE RISK WARNINGS",
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                Foreground = (Brush)TryFindResource("State.Fault"),
+                Margin = new Thickness(0, 0, 0, 8),
+            });
+
+            foreach (var warning in rollup.StrategicRiskWarnings)
+            {
+                warnStack.Children.Add(new TextBlock
+                {
+                    Text = $"• {warning}",
+                    Foreground = (Brush)TryFindResource("Text.Primary"),
+                    FontSize = 11,
+                    Margin = new Thickness(4, 2, 0, 2),
+                    TextWrapping = TextWrapping.Wrap,
+                });
+            }
+
+            warningCard.Child = warnStack;
+            ReportContainer.Children.Add(warningCard);
+        }
+
+        // Target Details
+        var targetsHeader = new TextBlock
+        {
+            Text = "PORTFOLIO TARGET HEALTH BREAKDOWN",
+            FontSize = 12,
+            FontWeight = FontWeights.Bold,
+            Foreground = (Brush)TryFindResource("Text.Primary"),
+            Margin = new Thickness(4, 8, 0, 8),
+        };
+        ReportContainer.Children.Add(targetsHeader);
+
+        foreach (var target in rollup.Targets)
+        {
+            var targetCard = new Border
+            {
+                Background = (Brush)TryFindResource("Surface.Card"),
+                BorderBrush = (Brush)TryFindResource("Border.Card"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(16),
+                Margin = new Thickness(0, 0, 0, 10),
+            };
+
+            var targetStack = new StackPanel();
+
+            var tHeader = new Grid();
+            tHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            tHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var tTitle = new StackPanel { Orientation = Orientation.Horizontal };
+            tTitle.Children.Add(new TextBlock
+            {
+                Text = target.Name,
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 13,
+                Foreground = (Brush)TryFindResource("Text.Primary"),
+            });
+            tTitle.Children.Add(new TextBlock
+            {
+                Text = $"  [{target.Environment}]  ·  {target.Kind}  ·  Build: {target.BuildLabel}",
+                Style = (Style)TryFindResource("Type.CaptionStyle"),
+                Foreground = (Brush)TryFindResource("Text.Muted"),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            Grid.SetColumn(tTitle, 0);
+            tHeader.Children.Add(tTitle);
+
+            var isTargetCleared = target.ClearanceStatus == ClearanceOutcome.Cleared;
+            var tBadge = new Border
+            {
+                Background = (Brush)(isTargetCleared ? TryFindResource("Authority.Soft") : TryFindResource("State.FaultSoft")),
+                BorderBrush = (Brush)(isTargetCleared ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 3, 8, 3),
+            };
+            tBadge.Child = new TextBlock
+            {
+                Text = target.ClearanceStatus.ToString().ToUpperInvariant(),
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = (Brush)(isTargetCleared ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+            };
+            Grid.SetColumn(tBadge, 1);
+            tHeader.Children.Add(tBadge);
+
+            targetStack.Children.Add(tHeader);
+
+            var tMetrics = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
+            AddMetric(tMetrics, "Coverage", $"{target.CoveragePercentage}%");
+            AddMetric(tMetrics, "Unknown Risk", $"{target.UnknownRiskPercentage}%");
+            AddMetric(tMetrics, "Lattice Nodes", $"{target.VerifiedNodeCount} / {target.NodeCount}");
+            AddMetric(tMetrics, "Open Defects", target.OpenFindingCount.ToString());
+            AddMetric(tMetrics, "Critical", target.CriticalFindingCount.ToString());
+            AddMetric(tMetrics, "Evidence", target.EvidenceCount.ToString());
+            targetStack.Children.Add(tMetrics);
+
+            targetCard.Child = targetStack;
+            ReportContainer.Children.Add(targetCard);
+        }
+    }
 }
 
