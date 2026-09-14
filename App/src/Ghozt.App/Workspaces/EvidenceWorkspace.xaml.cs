@@ -46,12 +46,29 @@ public partial class EvidenceWorkspace : UserControl
         }
     }
 
-    private void OnSearch(object sender, TextChangedEventArgs e) => Refresh();
+    private void OnSearch(object sender, TextChangedEventArgs e)
+    {
+        if (IsInitialized)
+        {
+            Refresh();
+        }
+    }
 
-    private void OnKindFilterChanged(object sender, SelectionChangedEventArgs e) => Refresh();
+    private void OnKindFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IsInitialized)
+        {
+            Refresh();
+        }
+    }
 
     private void Refresh()
     {
+        if (!IsInitialized || Items is null)
+        {
+            return;
+        }
+
         var target = Shell?.Target;
         var all = target is null ? [] : App.Store.EvidenceItems(target.Id);
 

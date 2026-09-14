@@ -367,6 +367,8 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("OnVerifyAll", evidenceXaml);
         Assert.Contains("OnExportArtefact", evidenceXaml);
         Assert.Contains("KindFilter", evidenceXaml);
+        Assert.Contains("VerifyAllButton", evidenceXaml);
+        Assert.Contains("ExportArtefactButton", evidenceXaml);
 
         var regressionsXaml = File.ReadAllText(Path.Combine(basePath, "RegressionsWorkspace.xaml"));
         Assert.Contains("OnExportSuite", regressionsXaml);
@@ -374,6 +376,16 @@ public sealed class RealExecutionTests : IDisposable
         var algorithmsXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
         Assert.Contains("OnExportDossier", algorithmsXaml);
         Assert.Contains("DomainFilter", algorithmsXaml);
+    }
+
+    [Fact]
+    public void EvidenceWorkspace_CodeBehind_HasInitializationGuards()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+        var cs = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml.cs"));
+
+        Assert.Contains("if (!IsInitialized || Items is null)", cs);
+        Assert.Contains("if (IsInitialized)", cs);
     }
 }
 

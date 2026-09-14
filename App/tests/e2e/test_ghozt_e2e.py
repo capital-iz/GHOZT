@@ -18,7 +18,9 @@ from pywinauto import Application
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-GHOZT_EXE = r"C:\Program Files\Capital-Iz\Ghozt\Ghozt.exe"
+LOCAL_PUB_EXE = r"C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT\Windows\build\publish\win-x64\Ghozt.exe"
+INSTALLED_EXE = r"C:\Program Files\Capital-Iz\Ghozt\Ghozt.exe"
+GHOZT_EXE = LOCAL_PUB_EXE if os.path.exists(LOCAL_PUB_EXE) else INSTALLED_EXE
 SCREENSHOTS_DIR = r"C:\Users\reama\.gemini\antigravity\brain\54eb30be-3d1b-4020-bb7f-71968b400064\screenshots\e2e_run"
 WORKSPACES = [
     "Targets",
@@ -80,7 +82,7 @@ def test_interactive_ui_automation():
         raise FileNotFoundError(f"Ghozt executable not found at {GHOZT_EXE}")
 
     print(f"Launching installed executable: {GHOZT_EXE}")
-    app = Application(backend="uia").start(GHOZT_EXE)
+    app = Application(backend="uia").start(f'"{GHOZT_EXE}"')
     pid = app.process
     print(f"  [PASS] Process launched successfully with PID={pid}")
 
@@ -174,11 +176,11 @@ def test_visual_capture_all_workspaces():
             [
                 "powershell",
                 "-Command",
-                f'& "{GHOZT_EXE}" --capture "{ws_dir}" --workspace "{ws}"'
+                f'Start-Process -FilePath "{GHOZT_EXE}" -ArgumentList "--capture `"{ws_dir}`" --workspace `"{ws}`"" -Wait'
             ],
             capture_output=True,
             text=True,
-            timeout=20
+            timeout=30
         )
         time.sleep(0.5)
 
