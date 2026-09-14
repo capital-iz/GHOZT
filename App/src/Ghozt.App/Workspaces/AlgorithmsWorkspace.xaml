@@ -2,66 +2,167 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- Command Header -->
-        <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+    <TabControl Background="Transparent" BorderThickness="0">
+        <!-- Tab 1: Deterministic & Metamorphic Invariants -->
+        <TabItem Header="Invariant Proofs">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource Button.Primary}" Content="Run Algorithm Suite"
-                            Click="OnRunSuite" x:Name="RunButton"
-                            ToolTip="Executes all deterministic algorithm invariant tests and analytical proofs"
-                            AutomationProperties.Name="Run algorithm invariant test suite" />
-                    <Button Margin="8,0,0,0" Content="Export Dossier (.md)" Click="OnExportDossier"
-                            x:Name="ExportDossierButton" IsEnabled="False"
-                            ToolTip="Exports comprehensive mathematical verification dossier to %LOCALAPPDATA%\Capital-Iz\Ghozt\AlgorithmReports"
-                            AutomationProperties.Name="Export mathematical verification dossier" />
-                    <Button Margin="8,0,0,0" Content="Seal to Evidence" Click="OnSealEvidence"
-                            x:Name="SealButton" IsEnabled="False"
-                            ToolTip="Records verified algorithm suite report into the SQLite evidence plane"
-                            AutomationProperties.Name="Seal verification report into evidence store" />
-                    <ComboBox x:Name="DomainFilter" Width="170" Margin="14,0,0,0" Height="26"
-                              SelectionChanged="OnDomainFilterChanged"
-                              AutomationProperties.Name="Filter invariants by mathematical domain">
-                        <ComboBoxItem Content="All Domains" IsSelected="True" />
-                        <ComboBoxItem Content="Stochastic Estimators" />
-                        <ComboBoxItem Content="Inferential Statistics" />
-                        <ComboBoxItem Content="Information Theory" />
-                        <ComboBoxItem Content="Graph Theory" />
-                        <ComboBoxItem Content="Applied Cryptography" />
-                        <ComboBoxItem Content="Numerical Stability" />
-                    </ComboBox>
-                </StackPanel>
+                <!-- Command Header -->
+                <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock x:Name="SuiteSummaryText" Text="Click 'Run Algorithm Suite' to evaluate invariants"
-                               Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
-                </StackPanel>
-            </Grid>
-        </Border>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource Button.Primary}" Content="Run Algorithm Suite"
+                                    Click="OnRunSuite" x:Name="RunButton"
+                                    ToolTip="Executes all deterministic algorithm invariant tests and analytical proofs"
+                                    AutomationProperties.Name="Run algorithm invariant test suite" />
+                            <Button Margin="8,0,0,0" Content="Export Dossier (.md)" Click="OnExportDossier"
+                                    x:Name="ExportDossierButton" IsEnabled="False"
+                                    ToolTip="Exports comprehensive mathematical verification dossier to %LOCALAPPDATA%\Capital-Iz\Ghozt\AlgorithmReports"
+                                    AutomationProperties.Name="Export mathematical verification dossier" />
+                            <Button Margin="8,0,0,0" Content="Seal to Evidence" Click="OnSealEvidence"
+                                    x:Name="SealButton" IsEnabled="False"
+                                    ToolTip="Records verified algorithm suite report into the SQLite evidence plane"
+                                    AutomationProperties.Name="Seal verification report into evidence store" />
+                            <ComboBox x:Name="DomainFilter" Width="170" Margin="14,0,0,0" Height="26"
+                                      SelectionChanged="OnDomainFilterChanged"
+                                      AutomationProperties.Name="Filter invariants by mathematical domain">
+                                <ComboBoxItem Content="All Domains" IsSelected="True" />
+                                <ComboBoxItem Content="Stochastic Estimators" />
+                                <ComboBoxItem Content="Inferential Statistics" />
+                                <ComboBoxItem Content="Information Theory" />
+                                <ComboBoxItem Content="Graph Theory" />
+                                <ComboBoxItem Content="Applied Cryptography" />
+                                <ComboBoxItem Content="Numerical Stability" />
+                            </ComboBox>
+                        </StackPanel>
 
-        <!-- Results List -->
-        <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="ResultsPanel">
-                <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
-                        BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Deterministic Algorithm &amp; Invariant Harness" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
-                        <TextBlock Margin="0,8,0,0" Text="Verify mathematical models, stochastic estimators, graph cycle prevention, and cryptographic proofs against analytical closed-form expectations."
-                                   Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
-                    </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock x:Name="SuiteSummaryText" Text="Click 'Run Algorithm Suite' to evaluate invariants"
+                                       Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
                 </Border>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+
+                <!-- Results List -->
+                <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ResultsPanel">
+                        <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Deterministic Algorithm &amp; Invariant Harness" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0" Text="Verify mathematical models, stochastic estimators, graph cycle prevention, and cryptographic proofs against analytical closed-form expectations."
+                                           Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
+
+        <!-- Tab 2: Computational Complexity Scaling Assays (Patent §20) -->
+        <TabItem Header="Complexity Assays">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Command Header -->
+                <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource Button.Primary}" Content="Run Complexity Assays"
+                                    Click="OnRunComplexity" x:Name="RunComplexityButton"
+                                    ToolTip="Executes empirical Big-O scaling benchmarks across variable sample sizes (N=100..5000)"
+                                    AutomationProperties.Name="Run empirical complexity assays" />
+                            <Button Margin="8,0,0,0" Content="Seal to Evidence" Click="OnSealComplexity"
+                                    x:Name="SealComplexityButton" IsEnabled="False"
+                                    ToolTip="Records complexity benchmark report into the evidence plane"
+                                    AutomationProperties.Name="Seal complexity report to evidence" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock x:Name="ComplexitySummaryText" Text="Click 'Run Complexity Assays' to evaluate empirical Big-O scaling"
+                                       Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Complexity Results List -->
+                <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ComplexityPanel">
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Empirical Computational Complexity Assays" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0" Text="Benchmarks algorithmic latency across sample orders of magnitude (N=100..5000), computing the empirical scaling exponent alpha = ln(T2/T1)/ln(N2/N1) to prevent super-linear algorithmic drift."
+                                           Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="520" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
+
+        <!-- Tab 3: Delta-Debugging Input Minimiser (Patent §20 & §28) -->
+        <TabItem Header="Delta-Debugging Lab">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Command Header -->
+                <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource Button.Primary}" Content="Run Input Minimisation"
+                                    Click="OnRunMinimisation" x:Name="RunMinimiseButton"
+                                    ToolTip="Isolates the 1-minimal reproducing subset of inputs triggering an algorithmic violation"
+                                    AutomationProperties.Name="Run delta debugging input minimisation" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock x:Name="MinimiseSummaryText" Text="Click 'Run Input Minimisation' to isolate minimal reproducing subset"
+                                       Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Minimiser Results Body -->
+                <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="MinimisePanel">
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Algorithmic Input Minimisation (ddmin)" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0" Text="Applies Delta Debugging to prune observational noise from complex input vectors, isolating the exact minimal critical inputs causing an algorithm failure or metamorphic contradiction."
+                                           Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="520" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </UserControl>

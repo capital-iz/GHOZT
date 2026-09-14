@@ -267,9 +267,18 @@ public partial class TargetsWorkspace : UserControl
                 {
                     var proc = System.Diagnostics.Process.GetProcessById(pid);
                     reachable = !proc.HasExited;
+                    var memMb = proc.WorkingSet64 / (1024.0 * 1024.0);
+                    var privMb = proc.PrivateMemorySize64 / (1024.0 * 1024.0);
                     detail = reachable
-                        ? $"Process active: {proc.ProcessName} (PID {pid}, responding={proc.Responding})"
+                        ? $"Process active: {proc.ProcessName} (PID {pid}, responding={proc.Responding}, WS={memMb:F1}MB, Priv={privMb:F1}MB, threads={proc.Threads.Count}, handles={proc.HandleCount})"
                         : $"Process has exited: PID {pid}";
+
+                    if (reachable)
+                    {
+                        Shell.Log("TGT.TELEMETRY",
+                            $"Process telemetry for {proc.ProcessName} (PID {pid}): WS={memMb:F1}MB, Priv={privMb:F1}MB, threads={proc.Threads.Count}, handles={proc.HandleCount}.",
+                            Severity.Info, related: target.Id.ToString());
+                    }
                 }
                 catch (Exception pex)
                 {

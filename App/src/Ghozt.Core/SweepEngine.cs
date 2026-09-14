@@ -53,9 +53,9 @@ public sealed class SweepEngine
     {
         "Smoke" => ["Reachability", "Identity", "Structure"],
         "Changed area" => ["Reachability", "Identity", "Structure", "Integrity"],
-        "Full sweep" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Capacity", "Consistency"],
-        "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Capacity", "Consistency", "Provenance"],
-        "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Quality Validation", "Integrity"],
+        "Full sweep" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Regression Guarding", "Capacity", "Consistency"],
+        "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Regression Guarding", "Capacity", "Consistency", "Provenance"],
+        "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Quality Validation", "Regression Guarding", "Integrity"],
         _ => ["Reachability", "Identity"],
     };
 
@@ -856,6 +856,96 @@ public sealed class SweepEngine
                     worstSeverity, reports.Count,
                     "Zero quality, security or accessibility deviations",
                     $"{totalFindings} deviations detected");
+            }
+
+            case "Regression Guarding":
+            {
+                var regressionEngine = new RegressionEngine(_store);
+                var evaluatedGuards = await regressionEngine.ExecuteGuardsAsync(target, cancellation).ConfigureAwait(false);
+
+                if (evaluatedGuards.Count == 0)
+                {
+                    return new CheckResult(true, false,
+                        "Regression guarding evaluated: 0 active guards configured for target.",
+                        "No regression guards have been derived from defects for this target yet.",
+                        Severity.Info, 1);
+                }
+
+                var passingCount = evaluatedGuards.Count(g => g.Status == GuardStatus.Passing);
+                var failingCount = evaluatedGuards.Count(g => g.Status == GuardStatus.Failing);
+                var worstSeverity = evaluatedGuards
+                    .Where(g => g.Status == GuardStatus.Failing)
+                    .Select(g => g.Severity)
+                    .DefaultIfEmpty(Severity.Info)
+                    .Max();
+
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine($"Regression Guard Suite evaluated {evaluatedGuards.Count} guards ({passingCount} passing, {failingCount} failing):");
+                foreach (var g in evaluatedGuards)
+                {
+                    detailSb.AppendLine($"- [{g.Id}] {g.Title}: {g.Status} ({g.Severity}) -> {g.ExpectedBehavior}");
+                    if (g.Status == GuardStatus.Failing)
+                    {
+                        var fp = FaultFingerprint.Compute(
+                            target.Id.ToString(),
+                            "REGRESSION",
+                            g.Id,
+                            g.Title,
+                            deltaSignature: g.ExpectedBehavior);
+
+                        var finding = new Finding
+                        {
+                            Id = _store.NextId(IdKind.Fault),
+                            TargetId = target.Id,
+                            SweepId = sweep.Id,
+                            Title = $"Regression: {g.Title}",
+                            Severity = g.Severity,
+                            Maturity = FindingMaturity.New,
+                            Expected = g.ExpectedBehavior,
+                            Actual = $"Guard {g.Id} failed during sweep re-test ({g.Details})",
+                            NodeId = "system:root",
+                            Fingerprint = fp,
+                            FirstSeenAt = DateTimeOffset.Now,
+                            LastSeenAt = DateTimeOffset.Now,
+                            ReproAttempts = 1,
+                            ReproSuccesses = 1,
+                        };
+                        FaultFingerprint.ClusterFinding(_store, finding, target, sweep);
+                    }
+                }
+
+                // Save sealed regression guard audit evidence
+                var auditPayload = detailSb.ToString();
+                _store.Save(new Evidence
+                {
+                    Id = _store.NextId(IdKind.Evidence),
+                    TargetId = target.Id,
+                    SweepId = sweep.Id,
+                    Kind = "regression:audit",
+                    Summary = $"Regression Guard Audit: {passingCount}/{evaluatedGuards.Count} passing",
+                    Sha256 = Hashing.Sha256(auditPayload),
+                    SizeBytes = System.Text.Encoding.UTF8.GetByteCount(auditPayload),
+                    Payload = auditPayload,
+                    SourceAdapter = "RegressionEngine",
+                    CapturedAt = DateTimeOffset.Now,
+                    Sealed = true,
+                    SealedBy = Environment.UserName,
+                });
+
+                if (failingCount == 0)
+                {
+                    return new CheckResult(true, false,
+                        $"Regression guarding passed: {evaluatedGuards.Count} guards evaluated with 100% pass rate.",
+                        detailSb.ToString(),
+                        Severity.Info, evaluatedGuards.Count);
+                }
+
+                return new CheckResult(false, false,
+                    $"Regression guarding failed: {failingCount}/{evaluatedGuards.Count} regression guards failed!",
+                    detailSb.ToString(),
+                    worstSeverity, evaluatedGuards.Count,
+                    "100% of regression guards passing",
+                    $"{failingCount} regression guards failed");
             }
 
             default:

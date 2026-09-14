@@ -338,8 +338,8 @@ public sealed class RealExecutionTests : IDisposable
     {
         var report = AlgorithmHarness.RunSuite();
         Assert.NotNull(report);
-        Assert.Equal(7, report.Results.Count);
-        Assert.Equal(7, report.PassedCount);
+        Assert.Equal(10, report.Results.Count);
+        Assert.Equal(10, report.PassedCount);
         Assert.Equal(0, report.FailedCount);
 
         Assert.Contains(report.Results, r => r.Id == "ALG.PHANTOM_GATE" && r.Passed);

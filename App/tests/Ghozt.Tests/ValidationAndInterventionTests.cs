@@ -387,4 +387,132 @@ public sealed class ValidationAndInterventionTests : IDisposable
         Assert.Equal("Stack exploded past 500 items", failure.Attribute("message")?.Value);
         Assert.Equal("Clamped back-stack", failure.Value);
     }
+
+    [Fact]
+    public void AlgorithmHarness_Suite_EvaluatesAll10Invariants_IncludingMetamorphicAndAsymptotic()
+    {
+        var report = AlgorithmHarness.RunSuite();
+
+        Assert.Equal(10, report.Results.Count);
+        Assert.Equal(10, report.PassedCount);
+        Assert.Equal(0, report.FailedCount);
+        Assert.False(string.IsNullOrWhiteSpace(report.Sha256Digest));
+
+        var permute = report.Results.FirstOrDefault(r => r.Id == "ALG.METAMORPHIC_PERMUTE");
+        Assert.NotNull(permute);
+        Assert.True(permute.Passed);
+        Assert.Equal("Information Theory", permute.Domain);
+
+        var monotone = report.Results.FirstOrDefault(r => r.Id == "ALG.METAMORPHIC_MONOTONE");
+        Assert.NotNull(monotone);
+        Assert.True(monotone.Passed);
+
+        var asymp = report.Results.FirstOrDefault(r => r.Id == "ALG.WILSON_ASYMPTOTIC");
+        Assert.NotNull(asymp);
+        Assert.True(asymp.Passed);
+
+        // Verify markdown dossier generation
+        var dossier = AlgorithmHarness.GenerateMathematicalDossier(report);
+        Assert.Contains("ALG.METAMORPHIC_PERMUTE", dossier);
+        Assert.Contains("ALG.WILSON_ASYMPTOTIC", dossier);
+    }
+
+    [Fact]
+    public void AlgorithmHarness_RunComplexitySuite_EvaluatesEmpiricalBigOScaling_PassesBounds()
+    {
+        var report = AlgorithmHarness.RunComplexitySuite();
+
+        Assert.Equal(3, report.Results.Count);
+        Assert.True(report.PassedCount >= 2); // At least 2 of 3 assays pass strictly under timer variations
+        Assert.False(string.IsNullOrWhiteSpace(report.Sha256Digest));
+
+        foreach (var benchmark in report.Results)
+        {
+            Assert.NotEmpty(benchmark.Samples);
+            Assert.True(benchmark.EmpiricalAlpha >= 0.0);
+            Assert.Contains("O(", benchmark.TheoreticalComplexity);
+        }
+
+        // Test empirical alpha helper directly
+        var p1 = new ComplexitySample(100, 100.0);
+        var p2 = new ComplexitySample(1000, 1000.0); // Exact linear scaling: 10x size -> 10x time
+        var alpha = AlgorithmHarness.ComputeEmpiricalAlpha(p1, p2);
+        Assert.InRange(alpha, 0.99, 1.01);
+    }
+
+    [Fact]
+    public void AlgorithmHarness_MinimizeInput_DeltaDebugging_IsolatesMinimalTriggerSubset()
+    {
+        var inputVector = new[]
+        {
+            "noise_0", "noise_1", "key:trigger_a", "noise_2",
+            "noise_3", "noise_4", "key:trigger_b", "noise_5"
+        };
+
+        static bool IsFailing(IReadOnlyList<string> sub) =>
+            sub.Contains("key:trigger_a") && sub.Contains("key:trigger_b");
+
+        var minimal = AlgorithmHarness.MinimizeInput(inputVector, IsFailing);
+
+        Assert.Equal(2, minimal.Count);
+        Assert.Contains("key:trigger_a", minimal);
+        Assert.Contains("key:trigger_b", minimal);
+    }
+
+    [Fact]
+    public async Task SweepEngine_RunsRegressionGuardingCheck_WhenGuardsExist_EvaluatesAndCapturesEvidence()
+    {
+        var target = new Target
+        {
+            Id = _store.NextId(IdKind.Target),
+            Name = "Regression Target",
+            Kind = "API Service",
+            Environment = TargetEnvironment.Local,
+            Access = AccessClass.ObserveOnly,
+            BaseAddress = _tempDir,
+            Reachable = true
+        };
+        _store.Save(target);
+
+        // Add a finding that derives into a guard
+        var finding = new Finding
+        {
+            Id = _store.NextId(IdKind.Fault),
+            TargetId = target.Id,
+            SweepId = _store.NextId(IdKind.Sweep),
+            NodeId = "node-reg-1",
+            Title = "Path unreachable",
+            Expected = "readable file path",
+            Actual = "Path not found: non_existent",
+            Severity = Severity.Medium,
+            Maturity = FindingMaturity.Verified, // Marks guard as passing
+            Fingerprint = "fp-reg-1"
+        };
+        _store.Save(finding);
+
+        var sweep = new Sweep
+        {
+            Id = _store.NextId(IdKind.Sweep),
+            TargetId = target.Id,
+            Name = "Full Sweep Regression Audit",
+            Mode = "Full sweep",
+            State = RunState.PreFlight,
+            MaxStates = 100,
+            MaxSeconds = 30,
+            MaxDepth = 10,
+            CreatedAt = DateTimeOffset.Now
+        };
+        _store.Save(sweep);
+
+        var engine = new SweepEngine(_store);
+        var completed = await engine.RunAsync(sweep, target, null, CancellationToken.None);
+
+        Assert.Equal(RunState.Completed, completed.State);
+
+        // Verify regression:audit evidence was captured
+        var evidenceItems = _store.EvidenceItems(target.Id);
+        var regEvidence = evidenceItems.FirstOrDefault(e => e.Kind == "regression:audit");
+        Assert.NotNull(regEvidence);
+        Assert.Contains("Regression Guard Audit", regEvidence.Summary);
+    }
 }
