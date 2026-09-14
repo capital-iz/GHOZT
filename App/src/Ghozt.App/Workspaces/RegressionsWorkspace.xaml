@@ -33,6 +33,10 @@
                             Click="OnExportSuite" x:Name="ExportSuiteButton"
                             ToolTip="Exports regression guards as machine-readable JSON to %LOCALAPPDATA%\Capital-Iz\Ghozt\Guards"
                             AutomationProperties.Name="Export regression guard suite as JSON" />
+                    <Button Margin="8,0,0,0" Content="Change Impact"
+                            Click="OnAnalyzeChangeImpact" x:Name="ChangeImpactButton"
+                            ToolTip="Analyzes source change impact on State Lattice nodes and regression guards (Patent §31)"
+                            AutomationProperties.Name="Analyze change impact" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

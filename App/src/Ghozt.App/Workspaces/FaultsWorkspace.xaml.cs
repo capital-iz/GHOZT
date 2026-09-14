@@ -97,6 +97,7 @@ public partial class FaultsWorkspace : UserControl
         AdvanceButton.IsEnabled = finding is not null && NextMaturity(finding) is not null;
         CausalButton.IsEnabled = finding is not null;
         FixBriefButton.IsEnabled = finding is not null;
+        VerifyRepairButton.IsEnabled = finding is not null;
         AssignButton.IsEnabled = finding is not null;
 
         if (finding is null || Shell.Target is null)
@@ -279,6 +280,38 @@ public partial class FaultsWorkspace : UserControl
         catch (Exception ex)
         {
             Shell.Log("FXB.EXPORT.FAIL", $"Failed to export Fix Brief {_currentFixBrief.Id}: {ex.Message}", Severity.Medium);
+        }
+    }
+
+    private async void OnVerifyRepair(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding || Shell.Target is not { } target) return;
+
+        VerifyRepairButton.IsEnabled = false;
+        VerifyRepairButton.Content = "Verifying…";
+
+        try
+        {
+            var fixBrief = _currentFixBrief ?? new FixBriefEngine(App.Store).Generate(finding, target, _currentHypothesis);
+            var verifier = new RepairVerifier(App.Store);
+            var result = await verifier.VerifyRepairAsync(target, finding, fixBrief);
+
+            Shell.Log(result.Passed ? "REPAIR.VERIFIED" : "REPAIR.REJECTED",
+                result.Detail,
+                result.Passed ? Severity.Info : Severity.High,
+                related: finding.Id.ToString());
+
+            Refresh();
+            Shell.Refresh();
+        }
+        catch (Exception ex)
+        {
+            Shell.Log("REPAIR.VERIFY.ERROR", $"Repair verification failed to complete: {ex.Message}", Severity.High);
+        }
+        finally
+        {
+            VerifyRepairButton.IsEnabled = Selected is not null;
+            VerifyRepairButton.Content = "Verify Repair";
         }
     }
 

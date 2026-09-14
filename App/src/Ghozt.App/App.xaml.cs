@@ -34,6 +34,26 @@ public partial class App : Application
         // blemish while a screen that will not open is a broken product.
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
+        var args = Environment.GetCommandLineArgs();
+
+        // Autonomous Headless CLI Execution (Patent §38)
+        if (args.Contains("--headless") || args.Contains("--sweep") || (args.Contains("--self-test") && !args.Contains("--capture")))
+        {
+            var options = HeadlessRunner.ParseArgs(args);
+            var dbPath = !string.IsNullOrWhiteSpace(options.DatabasePath)
+                ? options.DatabasePath
+                : GhoztStore.DefaultDatabasePath;
+
+            _store = new GhoztStore(dbPath);
+            Store = _store;
+
+            var runner = new HeadlessRunner(_store);
+            var exitCode = runner.RunAsync(options).GetAwaiter().GetResult();
+            _store.Dispose();
+            Environment.Exit(exitCode);
+            return;
+        }
+
         _store = new GhoztStore(GhoztStore.DefaultDatabasePath);
         Store = _store;
 
@@ -56,8 +76,6 @@ public partial class App : Application
         // empty in a project that lets the SDK write Main - which is every WPF app that does not
         // hand-roll one. Environment.GetCommandLineArgs() is populated either way, so the capture
         // switch works whether or not that generated entry point ever changes.
-        var args = Environment.GetCommandLineArgs();
-
         var capture = Array.IndexOf(args, "--capture");
         if (capture >= 0 && capture + 1 < args.Length)
         {

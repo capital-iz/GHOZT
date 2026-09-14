@@ -35,6 +35,10 @@
                             x:Name="FixBriefButton" IsEnabled="False"
                             ToolTip="Generates a bounded repair contract with scope constraints and rejection rules"
                             AutomationProperties.Name="Generate bounded Fix Brief" />
+                    <Button Margin="8,0,0,0" Content="Verify Repair" Click="OnVerifyRepair"
+                            x:Name="VerifyRepairButton" IsEnabled="False"
+                            ToolTip="Formally verifies code repair against Fix Brief and regression guards (Patent §30)"
+                            AutomationProperties.Name="Verify bounded repair" />
                     <Button Margin="8,0,0,0" Content="Assign to me" Click="OnAssign"
                             x:Name="AssignButton" IsEnabled="False"
                             AutomationProperties.Name="Assign the finding to the current operator" />

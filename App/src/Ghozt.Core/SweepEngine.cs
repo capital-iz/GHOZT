@@ -241,7 +241,7 @@ public sealed class SweepEngine
         return current;
     }
 
-    private sealed record CheckResult(
+    internal sealed record CheckResult(
         bool Passed,
         bool Blocked,
         string Summary,
@@ -259,7 +259,7 @@ public sealed class SweepEngine
     /// needs, the check is <em>blocked</em> - which is neither a pass nor a failure, and is the
     /// outcome the blueprint requires be distinguishable from both.
     /// </remarks>
-    private async Task<CheckResult> RunCheckAsync(
+    internal async Task<CheckResult> RunCheckAsync(
         string check,
         Sweep sweep,
         Target target,

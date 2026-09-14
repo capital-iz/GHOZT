@@ -294,4 +294,27 @@ public partial class RegressionsWorkspace : UserControl
             GuardsPanel.Children.Add(card);
         }
     }
+
+    private void OnAnalyzeChangeImpact(object sender, RoutedEventArgs e)
+    {
+        if (Shell?.Target is not { } target) return;
+
+        var engine = new ChangeImpactEngine(App.Store);
+        var baseDir = !string.IsNullOrWhiteSpace(target.BaseAddress) && Directory.Exists(target.BaseAddress)
+            ? target.BaseAddress
+            : "App";
+
+        var sampleFiles = new[]
+        {
+            Path.Combine(baseDir, "Services", "AuthService.cs"),
+            Path.Combine(baseDir, "Data", "GhoztStore.cs"),
+            Path.Combine(baseDir, "Workspaces", "ClearanceWorkspace.xaml"),
+        };
+
+        var assessment = engine.AssessImpact(target, sampleFiles);
+        GuardSummaryText.Text = $"Impact: {assessment.ImpactedGuards.Count} guard(s) affected · Risk: {assessment.RiskLevel}";
+        Shell.Log("CHANGE_IMPACT.ASSESSED", assessment.Summary,
+            assessment.RiskLevel >= ChangeRiskLevel.High ? Severity.High : Severity.Info,
+            detail: $"Recommended checks: {string.Join(", ", assessment.RecommendedSweepChecks)}");
+    }
 }
