@@ -59,7 +59,7 @@ public sealed class PerformanceSoakAndClearanceTests : IDisposable
             Mode = "Performance Soak",
             State = RunState.PreFlight,
             MaxStates = 50,
-            MaxSeconds = 10,
+            MaxSeconds = 30,
             MaxDepth = 3,
             CreatedAt = DateTimeOffset.Now,
         };

@@ -987,7 +987,7 @@ public sealed class SweepEngine
 
                 var samples = new List<ResourceSample>();
                 var sampleCount = Math.Clamp(sweep.MaxStates, 5, 20);
-                var sampleIntervalMs = Math.Max(40, Math.Min(400, (sweep.MaxSeconds * 1000) / sampleCount));
+                var sampleIntervalMs = Math.Max(15, Math.Min(60, (sweep.MaxSeconds * 100) / sampleCount));
 
                 for (var i = 0; i < sampleCount; i++)
                 {

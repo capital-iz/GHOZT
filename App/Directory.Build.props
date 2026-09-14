@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
 
   <!--
     Shared build settings for every Ghozt project.
@@ -23,9 +23,9 @@
     <Product>Ghozt - Dev Tester</Product>
     <Authors>Capital-Iz</Authors>
     <Copyright>Copyright (c) Capital-Iz</Copyright>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
   </PropertyGroup>
 
 </Project>

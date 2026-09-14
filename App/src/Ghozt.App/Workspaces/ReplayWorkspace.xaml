@@ -392,6 +392,90 @@
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>
+
+                        <!-- Tab 6: Deterministic Replay & Envelope (Patent §27 & §28) -->
+                        <TabItem Header="Replay &amp; Envelope">
+                            <ScrollViewer Padding="14,12" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="DETERMINISTIC REPLAY &amp; ENVELOPE" Style="{StaticResource Type.MicroLabelStyle}" />
+
+                                    <WrapPanel Margin="0,8,0,12">
+                                        <Button x:Name="BuildReplayPackageButton" Content="Compile Replay Package"
+                                                Click="OnBuildReplayPackage" Style="{StaticResource Button.Primary}" Margin="0,0,8,4"
+                                                ToolTip="Constructs formal Patent Table 49 Replay Package specification" />
+                                        <Button x:Name="VerifyDeterminismButton" Content="Evaluate Replay Determinism"
+                                                Click="OnVerifyDeterminism" Margin="0,0,0,4"
+                                                ToolTip="Evaluates execution reproducibility outcome and derives Table 52 envelope" />
+                                    </WrapPanel>
+
+                                    <!-- Table 50 Outcome Badge Card -->
+                                    <Border Margin="0,0,0,12" Padding="12" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="REPLAY OUTCOME (TABLE 50)" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" />
+                                                <Border Grid.Column="1" x:Name="ReplayOutcomeBadge" Padding="8,3" CornerRadius="4"
+                                                        Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1">
+                                                    <TextBlock x:Name="ReplayOutcomeText" Text="NOT EVALUATED" FontWeight="Bold" FontSize="10" Style="{StaticResource Type.MicroLabelStyle}" />
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock x:Name="ReplayOutcomeDetailText" Margin="0,6,0,0" Text="Click 'Compile Replay Package' to generate deterministic execution contract." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Table 52 Reproduction Envelope Card -->
+                                    <TextBlock Text="REPRODUCTION ENVELOPE (TABLE 52)" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Reproducibility Score:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="ReproScoreText" Text="—" Style="{StaticResource Type.MonoStyle}" Foreground="{DynamicResource Authority.Clearance}" />
+                                            </Grid>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Wilson 95% Confidence:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="ReproWilsonText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Attempts / Reproductions:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="ReproAttemptsText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Timing Range:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="ReproTimingText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <TextBlock x:Name="ReproConditionsText" Margin="0,6,0,0" Text="Envelope synthesizes conditions under which the failure holds still." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Table 49 Replay Package YAML Preview -->
+                                    <TextBlock Text="REPLAY PACKAGE SPECIFICATION (TABLE 49)" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,0" Padding="8" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <TextBox x:Name="ReplayPackageYamlText" Text="# Replay package will appear here"
+                                                 IsReadOnly="True" Background="Transparent" Foreground="{DynamicResource Text.Secondary}"
+                                                 BorderThickness="0" TextWrapping="Wrap" FontFamily="{DynamicResource Font.Mono}" FontSize="10" MinHeight="140" />
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
                     </TabControl>
                 </Border>
             </Grid>
