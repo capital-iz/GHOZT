@@ -795,24 +795,14 @@ public sealed class SweepEngine
     /// </remarks>
     private void RecordFinding(CheckResult result, Sweep sweep, Target target)
     {
-        var fingerprint = Hashing.Fingerprint(target.Id.ToString(), result.Summary, result.Expected);
-        var existing = _store.FindByFingerprint(target.Id, fingerprint);
+        var fingerprint = FaultFingerprint.Compute(
+            target.Id.ToString(),
+            result.Severity.ToString(),
+            "CHECK.DEVIATION",
+            result.Summary,
+            deltaSignature: result.Expected);
 
-        if (existing is not null)
-        {
-            _store.Save(existing with
-            {
-                LastSeenAt = DateTimeOffset.Now,
-                ReproAttempts = existing.ReproAttempts + 1,
-                ReproSuccesses = existing.ReproSuccesses + 1,
-            });
-
-            Log("FLT.RECUR", $"Deviation recurred: {result.Summary}", Severity.Medium, sweep, target,
-                $"finding={existing.Id}; fingerprint={fingerprint}; now {existing.ReproSuccesses + 1} of {existing.ReproAttempts + 1} attempts");
-            return;
-        }
-
-        var finding = new Finding
+        var draft = new Finding
         {
             Id = _store.NextId(IdKind.Fault),
             TargetId = target.Id,
@@ -830,10 +820,7 @@ public sealed class SweepEngine
             EvidenceCount = 1,
         };
 
-        _store.Save(finding);
-
-        Log("FLT.NEW", $"New deviation recorded: {result.Summary}", result.Severity, sweep, target,
-            $"finding={finding.Id}; fingerprint={fingerprint}\n{result.Detail}");
+        FaultFingerprint.ClusterFinding(_store, draft, target, sweep);
     }
 
     private void Log(string code, string message, Severity severity, Sweep sweep, Target target, string detail)

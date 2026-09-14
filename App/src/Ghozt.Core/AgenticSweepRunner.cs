@@ -409,39 +409,27 @@ public sealed class AgenticSweepRunner
 
     private void RecordFinding(Target target, Sweep sweep, OracleResult oracle, string nodeId)
     {
-        var existing = _store.FindByFingerprint(target.Id, oracle.Fingerprint);
-        if (existing is not null)
+        var draft = new Finding
         {
-            _store.Save(existing with
-            {
-                ReproAttempts = existing.ReproAttempts + 1,
-                ReproSuccesses = existing.ReproSuccesses + 1,
-                LastSeenAt = DateTimeOffset.Now,
-                EvidenceCount = existing.EvidenceCount + 1,
-            });
-        }
-        else
-        {
-            _store.Save(new Finding
-            {
-                Id = _store.NextId(IdKind.Fault),
-                TargetId = target.Id,
-                SweepId = sweep.Id,
-                Title = oracle.Title,
-                Severity = oracle.Severity,
-                Maturity = FindingMaturity.New,
-                Actual = oracle.Actual,
-                Expected = oracle.Expected,
-                Fingerprint = oracle.Fingerprint,
-                ReproAttempts = 1,
-                ReproSuccesses = 1,
-                NodeId = nodeId,
-                Owner = target.Owner,
-                FirstSeenAt = DateTimeOffset.Now,
-                LastSeenAt = DateTimeOffset.Now,
-                EvidenceCount = 1,
-            });
-        }
+            Id = _store.NextId(IdKind.Fault),
+            TargetId = target.Id,
+            SweepId = sweep.Id,
+            Title = oracle.Title,
+            Severity = oracle.Severity,
+            Maturity = FindingMaturity.New,
+            Actual = oracle.Actual,
+            Expected = oracle.Expected,
+            Fingerprint = oracle.Fingerprint,
+            ReproAttempts = 1,
+            ReproSuccesses = 1,
+            NodeId = nodeId,
+            Owner = target.Owner,
+            FirstSeenAt = DateTimeOffset.Now,
+            LastSeenAt = DateTimeOffset.Now,
+            EvidenceCount = 1,
+        };
+
+        FaultFingerprint.ClusterFinding(_store, draft, target, sweep);
     }
 
     private static string GetActionKey(UiActionIntent intent) =>

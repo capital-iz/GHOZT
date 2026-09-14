@@ -313,6 +313,82 @@
                                             <TextBlock x:Name="ComparisonDivergenceText" Text="No baseline run selected for comparison." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
+
+                                    <TextBlock Text="FIRST STEP DIVERGENCE POINT" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <TextBlock x:Name="DivergencePointText" Text="No step divergence detected between runs." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                            <Button x:Name="JumpDivergenceBtn" Content="Jump to Divergence Step" Margin="0,8,0,0" Height="28" Padding="10,0"
+                                                    Click="OnJumpToDivergenceClicked" Visibility="Collapsed"
+                                                    ToolTip="Scroll timeline scrubber directly to the divergence step" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <!-- Tab 5: Sequence Minimiser (Patent §28) -->
+                        <TabItem Header="Sequence Minimiser">
+                            <ScrollViewer Padding="14,12" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="REPRODUCTION SEQUENCE MINIMISATION" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <TextBlock Text="Applies Delta Debugging (ddmin) to isolate the minimal critical path of state transitions reproducing the fault fingerprint while eliminating observational noise."
+                                               Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" Margin="0,4,0,8" />
+
+                                    <Button x:Name="MinimiseBtn" Content="Minimise Failing Sequence" Click="OnMinimiseSequenceClicked"
+                                            Height="28" Padding="14,0" HorizontalAlignment="Left" Margin="0,0,0,12"
+                                            ToolTip="Reduce action sequence to minimal causal subset (Patent §28)" />
+
+                                    <TextBlock Text="MINIMISATION METRICS" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <Border Margin="0,6,0,12" Padding="10" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                        <StackPanel>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Original Steps:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="MinOriginalStepsText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <Grid Margin="0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Minimal Critical Steps:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="MinReducedStepsText" Text="—" Style="{StaticResource Type.MonoStyle}" Foreground="{DynamicResource State.Verified}" />
+                                            </Grid>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Noise Elimination Ratio:" Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock Grid.Column="1" x:Name="MinReductionPercentText" Text="—" Style="{StaticResource Type.MonoStyle}" />
+                                            </Grid>
+                                            <TextBlock x:Name="MinimisationDetailText" Margin="0,6,0,0" Text="Click above to compute minimal causal subsequence." Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="MINIMAL CRITICAL ACTION SEQUENCE" Style="{StaticResource Type.MicroLabelStyle}" />
+                                    <ItemsControl x:Name="MinimisedStepsList" Margin="0,6,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,0,0,6" Padding="8,6" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Padding="6,2" CornerRadius="3" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" Margin="0,0,8,0">
+                                                            <TextBlock Text="{Binding StepIndex, StringFormat='Step {0}'}" Style="{StaticResource Type.MonoStyle}" FontSize="10" />
+                                                        </Border>
+                                                        <TextBlock Grid.Column="1" Text="{Binding ActionDescription}" Style="{StaticResource Type.BodyStyle}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>

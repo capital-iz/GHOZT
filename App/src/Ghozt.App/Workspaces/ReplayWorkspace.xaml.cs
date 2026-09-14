@@ -36,6 +36,7 @@ public partial class ReplayWorkspace : UserControl
     private bool _attached;
     private Sweep? _currentSweep;
     private Sweep? _compareSweep;
+    private int? _firstDivergenceIndex;
 
     public ReplayWorkspace()
     {
@@ -137,6 +138,9 @@ public partial class ReplayWorkspace : UserControl
             StepDeltaText.Text = "—";
             DurationDeltaText.Text = "—";
             ComparisonDivergenceText.Text = "Comparison requires two distinct sweep runs.";
+            if (DivergencePointText != null) DivergencePointText.Text = "Comparison requires two distinct sweep runs.";
+            if (JumpDivergenceBtn != null) JumpDivergenceBtn.Visibility = Visibility.Collapsed;
+            _firstDivergenceIndex = null;
             return;
         }
 
@@ -146,8 +150,11 @@ public partial class ReplayWorkspace : UserControl
         var allEvA = App.Store.EvidenceItems(runA.TargetId).Where(ev => ev.SweepId == runA.Id).ToList();
         var allEvB = App.Store.EvidenceItems(runB.TargetId).Where(ev => ev.SweepId == runB.Id).ToList();
 
-        var stepsA = allEvA.Count(ev => ev.Kind == "ui:screenshot/png");
-        var stepsB = allEvB.Count(ev => ev.Kind == "ui:screenshot/png");
+        var screenshotsA = allEvA.Where(ev => ev.Kind == "ui:screenshot/png").OrderBy(e => e.CapturedAt).ToList();
+        var screenshotsB = allEvB.Where(ev => ev.Kind == "ui:screenshot/png").OrderBy(e => e.CapturedAt).ToList();
+
+        var stepsA = screenshotsA.Count;
+        var stepsB = screenshotsB.Count;
         var stepDelta = stepsA - stepsB;
 
         var findingsA = App.Store.Findings(runA.TargetId).Where(f => f.SweepId == runA.Id).ToList();
@@ -185,6 +192,43 @@ public partial class ReplayWorkspace : UserControl
         }
 
         ComparisonDivergenceText.Text = sb.ToString().TrimEnd();
+
+        // Compute step-by-step divergence
+        _firstDivergenceIndex = null;
+        var minSteps = Math.Min(stepsA, stepsB);
+        for (var i = 0; i < minSteps; i++)
+        {
+            if (!string.Equals(screenshotsA[i].Summary, screenshotsB[i].Summary, StringComparison.OrdinalIgnoreCase))
+            {
+                _firstDivergenceIndex = i;
+                break;
+            }
+        }
+
+        if (!_firstDivergenceIndex.HasValue && stepsA != stepsB)
+        {
+            _firstDivergenceIndex = minSteps;
+        }
+
+        if (_firstDivergenceIndex.HasValue && DivergencePointText != null)
+        {
+            var idx = _firstDivergenceIndex.Value;
+            var descA = idx < stepsA ? screenshotsA[idx].Summary : "(end of run)";
+            var descB = idx < stepsB ? screenshotsB[idx].Summary : "(end of run)";
+            DivergencePointText.Text = $"First divergence observed at Step {idx + 1}:\nRun A: {descA}\nRun B: {descB}";
+            if (JumpDivergenceBtn != null)
+            {
+                JumpDivergenceBtn.Visibility = idx < _steps.Count ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+        else if (DivergencePointText != null)
+        {
+            DivergencePointText.Text = "No step divergence detected: execution paths matched identically.";
+            if (JumpDivergenceBtn != null)
+            {
+                JumpDivergenceBtn.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 
     private void LoadSweep(Sweep? sweep)
@@ -451,6 +495,67 @@ public partial class ReplayWorkspace : UserControl
         else
         {
             StopPlayback();
+        }
+    }
+
+    private void OnJumpToDivergenceClicked(object sender, RoutedEventArgs e)
+    {
+        if (_firstDivergenceIndex.HasValue && _firstDivergenceIndex.Value >= 0 && _firstDivergenceIndex.Value < _steps.Count)
+        {
+            ShowStep(_firstDivergenceIndex.Value);
+        }
+    }
+
+    private void OnMinimiseSequenceClicked(object sender, RoutedEventArgs e)
+    {
+        if (_steps.Count == 0)
+        {
+            if (MinimisationDetailText != null)
+            {
+                MinimisationDetailText.Text = "No steps available in active sweep to minimise.";
+            }
+            return;
+        }
+
+        var result = SequenceMinimizer.MinimizeSequence(
+            _steps,
+            step => !step.Success ||
+                    step.Kind.Contains("click", StringComparison.OrdinalIgnoreCase) ||
+                    step.Kind.Contains("invoke", StringComparison.OrdinalIgnoreCase) ||
+                    step.Kind.Contains("set", StringComparison.OrdinalIgnoreCase) ||
+                    step.ActionDescription.Contains("click", StringComparison.OrdinalIgnoreCase) ||
+                    step.ActionDescription.Contains("navigate", StringComparison.OrdinalIgnoreCase) ||
+                    step.ActionDescription.Contains("type", StringComparison.OrdinalIgnoreCase),
+            step => !step.Success,
+            (a, b) => a.ActionDescription == b.ActionDescription && a.Kind == b.Kind);
+
+        if (MinOriginalStepsText != null) MinOriginalStepsText.Text = $"{result.OriginalCount} steps";
+        if (MinReducedStepsText != null) MinReducedStepsText.Text = $"{result.MinimalCount} steps";
+        if (MinReductionPercentText != null) MinReductionPercentText.Text = $"{result.ReductionPercent:F1}% noise eliminated";
+        if (MinimisationDetailText != null)
+        {
+            MinimisationDetailText.Text = $"Reduced from {result.OriginalCount} to {result.MinimalCount} steps. Pruned {result.PrunedCount} observational/duplicate step(s) while preserving causal fault path.";
+        }
+
+        if (MinimisedStepsList != null)
+        {
+            MinimisedStepsList.ItemsSource = result.MinimalSequence;
+        }
+
+        if (_currentSweep != null && Shell?.Target != null)
+        {
+            App.Store.Append(new LedgerEvent
+            {
+                Id = App.Store.NextId(IdKind.Event),
+                At = DateTimeOffset.Now,
+                Code = "RPL.MINIMISE",
+                Message = $"Minimised replay sequence for sweep {_currentSweep.Id} to {result.MinimalCount} critical steps ({result.ReductionPercent}% noise reduction).",
+                Severity = Severity.Info,
+                TargetId = _currentSweep.TargetId,
+                SweepId = _currentSweep.Id,
+                Actor = "SequenceMinimizer",
+                Detail = $"Original: {result.OriginalCount} steps, Minimal: {result.MinimalCount} steps, Pruned: {result.PrunedCount} steps.",
+            });
         }
     }
 }

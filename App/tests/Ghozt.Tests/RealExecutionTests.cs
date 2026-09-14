@@ -376,6 +376,12 @@ public sealed class RealExecutionTests : IDisposable
         var algorithmsXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
         Assert.Contains("OnExportDossier", algorithmsXaml);
         Assert.Contains("DomainFilter", algorithmsXaml);
+
+        var replayXaml = File.ReadAllText(Path.Combine(basePath, "ReplayWorkspace.xaml"));
+        Assert.Contains("OnMinimiseSequenceClicked", replayXaml);
+        Assert.Contains("OnJumpToDivergenceClicked", replayXaml);
+        Assert.Contains("MinimisedStepsList", replayXaml);
+        Assert.Contains("JumpDivergenceBtn", replayXaml);
     }
 
     [Fact]
