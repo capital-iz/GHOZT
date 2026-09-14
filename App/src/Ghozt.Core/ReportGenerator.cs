@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Security;
 using System.Text;
 using System.Text.Json;
 
@@ -23,6 +25,8 @@ public sealed record ForensicReport
     public required string MarkdownContent { get; init; }
     public required string HtmlContent { get; init; }
     public required string JsonContent { get; init; }
+    public string SarifContent { get; init; } = "";
+    public string JUnitXmlContent { get; init; } = "";
 }
 
 /// <summary>
@@ -30,6 +34,8 @@ public sealed record ForensicReport
 /// </summary>
 public sealed class ReportGenerator
 {
+    private static readonly JsonSerializerOptions s_indentedJson = new() { WriteIndented = true };
+
     private readonly GhoztStore _store;
 
     public ReportGenerator(GhoztStore store) => _store = store;
@@ -173,8 +179,11 @@ public sealed class ReportGenerator
             })
         };
 
-        var jsonContent = JsonSerializer.Serialize(jsonModel, new JsonSerializerOptions { WriteIndented = true });
+        var jsonContent = JsonSerializer.Serialize(jsonModel, s_indentedJson);
         var seal = Hashing.Sha256(jsonContent);
+
+        var sarifContent = BuildSarif(target, findings);
+        var junitContent = BuildJUnitXml(target, sweeps, findings);
 
         return new ForensicReport
         {
@@ -193,6 +202,115 @@ public sealed class ReportGenerator
             MarkdownContent = mdContent,
             HtmlContent = htmlContent,
             JsonContent = jsonContent,
+            SarifContent = sarifContent,
+            JUnitXmlContent = junitContent,
         };
+    }
+
+    /// <summary>
+    /// Generates an OASIS SARIF v2.1.0 compliant report for CI/CD and security scanners (Patent §32).
+    /// </summary>
+    public static string BuildSarif(Target target, IReadOnlyList<Finding> findings)
+    {
+        var rules = findings.GroupBy(f => f.Fingerprint.Length >= 8 ? f.Fingerprint[..8] : f.Id.ToString())
+            .Select(g => new
+            {
+                id = "GHOZT-" + g.Key,
+                name = g.First().Title,
+                shortDescription = new { text = g.First().Title },
+                fullDescription = new { text = $"Expected: {g.First().Expected}. Observed: {g.First().Actual}" },
+                defaultConfiguration = new { level = g.First().Severity >= Severity.High ? "error" : "warning" }
+            }).ToList();
+
+        var results = findings.Select(f => new
+        {
+            ruleId = "GHOZT-" + (f.Fingerprint.Length >= 8 ? f.Fingerprint[..8] : f.Id.ToString()),
+            level = f.Severity == Severity.Critical ? "error" : f.Severity == Severity.High ? "error" : f.Severity == Severity.Medium ? "warning" : "note",
+            message = new { text = $"{f.Title} | Observed: {f.Actual} | Expected: {f.Expected}" },
+            locations = new[]
+            {
+                new
+                {
+                    physicalLocation = new
+                    {
+                        artifactLocation = new { uri = !string.IsNullOrWhiteSpace(target.BaseAddress) ? target.BaseAddress.Replace('\\', '/') : target.Name },
+                        region = new { startLine = 1 }
+                    }
+                }
+            },
+            properties = new
+            {
+                findingId = f.Id.ToString(),
+                nodeId = f.NodeId,
+                reproducibility = f.Reproducibility,
+                isPhantom = f.IsPhantom,
+                maturity = f.Maturity.ToString()
+            }
+        }).ToList();
+
+        var sarif = new
+        {
+            schema = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            version = "2.1.0",
+            runs = new[]
+            {
+                new
+                {
+                    tool = new
+                    {
+                        driver = new
+                        {
+                            name = "Ghozt - Dev Tester",
+                            version = "0.2.7",
+                            informationUri = "https://github.com/capital-iz/GHOZT",
+                            rules
+                        }
+                    },
+                    results
+                }
+            }
+        };
+
+        return JsonSerializer.Serialize(sarif, s_indentedJson);
+    }
+
+    /// <summary>
+    /// Generates standard JUnit XML format for CI test reporting engines (Jenkins, GitLab CI) (Patent §32).
+    /// </summary>
+    public static string BuildJUnitXml(Target target, IReadOnlyList<Sweep> sweeps, IReadOnlyList<Finding> findings)
+    {
+        var sb = new StringBuilder();
+        var totalTests = Math.Max(1, sweeps.Sum(s => s.StatesVisited));
+        var failures = findings.Count;
+        var totalSeconds = sweeps.Sum(s => s.FinishedAt is { } fin && s.StartedAt is { } start && fin > start ? (fin - start).TotalSeconds : 0.0);
+
+        sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"<testsuites name=\"Ghozt Forensic Audit: {SecurityElement.Escape(target.Name)}\" tests=\"{totalTests}\" failures=\"{failures}\" errors=\"0\" time=\"{totalSeconds:F3}\">");
+
+        foreach (var sweep in sweeps)
+        {
+            var sweepFindings = findings.Where(f => f.SweepId == sweep.Id).ToList();
+            var sweepDuration = sweep.FinishedAt is { } sfin && sweep.StartedAt is { } sstart && sfin > sstart ? (sfin - sstart).TotalSeconds : 0.0;
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  <testsuite name=\"Sweep.{SecurityElement.Escape(sweep.Id.ToString())}\" tests=\"{Math.Max(1, sweep.StatesVisited)}\" failures=\"{sweepFindings.Count}\" errors=\"0\" time=\"{sweepDuration:F3}\">");
+
+            if (sweepFindings.Count == 0)
+            {
+                sb.AppendLine(CultureInfo.InvariantCulture, $"    <testcase classname=\"{SecurityElement.Escape(target.Name)}\" name=\"Sweep_{SecurityElement.Escape(sweep.Mode)}\" time=\"{sweepDuration:F3}\" />");
+            }
+            else
+            {
+                foreach (var f in sweepFindings)
+                {
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"    <testcase classname=\"{SecurityElement.Escape(target.Name)}\" name=\"{SecurityElement.Escape(f.Title)}\" time=\"0.010\">");
+                    sb.AppendLine(CultureInfo.InvariantCulture, $"      <failure message=\"{SecurityElement.Escape(f.Actual)}\" type=\"{f.Severity}\">{SecurityElement.Escape(f.Expected)}</failure>");
+                    sb.AppendLine("    </testcase>");
+                }
+            }
+
+            sb.AppendLine("  </testsuite>");
+        }
+
+        sb.AppendLine("</testsuites>");
+        return sb.ToString();
     }
 }

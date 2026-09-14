@@ -53,9 +53,9 @@ public sealed class SweepEngine
     {
         "Smoke" => ["Reachability", "Identity", "Structure"],
         "Changed area" => ["Reachability", "Identity", "Structure", "Integrity"],
-        "Full sweep" => ["Reachability", "Identity", "Structure", "Integrity", "Capacity", "Consistency"],
-        "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Capacity", "Consistency", "Provenance"],
-        "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Integrity"],
+        "Full sweep" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Capacity", "Consistency"],
+        "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Capacity", "Consistency", "Provenance"],
+        "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Quality Validation", "Integrity"],
         _ => ["Reachability", "Identity"],
     };
 
@@ -776,6 +776,86 @@ public sealed class SweepEngine
                     Detail: $"Explored {subSweep.StatesVisited} states, captured {subSweep.EvidenceCaptured} artefacts, found {subSweep.DeviationsFound} deviations.",
                     Severity: subSweep.DeviationsFound > 0 ? Severity.Medium : Severity.Info,
                     StatesVisited: Math.Max(1, subSweep.StatesVisited));
+            }
+
+            case "Quality Validation":
+            {
+                var reports = await ValidationRegistry.Default.RunAllAsync(target, _store, cancellation).ConfigureAwait(false);
+                var totalFindings = reports.Sum(r => r.Findings.Count);
+                var totalMetrics = reports.Sum(r => r.Metrics.Count);
+                var totalViolations = reports.Count(r => !r.Passed);
+                var worstSeverity = reports.SelectMany(r => r.Findings).Select(f => f.Severity).DefaultIfEmpty(Severity.Info).Max();
+
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine($"Multi-Modal Validation Registry executed {reports.Count} modules:");
+                foreach (var rep in reports)
+                {
+                    detailSb.AppendLine($"- [{rep.ModuleId}] {rep.ModuleName}: {(rep.Passed ? "PASS" : "DEVIATION")} ({rep.Findings.Count} findings, {rep.Metrics.Count} metrics)");
+                    if (rep.Findings.Count > 0)
+                    {
+                        foreach (var f in rep.Findings)
+                        {
+                            detailSb.AppendLine($"    * {f.Severity} [{f.Category}]: {f.Title} ({f.Actual})");
+
+                            var fp = FaultFingerprint.Compute(
+                                target.Id.ToString(),
+                                f.Category,
+                                "VAL.DEVIATION",
+                                f.Title,
+                                deltaSignature: f.Expected);
+
+                            var finding = new Finding
+                            {
+                                Id = _store.NextId(IdKind.Fault),
+                                TargetId = target.Id,
+                                SweepId = sweep.Id,
+                                Title = f.Title,
+                                Severity = f.Severity,
+                                Maturity = FindingMaturity.New,
+                                Expected = f.Expected,
+                                Actual = !string.IsNullOrWhiteSpace(f.Actual) ? $"{f.Actual} ({f.Description})" : f.Description,
+                                NodeId = f.LatticeNodeId,
+                                Fingerprint = fp,
+                                FirstSeenAt = DateTimeOffset.Now,
+                                LastSeenAt = DateTimeOffset.Now,
+                                ReproAttempts = 1,
+                                ReproSuccesses = 1,
+                            };
+                            FaultFingerprint.ClusterFinding(_store, finding, target, sweep);
+                        }
+                    }
+
+                    // Save module evidence artefact
+                    var modPayload = rep.EvidencePayload;
+                    _store.Save(new Evidence
+                    {
+                        Id = _store.NextId(IdKind.Evidence),
+                        TargetId = target.Id,
+                        SweepId = sweep.Id,
+                        Kind = $"validation:{rep.ModuleId}",
+                        Summary = rep.Summary,
+                        Sha256 = Hashing.Sha256(modPayload),
+                        SizeBytes = System.Text.Encoding.UTF8.GetByteCount(modPayload),
+                        Payload = modPayload,
+                        SourceAdapter = "ValidationRegistry",
+                        CapturedAt = DateTimeOffset.Now,
+                    });
+                }
+
+                if (totalFindings == 0)
+                {
+                    return new CheckResult(true, false,
+                        $"Quality validation passed: {reports.Count} modules, {totalMetrics} metrics verified with 0 defects.",
+                        detailSb.ToString(),
+                        Severity.Info, reports.Count);
+                }
+
+                return new CheckResult(false, false,
+                    $"Quality validation found {totalFindings} deviation(s) across {totalViolations} module(s).",
+                    detailSb.ToString(),
+                    worstSeverity, reports.Count,
+                    "Zero quality, security or accessibility deviations",
+                    $"{totalFindings} deviations detected");
             }
 
             default:

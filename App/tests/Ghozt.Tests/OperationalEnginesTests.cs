@@ -76,7 +76,7 @@ public sealed class OperationalEnginesTests : IDisposable
         var decision = engine.EvaluateTarget(target);
 
         Assert.Equal(ClearanceOutcome.Cleared, decision.Outcome);
-        Assert.Equal(6, decision.Gates.Count);
+        Assert.Equal(8, decision.Gates.Count);
         Assert.All(decision.Gates.Where(g => g.Mandatory), g => Assert.True(g.Passed));
         Assert.NotEmpty(decision.EvidenceDigest);
     }

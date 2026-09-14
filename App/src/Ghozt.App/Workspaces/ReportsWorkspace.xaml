@@ -30,6 +30,12 @@
                     <Button Margin="8,0,0,0" Content="Export JSON" Click="OnExportJson"
                             x:Name="ExportJsonButton" IsEnabled="False"
                             ToolTip="Exports machine-readable evidence dataset" />
+                    <Button Margin="8,0,0,0" Content="Export SARIF" Click="OnExportSarif"
+                            x:Name="ExportSarifButton" IsEnabled="False"
+                            ToolTip="Exports OASIS SARIF v2.1.0 report for CI/CD security scanning" />
+                    <Button Margin="8,0,0,0" Content="Export JUnit" Click="OnExportJUnit"
+                            x:Name="ExportJUnitButton" IsEnabled="False"
+                            ToolTip="Exports JUnit XML testsuite report for CI engines" />
                     <Button Margin="8,0,0,0" Content="Open in Viewer" Click="OnOpenViewer"
                             x:Name="OpenViewerButton" IsEnabled="False"
                             ToolTip="Opens the exported dossier in the system's default viewer" />

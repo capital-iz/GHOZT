@@ -35,6 +35,8 @@ public partial class ReportsWorkspace : UserControl
         ExportMdButton.IsEnabled = true;
         ExportHtmlButton.IsEnabled = true;
         ExportJsonButton.IsEnabled = true;
+        ExportSarifButton.IsEnabled = true;
+        ExportJUnitButton.IsEnabled = true;
     }
 
     private void RenderReport(ForensicReport report)
@@ -184,6 +186,28 @@ public partial class ReportsWorkspace : UserControl
         File.WriteAllText(_lastExportedPath, _currentReport.JsonContent);
         StatusText.Text = $"Exported to {_lastExportedPath}";
         Shell?.Log("RPT.EXPORT.JSON", $"Exported JSON dataset {_currentReport.ReportId} to disk.", Severity.Info,
+            detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        OpenViewerButton.IsEnabled = true;
+    }
+
+    private void OnExportSarif(object sender, RoutedEventArgs e)
+    {
+        if (_currentReport is null) return;
+        _lastExportedPath = Path.Combine(GetReportsDirectory(), $"{_currentReport.ReportId}.sarif.json");
+        File.WriteAllText(_lastExportedPath, _currentReport.SarifContent);
+        StatusText.Text = $"Exported SARIF to {_lastExportedPath}";
+        Shell?.Log("RPT.EXPORT.SARIF", $"Exported OASIS SARIF v2.1.0 dossier {_currentReport.ReportId} to disk.", Severity.Info,
+            detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        OpenViewerButton.IsEnabled = true;
+    }
+
+    private void OnExportJUnit(object sender, RoutedEventArgs e)
+    {
+        if (_currentReport is null) return;
+        _lastExportedPath = Path.Combine(GetReportsDirectory(), $"{_currentReport.ReportId}.junit.xml");
+        File.WriteAllText(_lastExportedPath, _currentReport.JUnitXmlContent);
+        StatusText.Text = $"Exported JUnit XML to {_lastExportedPath}";
+        Shell?.Log("RPT.EXPORT.JUNIT", $"Exported JUnit XML report {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         OpenViewerButton.IsEnabled = true;
     }

@@ -131,23 +131,73 @@ public partial class FaultsWorkspace : UserControl
         InterventionsList.Children.Clear();
         foreach (var cfx in hyp.Interventions)
         {
-            var p = new StackPanel { Margin = new Thickness(0, 4, 0, 4) };
+            var p = new Border
+            {
+                Margin = new Thickness(0, 4, 0, 4),
+                Padding = new Thickness(8, 6, 8, 6),
+                Background = (Brush)TryFindResource("Surface.Inset"),
+                BorderBrush = (Brush)TryFindResource("Border.Subtle"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+            };
+            var itemSp = new StackPanel();
+            var headerRow = new Grid();
+            headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
             var header = new TextBlock
             {
-                Text = $"[{cfx.Id}] {cfx.Class}: {(cfx.OutcomePreventedDeviation ? "PREVENTED DEVIATION" : "NO EFFECT")}",
+                Text = $"[{cfx.Id}] {cfx.Class}: {(cfx.OutcomePreventedDeviation ? "PREVENTED DEVIATION" : (cfx.Class == InterventionClass.NegativeControl ? "EXPECTED NEGATIVE" : "NO EFFECT"))}",
                 FontSize = 10,
                 FontWeight = FontWeights.Bold,
-                Foreground = (Brush)(cfx.OutcomePreventedDeviation ? TryFindResource("State.Verified") : TryFindResource("Text.Muted")),
+                Foreground = (Brush)(cfx.OutcomePreventedDeviation || cfx.Class == InterventionClass.NegativeControl ? TryFindResource("State.Verified") : TryFindResource("Text.Muted")),
+                VerticalAlignment = VerticalAlignment.Center,
             };
+            headerRow.Children.Add(header);
+
+            var testBtn = new Button
+            {
+                Content = "Test Branch",
+                FontSize = 9,
+                Padding = new Thickness(8, 2, 8, 2),
+                Tag = cfx,
+            };
+            Grid.SetColumn(testBtn, 1);
+            testBtn.Click += async (s, ev) =>
+            {
+                if (Selected is not { } f || Shell.Target is not { } t) return;
+                testBtn.IsEnabled = false;
+                testBtn.Content = "Testing…";
+                var engine = new CausalForensicsEngine(App.Store);
+                var (updatedHyp, _) = await engine.ExecuteInterventionAsync(_currentHypothesis!, cfx, f, t);
+                _currentHypothesis = updatedHyp;
+                RenderCausalHypothesis(_currentHypothesis);
+            };
+            headerRow.Children.Add(testBtn);
+
             var desc = new TextBlock
             {
-                Text = $"{cfx.Description} (Factor changed: {cfx.FactorChanged})",
+                Text = $"{cfx.Description}\n(Factor changed: {cfx.FactorChanged} · Held: {cfx.FactorHeldConstant})",
                 Style = (Style)TryFindResource("Type.CaptionStyle"),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(4, 2, 0, 0),
+                Margin = new Thickness(0, 4, 0, 0),
             };
-            p.Children.Add(header);
-            p.Children.Add(desc);
+            itemSp.Children.Add(headerRow);
+            itemSp.Children.Add(desc);
+            if (!string.IsNullOrWhiteSpace(cfx.ObservationNote))
+            {
+                var note = new TextBlock
+                {
+                    Text = $"Evidence: {cfx.ObservationNote}",
+                    Style = (Style)TryFindResource("Type.MonoStyle"),
+                    FontSize = 9,
+                    Foreground = (Brush)TryFindResource("Text.Secondary"),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 4, 0, 0),
+                };
+                itemSp.Children.Add(note);
+            }
+            p.Child = itemSp;
             InterventionsList.Children.Add(p);
         }
 

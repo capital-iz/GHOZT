@@ -129,6 +129,49 @@ public sealed class ClearanceEngine
             EvidenceNote = explorationPassed ? $"{completedSweeps} sweep(s) completed successfully." : "No completed examination sweeps found for target.",
         });
 
+        // Gate 7: Multi-Modal Quality & Security Validation
+        var securityOrA11yViolations = findings.Count(f =>
+            (f.Severity is Severity.Critical or Severity.High) &&
+            (f.NodeId.StartsWith("sec:", StringComparison.OrdinalIgnoreCase) ||
+             f.NodeId.StartsWith("theme:", StringComparison.OrdinalIgnoreCase) ||
+             f.Title.Contains("security", StringComparison.OrdinalIgnoreCase) ||
+             f.Title.Contains("contrast", StringComparison.OrdinalIgnoreCase) ||
+             f.Title.Contains("key", StringComparison.OrdinalIgnoreCase) ||
+             f.Title.Contains("token", StringComparison.OrdinalIgnoreCase)));
+        var validationPassed = securityOrA11yViolations == 0;
+        gates.Add(new ClearanceGate
+        {
+            Id = "GATE.VALIDATION_REGISTRY",
+            Name = "Cross-Cutting Quality & Security Gate",
+            Requirement = "Zero unmitigated High or Critical security, credential leak, or accessibility defects.",
+            PolicySource = "Patent §16 & §22 Cross-Cutting Quality Specification",
+            Mandatory = true,
+            Passed = validationPassed,
+            Result = validationPassed ? "Passed" : $"Failed ({securityOrA11yViolations} high/critical breach{(securityOrA11yViolations == 1 ? "" : "es")})",
+            EvidenceNote = validationPassed
+                ? "Zero critical or high security/accessibility defects in active finding backlog."
+                : $"{securityOrA11yViolations} high/critical security or accessibility defect(s) require remediation before clearance.",
+        });
+
+        // Gate 8: Regression Guards Invariant
+        var regEngine = new RegressionEngine(_store);
+        var guards = regEngine.GenerateGuards(target.Id);
+        var failingGuards = guards.Count(g => g.Status == GuardStatus.Failing);
+        var guardsPassed = failingGuards == 0;
+        gates.Add(new ClearanceGate
+        {
+            Id = "GATE.REGRESSION_GUARDS",
+            Name = "Automated Regression Guard Integrity",
+            Requirement = "100% of active automated regression guards must be in passing state.",
+            PolicySource = "Patent §31 Regression Memory & Change Impact Canon",
+            Mandatory = true,
+            Passed = guardsPassed,
+            Result = guardsPassed ? "Passed" : $"Failed ({failingGuards} failing guard{(failingGuards == 1 ? "" : "s")})",
+            EvidenceNote = guardsPassed
+                ? $"All {guards.Count} active regression guard(s) evaluated and passing."
+                : $"{failingGuards} of {guards.Count} regression guard(s) currently failing.",
+        });
+
         // Compute Outcome
         var mandatoryFailed = gates.Any(g => g.Mandatory && !g.Passed);
         var optionalFailed = gates.Any(g => !g.Mandatory && !g.Passed);
