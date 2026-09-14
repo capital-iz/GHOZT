@@ -317,6 +317,20 @@ public partial class InspectorPanel : UserControl
                 }
             },
         },
+        new InspectorTab
+        {
+            Title = "Adapter", Available = true, Reason = "",
+            Render = panel =>
+            {
+                var adapter = AdapterRegistry.Shared.Resolve(t);
+                Field(panel, "Adapter", adapter.Manifest.Name);
+                Field(panel, "Key", adapter.Manifest.Key, mono: true);
+                Field(panel, "Version", adapter.Manifest.Version, mono: true);
+                Field(panel, "Capabilities", adapter.Manifest.Capabilities.ToString());
+                Field(panel, "Max access", adapter.Manifest.MaxAccessClass.ToString());
+                ProvenanceNote(panel, Ghozt.Theming.Provenance.Observed, "Resolved dynamically from the examination adapter registry.");
+            },
+        },
     ];
 
     private static IReadOnlyList<InspectorTab> BuildEvidenceTabs(Evidence e) =>

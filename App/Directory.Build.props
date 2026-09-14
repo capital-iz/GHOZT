@@ -23,9 +23,9 @@
     <Product>Ghozt - Dev Tester</Product>
     <Authors>Capital-Iz</Authors>
     <Copyright>Copyright (c) Capital-Iz</Copyright>
-    <Version>0.5.0</Version>
-    <AssemblyVersion>0.5.0.0</AssemblyVersion>
-    <FileVersion>0.5.0.0</FileVersion>
+    <Version>0.6.0</Version>
+    <AssemblyVersion>0.6.0.0</AssemblyVersion>
+    <FileVersion>0.6.0.0</FileVersion>
   </PropertyGroup>
 
 </Project>

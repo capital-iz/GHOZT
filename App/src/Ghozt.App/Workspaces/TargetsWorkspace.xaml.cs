@@ -247,74 +247,44 @@ public partial class TargetsWorkspace : UserControl
 
         Shell.Log("TGT.PROBE", $"Probing {target.Name}…", Severity.Info, related: target.Id.ToString());
 
+        var adapter = AdapterRegistry.Shared.Resolve(target);
+        Shell.Log("TGT.ADAPTER.RESOLVE",
+            $"Resolved examination adapter '{adapter.Manifest.Name}' ({adapter.Manifest.Key} v{adapter.Manifest.Version}).",
+            Severity.Info, related: target.Id.ToString());
+
         var reachable = false;
         var detail = "";
 
         try
         {
-            if (Uri.TryCreate(target.BaseAddress, UriKind.Absolute, out var uri)
-                && uri.Scheme is "http" or "https")
-            {
-                using var response = await Probe.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead)
-                    .ConfigureAwait(true);
-                reachable = response.IsSuccessStatusCode;
-                detail = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase} from {uri}";
-            }
-            else if (target.BaseAddress.StartsWith("process:", StringComparison.OrdinalIgnoreCase)
-                     && int.TryParse(target.BaseAddress["process:".Length..], out var pid))
-            {
-                try
-                {
-                    var proc = System.Diagnostics.Process.GetProcessById(pid);
-                    reachable = !proc.HasExited;
-                    var memMb = proc.WorkingSet64 / (1024.0 * 1024.0);
-                    var privMb = proc.PrivateMemorySize64 / (1024.0 * 1024.0);
-                    detail = reachable
-                        ? $"Process active: {proc.ProcessName} (PID {pid}, responding={proc.Responding}, WS={memMb:F1}MB, Priv={privMb:F1}MB, threads={proc.Threads.Count}, handles={proc.HandleCount})"
-                        : $"Process has exited: PID {pid}";
+            var preflight = await adapter.PreflightCheckAsync(target).ConfigureAwait(true);
+            reachable = preflight.Success;
+            detail = $"{preflight.Code}: {preflight.Message}";
 
-                    if (reachable)
+            if (preflight.Diagnostics.Count > 0)
+            {
+                var diagSummary = string.Join("; ", preflight.Diagnostics.Select(d => $"{d.Key}={d.Value}"));
+                Shell.Log("TGT.ADAPTER.PREFLIGHT", $"Adapter preflight: {diagSummary}",
+                    reachable ? Severity.Info : Severity.Medium, related: target.Id.ToString());
+            }
+
+            if (reachable)
+            {
+                var discovery = await adapter.DiscoverAsync(target).ConfigureAwait(true);
+                if (discovery.Success && discovery.DiscoveredNodes.Count > 0)
+                {
+                    foreach (var node in discovery.DiscoveredNodes)
                     {
-                        Shell.Log("TGT.TELEMETRY",
-                            $"Process telemetry for {proc.ProcessName} (PID {pid}): WS={memMb:F1}MB, Priv={privMb:F1}MB, threads={proc.Threads.Count}, handles={proc.HandleCount}.",
-                            Severity.Info, related: target.Id.ToString());
+                        App.Store.Save(node);
                     }
+                    Shell.Log("TGT.ADAPTER.DISCOVER",
+                        $"Adapter discovered {discovery.DiscoveredNodes.Count} lattice nodes on '{target.Name}'.",
+                        Severity.Info, related: target.Id.ToString());
                 }
-                catch (Exception pex)
-                {
-                    reachable = false;
-                    detail = $"Process unreachable: {pex.Message}";
-                }
-            }
-            else if (!string.IsNullOrWhiteSpace(target.BaseAddress))
-            {
-                if (Directory.Exists(target.BaseAddress))
-                {
-                    reachable = true;
-                    var dInfo = new DirectoryInfo(target.BaseAddress);
-                    detail = $"Directory exists: {target.BaseAddress} (created {dInfo.CreationTimeUtc:O})";
-                }
-                else if (File.Exists(target.BaseAddress))
-                {
-                    reachable = true;
-                    var fInfo = new FileInfo(target.BaseAddress);
-                    detail = $"File exists: {target.BaseAddress} ({fInfo.Length:N0} bytes)";
-                }
-                else
-                {
-                    reachable = false;
-                    detail = $"Path not found: {target.BaseAddress}";
-                }
-            }
-            else
-            {
-                detail = "No base address is registered, so reachability cannot be established.";
             }
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
-            // The failure is the result, and it is recorded as one. Swallowing it and reporting
-            // "unreachable" with no reason would hide which of several causes applied.
             detail = $"{ex.GetType().Name}: {ex.Message}";
         }
 
@@ -324,7 +294,7 @@ public partial class TargetsWorkspace : UserControl
 
         Shell.Log(
             reachable ? "TGT.PROBE.OK" : "TGT.PROBE.FAIL",
-            reachable ? $"{target.Name} is reachable." : $"{target.Name} could not be reached.",
+            reachable ? $"{target.Name} is reachable via {adapter.Manifest.Key}." : $"{target.Name} could not be reached via {adapter.Manifest.Key}.",
             reachable ? Severity.Info : Severity.Medium,
             detail: detail,
             related: target.Id.ToString());
