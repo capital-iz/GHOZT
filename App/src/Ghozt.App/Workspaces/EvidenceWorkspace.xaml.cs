@@ -345,4 +345,43 @@ public partial class EvidenceWorkspace : UserControl
         Refresh();
         Shell.Refresh();
     }
+
+    private AdaptiveCaptureEngine? _adaptiveCapture;
+
+    private AdaptiveCaptureEngine GetOrCreateAdaptiveCapture()
+    {
+        return _adaptiveCapture ??= new AdaptiveCaptureEngine(App.Store);
+    }
+
+    private void OnCaptureModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CaptureModeFilter?.SelectedItem is ComboBoxItem item &&
+            Enum.TryParse<CaptureMode>(item.Content?.ToString(), true, out var mode))
+        {
+            var engine = GetOrCreateAdaptiveCapture();
+            engine.CurrentMode = mode;
+            Shell?.Log("CAP.MODE.CHANGED", $"Active capture mode transitioned to {mode}.", Severity.Info);
+        }
+    }
+
+    private void OnFreezeRingBuffer(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            return;
+        }
+
+        var engine = GetOrCreateAdaptiveCapture();
+        var evidence = engine.SealForensicPackage(target, "Operator manual freeze from Evidence workspace");
+
+        Shell?.Log(
+            "EVD.FREEZE.RINGBUFFER",
+            $"Captured and sealed pre-failure forensic ring buffer artefact {evidence.Id} ({evidence.SizeBytes} bytes).",
+            Severity.Info,
+            related: evidence.Id.ToString());
+
+        Refresh();
+        Shell?.Refresh();
+    }
 }

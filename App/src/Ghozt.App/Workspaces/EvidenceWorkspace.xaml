@@ -46,18 +46,22 @@
                             Click="OnRedactAll"
                             ToolTip="Scans all artefacts for sensitive tokens, passwords and keys, replacing them with redaction markers"
                             AutomationProperties.Name="Redact sensitive data in all artefacts" />
+                    <Button Margin="6,0,0,0" x:Name="FreezeRingBufferButton" Content="Freeze ring buffer"
+                            Click="OnFreezeRingBuffer"
+                            ToolTip="Seals in-memory pre-failure ring buffer telemetry into an immutable forensic evidence artefact (Patent §23)"
+                            AutomationProperties.Name="Freeze pre-failure ring buffer" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SEARCH" />
-                        <TextBox x:Name="Search" Width="200" HorizontalAlignment="Left" Height="26"
+                        <TextBox x:Name="Search" Width="160" HorizontalAlignment="Left" Height="26"
                                  TextChanged="OnSearch"
                                  AutomationProperties.Name="Search evidence by summary, kind or hash" />
                     </StackPanel>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="KIND" />
-                        <ComboBox x:Name="KindFilter" Width="130" Height="26" SelectionChanged="OnKindFilterChanged"
+                        <ComboBox x:Name="KindFilter" Width="120" Height="26" SelectionChanged="OnKindFilterChanged"
                                   AutomationProperties.Name="Filter evidence by kind">
                             <ComboBoxItem Content="All Kinds" IsSelected="True" />
                             <ComboBoxItem Content="ui-tree" />
@@ -66,6 +70,19 @@
                             <ComboBoxItem Content="stderr" />
                             <ComboBoxItem Content="check" />
                             <ComboBoxItem Content="algorithm-proof" />
+                            <ComboBoxItem Content="forensic-ring-buffer" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="CAPTURE MODE" />
+                        <ComboBox x:Name="CaptureModeFilter" Width="120" Height="26" SelectionChanged="OnCaptureModeChanged"
+                                  AutomationProperties.Name="Select active capture fidelity mode">
+                            <ComboBoxItem Content="Baseline" IsSelected="True" />
+                            <ComboBoxItem Content="Anomaly" />
+                            <ComboBoxItem Content="Forensic" />
+                            <ComboBoxItem Content="Sensitive" />
+                            <ComboBoxItem Content="Performance" />
+                            <ComboBoxItem Content="StoragePressure" />
                         </ComboBox>
                     </StackPanel>
                 </StackPanel>

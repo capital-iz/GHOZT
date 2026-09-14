@@ -501,4 +501,48 @@ public partial class StateMapWorkspace : UserControl
             HighlightNode(node);
         }
     }
+
+    private void OnExploreClick(object sender, RoutedEventArgs e)
+    {
+        var target = Shell.Target;
+        if (target is null) return;
+
+        var startNodeId = _selectedNode?.Id ?? $"node-{target.Id}-root";
+        var engine = new ExplorationEngine(App.Store);
+        var result = engine.Step(target, startNodeId, ExplorationStrategy.Frontier);
+
+        Refresh();
+
+        if (result.Executed)
+        {
+            var updatedNodes = App.Store.Nodes(target.Id);
+            var resultNode = updatedNodes.FirstOrDefault(n => n.Id == result.ResultStateId);
+            if (resultNode != null)
+            {
+                HighlightNode(resultNode);
+                Shell.InspectorSubject = resultNode;
+            }
+        }
+    }
+
+    private void OnTriangulateClick(object sender, RoutedEventArgs e)
+    {
+        var target = Shell.Target;
+        if (target is null) return;
+
+        var engine = new TruthTriangulationEngine(App.Store);
+        var report = engine.Triangulate(target);
+
+        if (report.DriftCount > 0)
+        {
+            DriftBadgeBorder.Visibility = Visibility.Visible;
+            DriftBadgeText.Text = $"{report.DriftCount} DRIFT{(report.DriftCount > 1 ? "S" : "")}";
+        }
+        else
+        {
+            DriftBadgeBorder.Visibility = Visibility.Collapsed;
+        }
+
+        Refresh();
+    }
 }
