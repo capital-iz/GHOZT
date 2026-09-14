@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Input;
 
 namespace Ghozt.App.Shell;
@@ -128,11 +130,40 @@ public sealed class RailButton : Control
         return Window.GetWindow(this)?.DataContext as ShellViewModel;
     }
 
-    private void Activate()
+    protected override AutomationPeer OnCreateAutomationPeer() => new RailButtonAutomationPeer(this);
+
+    internal void Activate()
     {
         if (Definition is not null && FindShell() is { } shell)
         {
             shell.Workspace = Definition.Kind;
+        }
+    }
+
+    private sealed class RailButtonAutomationPeer : FrameworkElementAutomationPeer, IInvokeProvider
+    {
+        public RailButtonAutomationPeer(RailButton owner) : base(owner) { }
+
+        protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Button;
+
+        protected override string GetClassNameCore() => nameof(RailButton);
+
+        public override object? GetPattern(PatternInterface patternInterface) =>
+            patternInterface == PatternInterface.Invoke ? this : base.GetPattern(patternInterface);
+
+        public void Invoke()
+        {
+            if (Owner is RailButton btn)
+            {
+                if (btn.Dispatcher.CheckAccess())
+                {
+                    btn.Activate();
+                }
+                else
+                {
+                    btn.Dispatcher.Invoke(btn.Activate);
+                }
+            }
         }
     }
 }

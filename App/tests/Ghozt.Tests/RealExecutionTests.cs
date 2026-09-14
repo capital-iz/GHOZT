@@ -393,5 +393,18 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("if (!IsInitialized || Items is null)", cs);
         Assert.Contains("if (IsInitialized)", cs);
     }
+
+    [Fact]
+    public void RailButton_ImplementsAutomationPeer_WithInvokeProvider()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Shell"));
+        var cs = File.ReadAllText(Path.Combine(basePath, "RailButton.cs"));
+
+        Assert.Contains("OnCreateAutomationPeer", cs);
+        Assert.Contains("RailButtonAutomationPeer", cs);
+        Assert.Contains("IInvokeProvider", cs);
+        Assert.Contains("AutomationControlType.Button", cs);
+        Assert.Contains("public void Invoke()", cs);
+    }
 }
 
