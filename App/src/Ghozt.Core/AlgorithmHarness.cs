@@ -337,14 +337,19 @@ public static class AlgorithmHarness
         var fpSamples = new List<ComplexitySample>();
         foreach (var size in fpSizes)
         {
-            var sw = Stopwatch.StartNew();
-            for (int i = 0; i < size; i++)
+            double minUs = double.MaxValue;
+            for (int r = 0; r < 3; r++)
             {
-                _ = Hashing.Fingerprint("target_test", "action_exec", $"btn_{i}", $"val_{i}");
+                var sw = Stopwatch.StartNew();
+                for (int i = 0; i < size; i++)
+                {
+                    _ = Hashing.Fingerprint("target_test", "action_exec", $"btn_{i}", $"val_{i}");
+                }
+                sw.Stop();
+                var us = Math.Max(0.1, sw.Elapsed.TotalMicroseconds);
+                if (us < minUs) minUs = us;
             }
-            sw.Stop();
-            var us = Math.Max(0.1, sw.Elapsed.TotalMicroseconds);
-            fpSamples.Add(new ComplexitySample(size, us));
+            fpSamples.Add(new ComplexitySample(size, minUs));
         }
 
         var fpAlpha = ComputeEmpiricalAlpha(fpSamples[0], fpSamples[^1]);
@@ -371,11 +376,16 @@ public static class AlgorithmHarness
                 dict[$"state_{i}"] = i + 1;
             }
 
-            var sw = Stopwatch.StartNew();
-            _ = StateSpaceMath.ShannonEntropy(dict);
-            sw.Stop();
-            var us = Math.Max(0.1, sw.Elapsed.TotalMicroseconds);
-            entropySamples.Add(new ComplexitySample(size, us));
+            double minUs = double.MaxValue;
+            for (int r = 0; r < 3; r++)
+            {
+                var sw = Stopwatch.StartNew();
+                _ = StateSpaceMath.ShannonEntropy(dict);
+                sw.Stop();
+                var us = Math.Max(0.1, sw.Elapsed.TotalMicroseconds);
+                if (us < minUs) minUs = us;
+            }
+            entropySamples.Add(new ComplexitySample(size, minUs));
         }
 
         var entropyAlpha = ComputeEmpiricalAlpha(entropySamples[0], entropySamples[^1]);
@@ -434,11 +444,16 @@ public static class AlgorithmHarness
                 });
             }
 
-            var sw = Stopwatch.StartNew();
-            _ = StateSpaceMath.ProjectAcyclicSpanningTree(testNodes, testEdges, "node_0");
-            sw.Stop();
-            var us = Math.Max(0.1, sw.Elapsed.TotalMicroseconds);
-            graphSamples.Add(new ComplexitySample(vCount, us));
+            double minUs = double.MaxValue;
+            for (int r = 0; r < 3; r++)
+            {
+                var sw = Stopwatch.StartNew();
+                _ = StateSpaceMath.ProjectAcyclicSpanningTree(testNodes, testEdges, "node_0");
+                sw.Stop();
+                var us = Math.Max(0.1, sw.Elapsed.TotalMicroseconds);
+                if (us < minUs) minUs = us;
+            }
+            graphSamples.Add(new ComplexitySample(vCount, minUs));
         }
 
         var graphAlpha = ComputeEmpiricalAlpha(graphSamples[0], graphSamples[^1]);

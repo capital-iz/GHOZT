@@ -381,6 +381,7 @@ def test_automated_unit_integration_suite():
     print("STAGE 3: FULL UNIT & INTEGRATION TEST REGRESSION SUITE")
     print("=" * 70)
 
+    time.sleep(2.0)
     cmd = ["dotnet", "test", r"App\tests\Ghozt.Tests\Ghozt.Tests.csproj", "-c", "Release"]
     print(f"Running: {' '.join(cmd)}")
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
