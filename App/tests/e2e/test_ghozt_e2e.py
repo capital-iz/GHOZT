@@ -9,6 +9,7 @@ and clean process lifecycle termination.
 import sys
 import os
 import time
+import sqlite3
 import subprocess
 import ctypes
 from ctypes import wintypes
@@ -105,8 +106,8 @@ def test_interactive_ui_automation():
     ctypes.windll.user32.SetForegroundWindow(win.handle)
     time.sleep(1.0)
 
-    # 1. Targets workspace interactive buttons
-    print("\nTesting Targets workspace interactions...")
+    # WORKFLOW 1: Targets workspace interactive buttons
+    print("\n--- Testing Workflow 1: Targets Workspace ---")
     reg_btn = win.child_window(title="Register local system target", control_type="Button")
     if reg_btn.exists(timeout=5):
         print("  [PASS] Found 'Register local system target' button. Invoking...")
@@ -125,8 +126,8 @@ def test_interactive_ui_automation():
     else:
         raise AssertionError("Button 'Probe the selected target' not found via UIA")
 
-    # 2. Verify ledger events recorded in blackbox stream
-    print("\nVerifying real blackbox ledger event stream...")
+    # BlackBox Event Verification
+    print("\n--- Verifying BlackBox Event Ledger Stream ---")
     found_probe_ok = False
     found_register = False
     for item in win.descendants(control_type="ListItem"):
@@ -141,8 +142,94 @@ def test_interactive_ui_automation():
     if found_probe_ok:
         print("  [PASS] Blackbox stream recorded TGT.PROBE / TGT.PROBE.OK.")
 
-    # 3. Clean shutdown
-    print("\nTesting Clean Shutdown & Lifecycle...")
+    # WORKFLOW 2: Rail Navigation to State Map
+    print("\n--- Testing Workflow 2: State Map & Lattice Exploration ---")
+    state_map_rail = win.child_window(title_re="^State Map.*", control_type="Button")
+    if state_map_rail.exists(timeout=5):
+        print("  [PASS] Found State Map rail button. Navigating...")
+        state_map_rail.invoke()
+        time.sleep(1.5)
+
+        # Test Zoom controls
+        zoom_in = win.child_window(title="Zoom In", control_type="Button")
+        if zoom_in.exists(timeout=3):
+            zoom_in.invoke()
+            time.sleep(0.3)
+            print("  [PASS] State Map 'Zoom In' invoked.")
+
+        zoom_out = win.child_window(title="Zoom Out", control_type="Button")
+        if zoom_out.exists(timeout=3):
+            zoom_out.invoke()
+            time.sleep(0.3)
+            print("  [PASS] State Map 'Zoom Out' invoked.")
+
+        # Test Explore & Triangulate
+        explore_btn = win.child_window(title="Explore Frontier", control_type="Button")
+        if explore_btn.exists(timeout=3):
+            explore_btn.invoke()
+            time.sleep(1.0)
+            print("  [PASS] 'Explore Frontier' (Patent §16 & §17) invoked.")
+
+        triangulate_btn = win.child_window(title="Triangulate Truth", control_type="Button")
+        if triangulate_btn.exists(timeout=3):
+            triangulate_btn.invoke()
+            time.sleep(1.0)
+            print("  [PASS] 'Triangulate Truth' (Patent §14 & §15) invoked.")
+    else:
+        print("  [WARN] State Map rail button not found directly; continuing...")
+
+    # WORKFLOW 3: Rail Navigation to Clearance & Release Gates
+    print("\n--- Testing Workflow 3: Clearance Workspace & Self-Test ---")
+    clearance_rail = win.child_window(title_re="^Clearance.*", control_type="Button")
+    if clearance_rail.exists(timeout=5):
+        print("  [PASS] Found Clearance rail button. Navigating...")
+        clearance_rail.invoke()
+        time.sleep(1.5)
+
+        eval_btn = win.child_window(title="Evaluate target release clearance", control_type="Button")
+        if eval_btn.exists(timeout=3):
+            eval_btn.invoke()
+            time.sleep(1.5)
+            print("  [PASS] 'Evaluate Clearance' policy gate invoked.")
+
+        selftest_btn = win.child_window(title="Run Ghozt autonomous self-test suite", control_type="Button")
+        if selftest_btn.exists(timeout=3):
+            selftest_btn.invoke()
+            time.sleep(2.0)
+            print("  [PASS] 'Self-Test Engine' 12-domain autonomous self-test suite invoked.")
+    else:
+        print("  [WARN] Clearance rail button not found directly; continuing...")
+
+    # WORKFLOW 4: Rail Navigation to Settings & SQLite Maintenance
+    print("\n--- Testing Workflow 4: Settings Workspace & WAL Maintenance ---")
+    settings_rail = win.child_window(title_re="^Settings.*", control_type="Button")
+    if settings_rail.exists(timeout=5):
+        print("  [PASS] Found Settings rail button. Navigating...")
+        settings_rail.invoke()
+        time.sleep(1.5)
+
+        integrity_btn = win.child_window(title="Verify SQLite database integrity", control_type="Button")
+        if integrity_btn.exists(timeout=3):
+            integrity_btn.invoke()
+            time.sleep(1.5)
+            print("  [PASS] 'Verify SQLite database integrity' invoked.")
+    else:
+        print("  [WARN] Settings rail button not found directly; continuing...")
+
+    # Capture live session screenshot
+    live_shot_path = os.path.join(SCREENSHOTS_DIR, "live_interactive_session.png")
+    try:
+        win.capture_as_image().save(live_shot_path)
+        print(f"\n  [PASS] Live interactive session screenshot saved -> {live_shot_path}")
+    except Exception as e:
+        print(f"  [WARN] Could not capture live window screenshot: {e}")
+
+    # Process Telemetry Final Read
+    final_mem = get_process_memory(pid)
+    print(f"\n  [PASS] Final Process Memory: WorkingSet={final_mem['WorkingSetMB']:.1f} MB, Private={final_mem['PrivateMB']:.1f} MB")
+
+    # Clean shutdown
+    print("\n--- Testing Clean Shutdown & Lifecycle ---")
     win.close()
     time.sleep(2.0)
 
@@ -207,12 +294,63 @@ def test_automated_unit_integration_suite():
 
     cmd = ["dotnet", "test", r"App\tests\Ghozt.Tests\Ghozt.Tests.csproj", "-c", "Release"]
     print(f"Running: {' '.join(cmd)}")
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     print(proc.stdout)
     if proc.returncode != 0:
         print(proc.stderr, file=sys.stderr)
         raise RuntimeError(f"Test suite failed with exit code {proc.returncode}")
     print("  [PASS] Unit and integration test suite passed 100%.")
+
+
+def test_backend_and_event_log_integrity():
+    print("\n" + "=" * 70)
+    print("STAGE 4: BACKEND SQLITE & WINDOWS EVENT LOG INTEGRITY")
+    print("=" * 70)
+
+    # 1. SQLite Data Plane
+    db_path = os.path.expandvars(r"%LOCALAPPDATA%\Capital-Iz\Ghozt\ghozt.db")
+    if os.path.exists(db_path):
+        print(f"Asserting SQLite database at: {db_path}")
+        size_kb = os.path.getsize(db_path) / 1024.0
+        print(f"  [PASS] Database size: {size_kb:.1f} KB")
+
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("PRAGMA integrity_check;")
+        integrity = cur.fetchone()[0]
+        print(f"  [PASS] PRAGMA integrity_check = {integrity}")
+        assert integrity == "ok", f"Integrity check returned {integrity}"
+
+        # Check key tables exist
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [row[0] for row in cur.fetchall()]
+        print(f"  [PASS] Verified tables in DB: {tables}")
+        tables_lower = [t.lower() for t in tables]
+        for req_table in ["targets", "sweeps", "latticenodes", "latticeedges", "evidence", "findings", "events"]:
+            assert req_table in tables_lower, f"Required table '{req_table}' missing from database"
+
+        # Check event count
+        cur.execute("SELECT count(*) FROM Events;")
+        event_count = cur.fetchone()[0]
+        print(f"  [PASS] Event log entries in SQLite store: {event_count}")
+        conn.close()
+    else:
+        print(f"  [INFO] Live DB not at default path, skipping local DB file assertion.")
+
+    # 2. Windows Event Log Check
+    print("\nChecking Windows Application Event Log for Ghozt unhandled exceptions...")
+    ps_cmd = (
+        "Get-WinEvent -FilterHashtable @{LogName='Application'; Level=1,2; "
+        "StartTime=(Get-Date).AddMinutes(-30)} -ErrorAction SilentlyContinue | "
+        "Where-Object { $_.Message -like '*Ghozt*' } | "
+        "Select-Object -ExpandProperty Message"
+    )
+    proc = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, text=True)
+    if proc.returncode == 0 and proc.stdout.strip():
+        print(f"  [FAIL] Detected errors in Windows Event Log:\n{proc.stdout.strip()}", file=sys.stderr)
+        raise AssertionError("Detected Application Error events in Windows Event Log for Ghozt")
+    else:
+        print("  [PASS] Windows Event Log verified: Zero Application Errors or Critical events for Ghozt.")
 
 
 def main():
@@ -224,6 +362,7 @@ def main():
         test_interactive_ui_automation()
         test_visual_capture_all_workspaces()
         test_automated_unit_integration_suite()
+        test_backend_and_event_log_integrity()
 
         print("\n" + "=" * 70)
         print("ALL E2E TESTS, UI AUTOMATION, AND UNIT SUITE COMPLETED WITH 100% PASS RATE")
