@@ -54,7 +54,15 @@ public partial class App : Application
             return;
         }
 
-        _store = new GhoztStore(GhoztStore.DefaultDatabasePath);
+        var guiDbPath = GhoztStore.DefaultDatabasePath;
+        var dbIdx = Array.IndexOf(args, "--db");
+        if (dbIdx < 0) dbIdx = Array.IndexOf(args, "--database");
+        if (dbIdx >= 0 && dbIdx + 1 < args.Length && !string.IsNullOrWhiteSpace(args[dbIdx + 1]))
+        {
+            guiDbPath = args[dbIdx + 1];
+        }
+
+        _store = new GhoztStore(guiDbPath);
         Store = _store;
 
         var theme = new ThemeManager(_store);

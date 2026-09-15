@@ -126,3 +126,33 @@ public sealed class IsEmptyConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+public sealed class TargetActiveBorderConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length >= 2 && values[0] is GhoztId cardId && values[1] is Target active && active.Id == cardId)
+        {
+            return Application.Current?.TryFindResource("Border.Selected") as Brush ?? Brushes.Cyan;
+        }
+        return Application.Current?.TryFindResource("Border.Card") as Brush ?? Brushes.Gray;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+public sealed class TargetActiveVisibilityConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length >= 2 && values[0] is GhoztId cardId && values[1] is Target active && active.Id == cardId)
+        {
+            return Visibility.Visible;
+        }
+        return Visibility.Collapsed;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

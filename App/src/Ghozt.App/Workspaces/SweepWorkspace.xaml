@@ -34,12 +34,29 @@
                                         Background="{DynamicResource Surface.Card}"
                                         BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
                                         CornerRadius="{StaticResource Radius.Control}">
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding Index}" Style="{StaticResource Type.IdentifierStyle}"
-                                                   Width="18" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Type.CaptionStyle}"
-                                                   FontWeight="SemiBold" VerticalAlignment="Center" />
-                                    </StackPanel>
+                                                   VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="6,0,6,0">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Type.CaptionStyle}"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Outcome}" Style="{StaticResource Type.MicroLabelStyle}"
+                                                       Foreground="{Binding Brush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Glyph}" FontSize="11" FontWeight="Bold"
+                                                       Foreground="{Binding Brush}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Status}" FontSize="9" FontWeight="SemiBold"
+                                                       Foreground="{Binding Brush}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -123,7 +140,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,18,0,24">
                         <Button x:Name="StartButton" Style="{StaticResource Button.Primary}"
                                 Content="Start sweep" MinWidth="130" Click="OnStart"
                                 AutomationProperties.Name="Start the sweep" />
@@ -170,6 +187,29 @@
                         <shell:StatusPlate x:Name="DeviationPlate" Label="DEVIATIONS" Value="0" Token="State.Fault" />
                         <shell:StatusPlate x:Name="EvidencePlate" Label="EVIDENCE" Value="0" Token="Ghozt.Live" />
                     </StackPanel>
+
+                    <!-- Post-Sweep Actions -->
+                    <Border x:Name="PostSweepPanel" Visibility="Collapsed" Margin="0,14,0,0" Padding="12,10"
+                            Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Accent.BorderStrong}"
+                            BorderThickness="1" CornerRadius="{StaticResource Radius.Card}">
+                        <StackPanel>
+                            <TextBlock Text="SWEEP COMPLETE — NEXT ACTIONS" Style="{StaticResource Type.MicroLabelStyle}"
+                                       Foreground="{DynamicResource Accent.Text}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="Explore State Lattice" Style="{StaticResource Button.Primary}"
+                                        Click="OnPostSweepExploreLattice" Margin="0,0,8,0"
+                                        ToolTip="Examine discovered nodes and transitions in the interactive State Lattice"
+                                        AutomationProperties.Name="Explore in State Lattice" />
+                                <Button Content="Triage Faults" Style="{StaticResource Button.Destructive}"
+                                        x:Name="BtnPostSweepFaults" Click="OnPostSweepFaults" Margin="0,0,8,0"
+                                        ToolTip="Triage deviations recorded during this sweep"
+                                        AutomationProperties.Name="Triage recorded faults" />
+                                <Button Content="Evaluate Clearance" Click="OnPostSweepClearance"
+                                        ToolTip="Evaluate commercial release policy gates for this target"
+                                        AutomationProperties.Name="Evaluate clearance gates" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 

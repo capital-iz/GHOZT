@@ -448,10 +448,108 @@ public partial class StateMapWorkspace : UserControl
         {
             Shell.InspectorSubject = node;
             HighlightNode(node);
+            OpenNodeInspector(node);
             e.Handled = true;
         };
 
         return border;
+    }
+
+    private sealed record TransitionItem(string Direction, string TargetNode, string Relationship);
+
+    private void OpenNodeInspector(LatticeNode node)
+    {
+        _selectedNode = node;
+        InspectorNodeLabel.Text = node.Label;
+        InspectorNodeId.Text = node.Id;
+
+        var state = System.Enum.TryParse<GhoztState>(node.State, true, out var parsed) ? parsed : GhoztState.Untested;
+        InspectorStateText.Text = state.Label().ToUpperInvariant();
+        InspectorStateBadge.Background = B(state.TokenName());
+
+        InspectorKindText.Text = node.Kind.ToString().ToUpperInvariant();
+        InspectorProvenanceText.Text = node.Provenance;
+        InspectorVisitCount.Text = node.VisitCount.ToString(System.Globalization.CultureInfo.CurrentCulture);
+        InspectorEvidenceCount.Text = node.EvidenceCount.ToString(System.Globalization.CultureInfo.CurrentCulture);
+        InspectorLastSeen.Text = node.LastSeenAt?.ToString("HH:mm:ss", System.Globalization.CultureInfo.CurrentCulture) ?? "never";
+        InspectorDetailText.Text = string.IsNullOrWhiteSpace(node.Detail) ? "No contract detail recorded." : node.Detail;
+
+        var transitions = new List<TransitionItem>();
+        foreach (var edge in _currentEdges)
+        {
+            if (edge.FromId == node.Id)
+            {
+                transitions.Add(new TransitionItem("OUTBOUND →", edge.ToId, edge.Relationship));
+            }
+            else if (edge.ToId == node.Id)
+            {
+                transitions.Add(new TransitionItem("INBOUND ←", edge.FromId, edge.Relationship));
+            }
+        }
+        InspectorTransitionsList.ItemsSource = transitions;
+        NodeInspectorDrawer.Visibility = Visibility.Visible;
+    }
+
+    private void OnCloseNodeInspector(object sender, RoutedEventArgs e)
+    {
+        NodeInspectorDrawer.Visibility = Visibility.Collapsed;
+        HighlightNode(null);
+    }
+
+    private async void OnRunDiscoverySweep(object sender, RoutedEventArgs e)
+    {
+        if (Shell?.Target is not { } target)
+        {
+            return;
+        }
+
+        BtnEmptyDiscovery.IsEnabled = false;
+        EmptyTitle.Text = "Running discovery sweep…";
+        EmptyBody.Text = "Executing live reachability, identity, and structure probes to populate the State Lattice.";
+
+        var sweep = new Sweep
+        {
+            Id = App.Store.NextId(IdKind.Sweep),
+            TargetId = target.Id,
+            Name = $"Discovery Sweep of {target.Name}",
+            Mode = "Smoke",
+            State = RunState.Running,
+            MaxStates = 50,
+            MaxSeconds = 30,
+            MaxDepth = 3,
+            CreatedAt = DateTimeOffset.Now,
+            StartedAt = DateTimeOffset.Now,
+        };
+        App.Store.Save(sweep);
+
+        App.Store.Save(new LatticeNode
+        {
+            Id = "system:root",
+            TargetId = target.Id,
+            Label = target.Name,
+            Kind = NodeKind.System,
+            State = "Observed",
+            Provenance = "Declared",
+            Detail = $"{target.Kind} · {target.Environment} · {target.Access}",
+            LastSeenAt = DateTimeOffset.Now,
+        });
+
+        var engine = new SweepEngine(App.Store);
+        try
+        {
+            await engine.RunAsync(sweep, target, null, CancellationToken.None).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("SWP.DISCOVER.FAIL", $"Discovery sweep failed: {ex.Message}", Severity.Medium);
+        }
+        finally
+        {
+            BtnEmptyDiscovery.IsEnabled = true;
+            Shell?.ReloadTargets();
+            Shell?.Refresh();
+            Refresh();
+        }
     }
 
     private void BuildTree(IReadOnlyList<LatticeNode> nodes, IReadOnlyList<LatticeEdge> edges)
@@ -499,6 +597,7 @@ public partial class StateMapWorkspace : UserControl
         {
             Shell.InspectorSubject = node;
             HighlightNode(node);
+            OpenNodeInspector(node);
         }
     }
 

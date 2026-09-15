@@ -287,7 +287,8 @@ public sealed class GhoztStore : IDisposable
     private static DateTimeOffset? ParseIsoOrNull(object value) =>
         value is string s && !string.IsNullOrEmpty(s) ? ParseIso(s) : null;
 
-    private static T Enum<T>(string value) where T : struct => System.Enum.Parse<T>(value, ignoreCase: true);
+    private static T Enum<T>(string value) where T : struct =>
+        System.Enum.TryParse<T>(value, ignoreCase: true, out var result) ? result : default;
 
     // ---------------------------------------------------------------- targets
 

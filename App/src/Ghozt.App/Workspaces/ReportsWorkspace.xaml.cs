@@ -37,6 +37,7 @@ public partial class ReportsWorkspace : UserControl
         ExportJsonButton.IsEnabled = true;
         ExportSarifButton.IsEnabled = true;
         ExportJUnitButton.IsEnabled = true;
+        PreviewInAppButton.IsEnabled = true;
     }
 
     private void RenderReport(ForensicReport report)
@@ -199,6 +200,7 @@ public partial class ReportsWorkspace : UserControl
         Shell?.Log("RPT.EXPORT.SARIF", $"Exported OASIS SARIF v2.1.0 dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         OpenViewerButton.IsEnabled = true;
+        PreviewInAppButton.IsEnabled = true;
     }
 
     private void OnExportJUnit(object sender, RoutedEventArgs e)
@@ -210,6 +212,7 @@ public partial class ReportsWorkspace : UserControl
         Shell?.Log("RPT.EXPORT.JUNIT", $"Exported JUnit XML report {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         OpenViewerButton.IsEnabled = true;
+        PreviewInAppButton.IsEnabled = true;
     }
 
     private void OnOpenViewer(object sender, RoutedEventArgs e)
@@ -231,6 +234,39 @@ public partial class ReportsWorkspace : UserControl
         {
             // Fallback if no association exists
         }
+    }
+
+    private void OnPreviewInApp(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_lastExportedPath) && File.Exists(_lastExportedPath))
+        {
+            PreviewDocTitle.Text = Path.GetFileName(_lastExportedPath);
+            PreviewDocContent.Text = File.ReadAllText(_lastExportedPath);
+            DocumentPreviewDrawer.Visibility = Visibility.Visible;
+            return;
+        }
+
+        if (_currentReport is not null)
+        {
+            PreviewDocTitle.Text = $"{_currentReport.ReportId} (Markdown)";
+            PreviewDocContent.Text = _currentReport.MarkdownContent;
+            DocumentPreviewDrawer.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void OnCopyPreviewText(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(PreviewDocContent.Text);
+            StatusText.Text = "Copied document content to clipboard.";
+        }
+        catch { }
+    }
+
+    private void OnClosePreview(object sender, RoutedEventArgs e)
+    {
+        DocumentPreviewDrawer.Visibility = Visibility.Collapsed;
     }
 
     private void OnPortfolioRollup(object sender, RoutedEventArgs e)

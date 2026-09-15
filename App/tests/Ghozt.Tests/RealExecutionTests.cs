@@ -395,6 +395,26 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("OnJumpToDivergenceClicked", replayXaml);
         Assert.Contains("MinimisedStepsList", replayXaml);
         Assert.Contains("JumpDivergenceBtn", replayXaml);
+
+        var targetsXaml = File.ReadAllText(Path.Combine(basePath, "TargetsWorkspace.xaml"));
+        Assert.Contains("OnPruneCanaries", targetsXaml);
+        Assert.Contains("PruneCanariesButton", targetsXaml);
+
+        var sweepXaml = File.ReadAllText(Path.Combine(basePath, "SweepWorkspace.xaml"));
+        Assert.Contains("PostSweepPanel", sweepXaml);
+        Assert.Contains("OnPostSweepExploreLattice", sweepXaml);
+        Assert.Contains("OnPostSweepFaults", sweepXaml);
+        Assert.Contains("OnPostSweepClearance", sweepXaml);
+
+        var stateMapXaml = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml"));
+        Assert.Contains("NodeInspectorDrawer", stateMapXaml);
+        Assert.Contains("OnRunDiscoverySweep", stateMapXaml);
+        Assert.Contains("BtnEmptyDiscovery", stateMapXaml);
+
+        var reportsXaml = File.ReadAllText(Path.Combine(basePath, "ReportsWorkspace.xaml"));
+        Assert.Contains("PreviewInAppButton", reportsXaml);
+        Assert.Contains("DocumentPreviewDrawer", reportsXaml);
+        Assert.Contains("OnPreviewInApp", reportsXaml);
     }
 
     [Fact]

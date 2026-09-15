@@ -125,6 +125,15 @@ public partial class TargetsWorkspace : UserControl
         }
     }
 
+    private void OnClearanceTarget(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: Target target })
+        {
+            Shell.Target = target;
+            Shell.Workspace = WorkspaceKind.Clearance;
+        }
+    }
+
     private void OnSelectTarget(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: Target target })
@@ -211,6 +220,16 @@ public partial class TargetsWorkspace : UserControl
     {
         var path = App.Store.DatabasePath;
 
+        var existing = App.Store.Targets().FirstOrDefault(t => t.Name == "Ghozt Host Subsystem" && t.BaseAddress == path);
+        if (existing is not null)
+        {
+            Shell.Target = existing;
+            Shell.InspectorSubject = existing;
+            Shell.Log("TGT.SELECT", "Ghozt Host Subsystem already registered. Active target selected.", Severity.Info, related: existing.Id.ToString());
+            ApplyFilter();
+            return;
+        }
+
         var target = new Target
         {
             Id = App.Store.NextId(IdKind.Target),
@@ -233,6 +252,38 @@ public partial class TargetsWorkspace : UserControl
 
         Shell.Log("TGT.REGISTER", "Registered Ghozt Host Subsystem as an operational target.",
             Severity.Info, detail: $"path={path}; exists={File.Exists(path)}", related: target.Id.ToString());
+    }
+
+    /// <summary>
+    /// Prunes ephemeral test canary targets from the evidence store.
+    /// </summary>
+    private void OnPruneCanaries(object sender, RoutedEventArgs e)
+    {
+        var canaries = App.Store.Targets()
+            .Where(t => t.Name.Contains("Clearance Canary", StringComparison.OrdinalIgnoreCase) ||
+                        t.Name.StartsWith("Test Canary", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (canaries.Count == 0)
+        {
+            Shell.Log("TGT.PRUNE.NONE", "No ephemeral or canary targets found to prune.", Severity.Info);
+            return;
+        }
+
+        foreach (var canary in canaries)
+        {
+            App.Store.DeleteTarget(canary.Id);
+        }
+
+        Shell.Log("TGT.PRUNE", $"Pruned {canaries.Count} ephemeral canary targets from evidence store.", Severity.Info,
+            detail: string.Join(", ", canaries.Select(c => $"{c.Name} ({c.Id})")));
+
+        Shell.ReloadTargets();
+        if (Shell.Target is not null && canaries.Any(c => c.Id == Shell.Target.Id))
+        {
+            Shell.Target = App.Store.Targets().FirstOrDefault();
+        }
+        ApplyFilter();
     }
 
     /// <summary>

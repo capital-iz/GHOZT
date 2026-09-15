@@ -6,6 +6,8 @@
     <UserControl.Resources>
         <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         <shell:IsEmptyConverter x:Key="IsEmpty" />
+        <shell:TargetActiveBorderConverter x:Key="TargetActiveBorder" />
+        <shell:TargetActiveVisibilityConverter x:Key="TargetActiveVisibility" />
     </UserControl.Resources>
 
     <Grid>
@@ -45,7 +47,10 @@
                     <Button Margin="8,0,0,0" Content="Register Local System" Click="OnRegisterLocalHost"
                             ToolTip="Registers Ghozt's local evidence store and host subsystem as an operational target"
                             AutomationProperties.Name="Register local system target" />
-                    <Button Style="{StaticResource Button.Destructive}" Margin="20,0,0,0"
+                    <Button x:Name="PruneCanariesButton" Margin="8,0,0,0" Content="Prune Canaries" Click="OnPruneCanaries"
+                            ToolTip="Safely prunes ephemeral test canary targets from the evidence store"
+                            AutomationProperties.Name="Prune ephemeral canary targets" />
+                    <Button Style="{StaticResource Button.Destructive}" Margin="16,0,0,0"
                             Content="Remove target" Click="OnRemove"
                             IsEnabled="{Binding HasTarget}"
                             ToolTip="Permanently removes the target and everything recorded against it"
@@ -83,13 +88,18 @@
                         <DataTemplate>
                             <!-- A target card. Every reading that gates what may be done is on the
                                  card, not behind a click: environment, access class, authority. -->
-                            <Border Width="340" Margin="0,0,14,14" Padding="14"
+                            <Border Width="380" Margin="0,0,14,14" Padding="14"
                                     Background="{DynamicResource Surface.Card}"
-                                    BorderBrush="{DynamicResource Border.Card}"
-                                    BorderThickness="1"
+                                    BorderThickness="1.5"
                                     CornerRadius="{StaticResource Radius.CardLarge}"
                                     MouseLeftButtonUp="OnSelectTarget"
                                     Cursor="Hand">
+                                <Border.BorderBrush>
+                                    <MultiBinding Converter="{StaticResource TargetActiveBorder}">
+                                        <Binding Path="Id" />
+                                        <Binding Path="DataContext.Target" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                    </MultiBinding>
+                                </Border.BorderBrush>
                                 <StackPanel>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -100,12 +110,32 @@
                                             <TextBlock Text="{Binding Name}" Style="{StaticResource Type.HeadingStyle}" />
                                             <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
                                         </StackPanel>
-                                        <Border Grid.Column="1" VerticalAlignment="Top" Padding="6,2"
-                                                CornerRadius="{StaticResource Radius.Chip}"
-                                                Background="{DynamicResource Surface.Inset}">
-                                            <TextBlock Text="{Binding Kind}" FontSize="9"
-                                                       Foreground="{DynamicResource Text.Secondary}" />
-                                        </Border>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                            <Border Padding="6,2" Margin="0,0,6,0"
+                                                    CornerRadius="{StaticResource Radius.Chip}"
+                                                    Background="{DynamicResource Accent.Fill}">
+                                                <Border.Visibility>
+                                                    <MultiBinding Converter="{StaticResource TargetActiveVisibility}">
+                                                        <Binding Path="Id" />
+                                                        <Binding Path="DataContext.Target" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                                    </MultiBinding>
+                                                </Border.Visibility>
+                                                <TextBlock Text="ACTIVE" FontSize="9" FontWeight="Bold"
+                                                           Foreground="{DynamicResource Text.OnAccent}" />
+                                            </Border>
+                                            <Border Padding="6,2" Margin="0,0,6,0"
+                                                    CornerRadius="{StaticResource Radius.Chip}"
+                                                    Background="{DynamicResource Surface.Inset}">
+                                                <TextBlock Text="{Binding Kind}" FontSize="9"
+                                                           Foreground="{DynamicResource Text.Secondary}" />
+                                            </Border>
+                                            <Border Padding="6,2"
+                                                    CornerRadius="{StaticResource Radius.Chip}"
+                                                    Background="{DynamicResource Surface.Inset}">
+                                                <TextBlock Text="{Binding Reachable, StringFormat='Reachable: {0}'}" FontSize="9"
+                                                           Foreground="{DynamicResource Text.Secondary}" />
+                                            </Border>
+                                        </StackPanel>
                                     </Grid>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
@@ -128,8 +158,8 @@
                                                     <Setter Property="Text" Value="{Binding AuthorityNote}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding AuthorityNote}" Value="">
-                                                             <Setter Property="Text" Value="No authority grant recorded — Ghozt will observe only." />
-                                                             <Setter Property="Foreground" Value="{DynamicResource State.Warning}" />
+                                                            <Setter Property="Text" Value="No authority grant recorded — Ghozt will observe only." />
+                                                            <Setter Property="Foreground" Value="{DynamicResource State.Warning}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -139,31 +169,20 @@
 
                                     <!-- Direct Target Control & Navigation Actions -->
                                     <Border Margin="0,12,0,0" Padding="0,10,0,0" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Content="Launch" Height="26" Padding="8,0" Margin="0,0,6,0"
-                                                        Click="OnLaunchTarget" ToolTip="Launch target executable or verify running process"
-                                                        AutomationProperties.Name="Launch target" />
-                                                <Button Content="Authority" Height="26" Padding="8,0" Margin="0,0,6,0"
-                                                        Click="OnTargetCardAuthorityGrant" ToolTip="Issue or manage execution authority grant (L0-L5)"
-                                                        AutomationProperties.Name="Manage target authority grant" />
-                                                <Button Content="State Lattice" Height="26" Padding="8,0" Margin="0,0,6,0"
-                                                        Click="OnExploreTargetLattice" ToolTip="Jump to State Lattice for this target"
-                                                        AutomationProperties.Name="Open State Lattice" />
-                                                <Button Content="Sweep" Height="26" Padding="8,0"
-                                                        Click="OnSweepTarget" ToolTip="Open sweep runner for this target"
-                                                        AutomationProperties.Name="Open sweep runner" />
-                                            </StackPanel>
-                                            <Border Grid.Column="1" VerticalAlignment="Center" Padding="6,2" CornerRadius="{StaticResource Radius.Chip}"
-                                                    Background="{DynamicResource Surface.Inset}">
-                                                <TextBlock Text="{Binding Reachable, StringFormat='Reachable: {0}'}" FontSize="9"
-                                                           Foreground="{DynamicResource Text.Secondary}" />
-                                            </Border>
-                                        </Grid>
+                                        <UniformGrid Columns="4">
+                                            <Button Content="Launch" Height="26" Padding="4,0" FontSize="11" Margin="0,0,4,0"
+                                                    Click="OnLaunchTarget" ToolTip="Launch target executable or verify running process"
+                                                    AutomationProperties.Name="Launch target" />
+                                            <Button Content="Lattice" Height="26" Padding="4,0" FontSize="11" Margin="0,0,4,0"
+                                                    Click="OnExploreTargetLattice" ToolTip="Jump to State Lattice for this target"
+                                                    AutomationProperties.Name="Open State Lattice" />
+                                            <Button Content="Sweep" Height="26" Padding="4,0" FontSize="11" Margin="0,0,4,0"
+                                                    Click="OnSweepTarget" ToolTip="Open sweep runner for this target"
+                                                    AutomationProperties.Name="Open sweep runner" />
+                                            <Button Content="Clearance" Height="26" Padding="4,0" FontSize="11"
+                                                    Click="OnClearanceTarget" ToolTip="Jump to release policy clearance for this target"
+                                                    AutomationProperties.Name="Open clearance" />
+                                        </UniformGrid>
                                     </Border>
                                 </StackPanel>
                             </Border>

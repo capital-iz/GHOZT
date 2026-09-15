@@ -39,6 +39,10 @@
                     <Button Margin="8,0,0,0" Content="Open in Viewer" Click="OnOpenViewer"
                             x:Name="OpenViewerButton" IsEnabled="False"
                             ToolTip="Opens the exported dossier in the system's default viewer" />
+                    <Button Margin="8,0,0,0" Content="Preview In-App" Click="OnPreviewInApp"
+                            x:Name="PreviewInAppButton" IsEnabled="False"
+                            ToolTip="Reads the exported dossier directly inside an embedded in-app viewer"
+                            AutomationProperties.Name="Preview report in-app" />
                     <Button Margin="8,0,0,0" Content="Portfolio Rollup" Click="OnPortfolioRollup"
                             x:Name="PortfolioRollupButton"
                             ToolTip="Generates an executive multi-target quality report across the entire Capital-Iz estate (Patent §41)"
@@ -53,17 +57,49 @@
         </Border>
 
         <!-- Report Content -->
-        <ScrollViewer Grid.Row="1" Padding="24,20" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="ReportContainer" MaxWidth="900" HorizontalAlignment="Left">
-                <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
-                        BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="28">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Forensic Examination Dossier Builder" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
-                        <TextBlock Margin="0,8,0,0" Text="Compiles complete target evidence, clearance gates, state lattice metrics, and deviation traces into verifiable reports."
-                                   Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+        <Grid Grid.Row="1">
+            <ScrollViewer Padding="24,20" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ReportContainer" MaxWidth="900" HorizontalAlignment="Left">
+                    <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                            BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="28">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Forensic Examination Dossier Builder" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                            <TextBlock Margin="0,8,0,0" Text="Compiles complete target evidence, clearance gates, state lattice metrics, and deviation traces into verifiable reports."
+                                       Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Embedded Document Preview Drawer -->
+            <Border x:Name="DocumentPreviewDrawer" Visibility="Collapsed" Background="{DynamicResource Surface.Panel}"
+                    BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0" Padding="24,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="DOCUMENT PREVIEW" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <TextBlock x:Name="PreviewDocTitle" Style="{StaticResource Type.MonoStyle}" FontSize="12" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Content="Copy All" Click="OnCopyPreviewText" Margin="0,0,8,0" Padding="8,2" ToolTip="Copy document content to clipboard" />
+                            <Button Content="Close Preview" Click="OnClosePreview" Padding="8,2" ToolTip="Close document preview drawer" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBox Grid.Row="1" x:Name="PreviewDocContent" IsReadOnly="True" TextWrapping="Wrap"
+                             AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             Background="{DynamicResource Surface.Inset}" Foreground="{DynamicResource Text.Primary}"
+                             FontFamily="{StaticResource Font.Mono}" FontSize="11" Padding="14"
+                             BorderBrush="{DynamicResource Border.Card}" BorderThickness="1" />
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

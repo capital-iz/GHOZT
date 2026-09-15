@@ -70,7 +70,7 @@ public sealed class HeadlessRunner
             {
                 cert = args[++i];
             }
-            else if (arg.Equals("--database", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            else if ((arg.Equals("--database", StringComparison.OrdinalIgnoreCase) || arg.Equals("--db", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
             {
                 db = args[++i];
             }

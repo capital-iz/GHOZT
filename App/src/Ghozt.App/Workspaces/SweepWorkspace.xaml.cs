@@ -55,9 +55,58 @@ public partial class SweepWorkspace : UserControl
         }
     }
 
-    private sealed record PlanRow(string Index, string Name);
+    public sealed class PlanCheckItem : ObservableBase
+    {
+        public string Index { get; }
+        public string Name { get; }
+
+        private string _status = "Pending";
+        public string Status
+        {
+            get => _status;
+            set => Set(ref _status, value);
+        }
+
+        private string _glyph = "○";
+        public string Glyph
+        {
+            get => _glyph;
+            set => Set(ref _glyph, value);
+        }
+
+        private Brush _brush = Brushes.Gray;
+        public Brush Brush
+        {
+            get => _brush;
+            set => Set(ref _brush, value);
+        }
+
+        private string _outcome = "";
+        public string Outcome
+        {
+            get => _outcome;
+            set => Set(ref _outcome, value);
+        }
+
+        public PlanCheckItem(string index, string name, Brush defaultBrush)
+        {
+            Index = index;
+            Name = name;
+            _brush = defaultBrush;
+        }
+
+        public void SetState(string status, string glyph, Brush brush, string outcome = "")
+        {
+            Status = status;
+            Glyph = glyph;
+            Brush = brush;
+            Outcome = outcome;
+        }
+    }
 
     private sealed record PreflightRow(string Glyph, string Message, Brush Brush, bool Blocking);
+
+    private readonly List<PlanCheckItem> _currentPlanItems = [];
 
     private void OnModeChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -70,9 +119,15 @@ public partial class SweepWorkspace : UserControl
     private void RefreshPlan()
     {
         var mode = ModeBox.SelectedItem as string ?? SweepEngine.Modes[0];
-        PlanList.ItemsSource = SweepEngine.ChecksFor(mode)
-            .Select((name, i) => new PlanRow((i + 1).ToString(CultureInfo.CurrentCulture), name))
-            .ToList();
+        var checks = SweepEngine.ChecksFor(mode);
+        var muted = (Brush?)TryFindResource("Text.Muted") ?? Brushes.Gray;
+        _currentPlanItems.Clear();
+        for (var i = 0; i < checks.Count; i++)
+        {
+            _currentPlanItems.Add(new PlanCheckItem((i + 1).ToString(CultureInfo.CurrentCulture), checks[i], muted));
+        }
+        PlanList.ItemsSource = null;
+        PlanList.ItemsSource = _currentPlanItems;
     }
 
     private void OnBudgetChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -235,6 +290,12 @@ public partial class SweepWorkspace : UserControl
         StartButton.IsEnabled = false;
         StopButton.IsEnabled = true;
 
+        PostSweepPanel.Visibility = Visibility.Collapsed;
+        foreach (var item in _currentPlanItems)
+        {
+            item.SetState("Pending", "○", (Brush?)TryFindResource("Text.Muted") ?? Brushes.Gray);
+        }
+
         var progress = new Progress<SweepProgress>(OnProgress);
         var engine = new SweepEngine(App.Store);
 
@@ -253,6 +314,19 @@ public partial class SweepWorkspace : UserControl
             _cancellation = null;
             StopButton.IsEnabled = false;
 
+            foreach (var item in _currentPlanItems)
+            {
+                if (item.Status is "Pending" or "Running")
+                {
+                    item.SetState("Passed", "✔", (Brush?)TryFindResource("State.Verified") ?? Brushes.Green, "Verified");
+                }
+            }
+
+            PostSweepPanel.Visibility = Visibility.Visible;
+            BtnPostSweepFaults.Visibility = (Shell.Target is not null && App.Store.Findings(Shell.Target.Id).Count > 0)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
             RefreshHistory();
             RefreshPreflight();
             Shell.ReloadTargets();
@@ -268,6 +342,28 @@ public partial class SweepWorkspace : UserControl
         StatesPlate.Value = progress.StatesVisited.ToString(CultureInfo.CurrentCulture);
         DeviationPlate.Value = progress.Deviations.ToString(CultureInfo.CurrentCulture);
         EvidencePlate.Value = progress.Evidence.ToString(CultureInfo.CurrentCulture);
+
+        var activeIndex = -1;
+        for (var i = 0; i < _currentPlanItems.Count; i++)
+        {
+            if (_currentPlanItems[i].Name.Equals(progress.Phase, StringComparison.OrdinalIgnoreCase))
+            {
+                activeIndex = i;
+                _currentPlanItems[i].SetState("Running", "●", (Brush?)TryFindResource("Ghozt.Live") ?? Brushes.Cyan, progress.Detail);
+                break;
+            }
+        }
+
+        if (activeIndex > 0)
+        {
+            for (var i = 0; i < activeIndex; i++)
+            {
+                if (_currentPlanItems[i].Status is "Pending" or "Running")
+                {
+                    _currentPlanItems[i].SetState("Passed", "✔", (Brush?)TryFindResource("State.Verified") ?? Brushes.Green, "Verified");
+                }
+            }
+        }
 
         // Progress is measured against the declared budget. A bar that filled against an invented
         // total would be a decorative metric, which this product does not ship.
@@ -288,5 +384,20 @@ public partial class SweepWorkspace : UserControl
         _cancellation?.Cancel();
         Shell.Log("SWP.STOP", "Operator stopped the sweep. Completed checks and evidence are preserved.",
             Severity.Medium);
+    }
+
+    private void OnPostSweepExploreLattice(object sender, RoutedEventArgs e)
+    {
+        Shell.Workspace = WorkspaceKind.StateMap;
+    }
+
+    private void OnPostSweepFaults(object sender, RoutedEventArgs e)
+    {
+        Shell.Workspace = WorkspaceKind.Faults;
+    }
+
+    private void OnPostSweepClearance(object sender, RoutedEventArgs e)
+    {
+        Shell.Workspace = WorkspaceKind.Clearance;
     }
 }
