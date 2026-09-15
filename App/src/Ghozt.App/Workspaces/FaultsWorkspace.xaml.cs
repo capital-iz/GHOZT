@@ -43,7 +43,7 @@ public partial class FaultsWorkspace : UserControl
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ShellViewModel.Target) or nameof(ShellViewModel.Findings))
+        if (e.PropertyName is nameof(ShellViewModel.Target) or nameof(ShellViewModel.Findings) or nameof(ShellViewModel.RequestedFindingId) or nameof(ShellViewModel.RequestedNodeId))
         {
             Refresh();
         }
@@ -59,6 +59,24 @@ public partial class FaultsWorkspace : UserControl
 
         if (findings.Count > 0)
         {
+            if (Shell?.RequestedFindingId is { } reqId)
+            {
+                var match = findings.FirstOrDefault(f => f.Id == reqId);
+                if (match is not null)
+                {
+                    Queue.SelectedItem = match;
+                    Queue.ScrollIntoView(match);
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(Shell?.RequestedNodeId))
+            {
+                var match = findings.FirstOrDefault(f => f.NodeId.Equals(Shell.RequestedNodeId, StringComparison.OrdinalIgnoreCase));
+                if (match is not null)
+                {
+                    Queue.SelectedItem = match;
+                    Queue.ScrollIntoView(match);
+                }
+            }
             return;
         }
 
@@ -99,10 +117,14 @@ public partial class FaultsWorkspace : UserControl
         FixBriefButton.IsEnabled = finding is not null;
         VerifyRepairButton.IsEnabled = finding is not null;
         AssignButton.IsEnabled = finding is not null;
+        if (ReplayFaultButton is not null) ReplayFaultButton.IsEnabled = finding is not null;
+        if (LocateMapButton is not null) LocateMapButton.IsEnabled = finding is not null;
+        if (ViewEvidenceButton is not null) ViewEvidenceButton.IsEnabled = finding is not null;
 
         if (finding is null || Shell.Target is null)
         {
             NoSelectionBox.Visibility = Visibility.Visible;
+            if (CrossNavCard is not null) CrossNavCard.Visibility = Visibility.Collapsed;
             MaturityCard.Visibility = Visibility.Collapsed;
             FingerprintCard.Visibility = Visibility.Collapsed;
             CausalCard.Visibility = Visibility.Collapsed;
@@ -111,6 +133,7 @@ public partial class FaultsWorkspace : UserControl
         }
 
         NoSelectionBox.Visibility = Visibility.Collapsed;
+        if (CrossNavCard is not null) CrossNavCard.Visibility = Visibility.Visible;
 
         // Render Maturity Lifecycle (Table 45)
         RenderMaturityCard(finding);
@@ -663,6 +686,44 @@ public partial class FaultsWorkspace : UserControl
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Rejection Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OnReplayFault(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding) return;
+        if (finding.SweepId is not null)
+        {
+            Shell.NavigateToReplay(finding.SweepId.Value, finding.Id);
+        }
+        else
+        {
+            var sweeps = App.Store.Sweeps(finding.TargetId);
+            if (sweeps.Count > 0)
+            {
+                Shell.NavigateToReplay(sweeps[0].Id, finding.Id);
+            }
+        }
+    }
+
+    private void OnLocateOnStateMap(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding) return;
+        var nodeId = !string.IsNullOrWhiteSpace(finding.NodeId) ? finding.NodeId : "system:root";
+        Shell.NavigateToStateMap(nodeId);
+    }
+
+    private void OnViewEvidence(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding) return;
+        var evidenceList = App.Store.EvidenceItems(findingId: finding.Id);
+        if (evidenceList.Count > 0)
+        {
+            Shell.NavigateToEvidence(evidenceList[0].Id);
+        }
+        else
+        {
+            Shell.Workspace = WorkspaceKind.Evidence;
         }
     }
 }

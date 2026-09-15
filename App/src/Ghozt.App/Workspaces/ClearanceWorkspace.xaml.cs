@@ -185,6 +185,67 @@ public partial class ClearanceWorkspace : UserControl
                 Foreground = (Brush)TryFindResource("Text.Muted"),
             });
 
+            if (!gate.Passed)
+            {
+                var remediationPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Margin = new Thickness(0, 8, 0, 0),
+                };
+
+                remediationPanel.Children.Add(new TextBlock
+                {
+                    Text = "REMEDIATION: ",
+                    FontSize = 10,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = (Brush)TryFindResource("Text.Muted"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, 0, 8, 0),
+                });
+
+                var remedyBtn = new Button
+                {
+                    Padding = new Thickness(10, 3, 10, 3),
+                    FontSize = 10,
+                    Tag = gate.Id,
+                };
+
+                if (gate.Id.Contains("DEFECT", StringComparison.OrdinalIgnoreCase) ||
+                    gate.Id.Contains("FAULT", StringComparison.OrdinalIgnoreCase) ||
+                    gate.Id == "3" || gate.Id == "4")
+                {
+                    remedyBtn.Content = "Triage Open Faults →";
+                    remedyBtn.Click += (_, _) => Shell?.NavigateToFaults();
+                }
+                else if (gate.Id.Contains("EVIDENCE", StringComparison.OrdinalIgnoreCase) ||
+                         gate.Id.Contains("SEAL", StringComparison.OrdinalIgnoreCase) ||
+                         gate.Id == "11" || gate.Id == "12")
+                {
+                    remedyBtn.Content = "Review & Seal Evidence →";
+                    remedyBtn.Click += (_, _) =>
+                    {
+                        if (Shell != null) Shell.Workspace = WorkspaceKind.Evidence;
+                    };
+                }
+                else if (gate.Id.Contains("REGRESS", StringComparison.OrdinalIgnoreCase) ||
+                         gate.Id == "6")
+                {
+                    remedyBtn.Content = "Inspect Regressions →";
+                    remedyBtn.Click += (_, _) =>
+                    {
+                        if (Shell != null) Shell.Workspace = WorkspaceKind.Reports;
+                    };
+                }
+                else
+                {
+                    remedyBtn.Content = "Execute Target Sweep →";
+                    remedyBtn.Click += (_, _) => Shell?.NavigateToSweep();
+                }
+
+                remediationPanel.Children.Add(remedyBtn);
+                gateStack.Children.Add(remediationPanel);
+            }
+
             gateCard.Child = gateStack;
             ClearanceContainer.Children.Add(gateCard);
         }

@@ -95,101 +95,179 @@
         </Border>
 
         <Grid Grid.Row="1">
-            <ListBox x:Name="Items" Background="Transparent" BorderThickness="0" Padding="20,14"
-                     SelectionChanged="OnSelect"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     AutomationProperties.Name="Evidence artefacts">
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Margin" Value="0,0,0,6" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="Root"
-                                            Background="{DynamicResource Surface.Card}"
-                                            BorderBrush="{DynamicResource Border.Card}"
-                                            BorderThickness="1"
-                                            CornerRadius="{StaticResource Radius.Card}"
-                                            Padding="14,11">
-                                        <ContentPresenter />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.CardStrongHover}" />
-                                        </Trigger>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.Selected}" />
-                                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent.BorderStrong}" />
-                                            <Setter TargetName="Root" Property="BorderThickness" Value="2" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="380" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
+            <Grid Grid.Column="0">
+                <ListBox x:Name="Items" Background="Transparent" BorderThickness="0" Padding="20,14"
+                         SelectionChanged="OnSelect"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         AutomationProperties.Name="Evidence artefacts">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Margin" Value="0,0,0,6" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="Root"
+                                                Background="{DynamicResource Surface.Card}"
+                                                BorderBrush="{DynamicResource Border.Card}"
+                                                BorderThickness="1"
+                                                CornerRadius="{StaticResource Radius.Card}"
+                                                Padding="14,11">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.CardStrongHover}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource Surface.Selected}" />
+                                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent.BorderStrong}" />
+                                                <Setter TargetName="Root" Property="BorderThickness" Value="2" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Summary}" Style="{StaticResource Type.HeadingStyle}" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                        <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="{Binding Kind}" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <TextBlock Text="{Binding SourceAdapter}" Style="{StaticResource Type.IdentifierStyle}" />
+                                        <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="3" VerticalAlignment="Center"
+                                                Visibility="{Binding Redacted, Converter={StaticResource BoolToVisibility}}"
+                                                Background="{DynamicResource Surface.CardStrong}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1">
+                                            <TextBlock Text="REDACTED" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource Text.Muted}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Sha256}" Margin="0,4,0,0"
+                                               Style="{StaticResource Type.IdentifierStyle}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+
+                                <Border Grid.Column="1" VerticalAlignment="Top" Padding="8,4"
+                                        CornerRadius="{StaticResource Radius.SealChamfer}"
+                                        BorderThickness="1"
+                                        Visibility="{Binding Sealed, Converter={StaticResource BoolToVisibility}}"
+                                        Background="{DynamicResource Authority.Soft}"
+                                        BorderBrush="{DynamicResource Authority.Border}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE72E;" FontFamily="{StaticResource Font.Icon}" FontSize="10"
+                                                   Foreground="{DynamicResource Authority.Clearance}" VerticalAlignment="Center" />
+                                        <TextBlock Text="SEALED" Margin="5,0,0,0" FontSize="9" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Authority.Clearance}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
+                        VerticalAlignment="Top" HorizontalAlignment="Center" x:Name="EmptyPanel">
+                    <StackPanel>
+                        <TextBlock Text="&#xE8F1;" FontFamily="{StaticResource Font.Icon}" FontSize="22"
+                                   Foreground="{DynamicResource Text.Muted}" HorizontalAlignment="Center" />
+                        <TextBlock x:Name="EmptyTitle" Margin="0,12,0,0" HorizontalAlignment="Center"
+                                   Style="{StaticResource Type.SectionStyle}" />
+                        <TextBlock x:Name="EmptyBody" Margin="0,8,0,0" TextAlignment="Center"
+                                   Style="{StaticResource Type.CaptionStyle}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Evidence Preview Drawer -->
+            <Border Grid.Column="1" x:Name="EvidencePreviewDrawer" Width="440" Visibility="Collapsed"
+                    Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Subtle}"
+                    BorderThickness="1,0,0,0" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-
                             <StackPanel>
-                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Type.HeadingStyle}" />
-                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                    <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="{Binding Kind}" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="·" Margin="6,0" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <TextBlock Text="{Binding SourceAdapter}" Style="{StaticResource Type.IdentifierStyle}" />
-                                    <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="3" VerticalAlignment="Center"
-                                            Visibility="{Binding Redacted, Converter={StaticResource BoolToVisibility}}"
-                                            Background="{DynamicResource Surface.CardStrong}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1">
-                                        <TextBlock Text="REDACTED" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource Text.Muted}" />
-                                    </Border>
-                                </StackPanel>
-                                <TextBlock Text="{Binding Sha256}" Margin="0,4,0,0"
-                                           Style="{StaticResource Type.IdentifierStyle}"
-                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="ARTEFACT FORENSIC PREVIEW" Style="{StaticResource Type.MicroLabelStyle}" />
+                                <TextBlock x:Name="PreviewSummary" Style="{StaticResource Type.HeadingStyle}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                <TextBlock x:Name="PreviewId" Style="{StaticResource Type.IdentifierStyle}" Margin="0,2,0,0" />
                             </StackPanel>
-
-                            <!--
-                              The seal. Gold only when the artefact is verified; an unsealed artefact
-                              gets a plain outline, never a dimmed gold. A faint gold seal reads as a
-                              weak approval rather than as no approval.
-                            -->
-                            <Border Grid.Column="1" VerticalAlignment="Top" Padding="8,4"
-                                    CornerRadius="{StaticResource Radius.SealChamfer}"
-                                    BorderThickness="1"
-                                    Visibility="{Binding Sealed, Converter={StaticResource BoolToVisibility}}"
-                                    Background="{DynamicResource Authority.Soft}"
-                                    BorderBrush="{DynamicResource Authority.Border}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE72E;" FontFamily="{StaticResource Font.Icon}" FontSize="10"
-                                               Foreground="{DynamicResource Authority.Clearance}" VerticalAlignment="Center" />
-                                    <TextBlock Text="SEALED" Margin="5,0,0,0" FontSize="9" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource Authority.Clearance}" />
-                                </StackPanel>
-                            </Border>
+                            <Button Grid.Column="1" VerticalAlignment="Top" Content="✕" Width="24" Height="24" Padding="0"
+                                    Click="OnClosePreview" ToolTip="Close Preview Drawer" />
                         </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
 
-            <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
-                    VerticalAlignment="Top" HorizontalAlignment="Center" x:Name="EmptyPanel">
-                <StackPanel>
-                    <TextBlock Text="&#xE8F1;" FontFamily="{StaticResource Font.Icon}" FontSize="22"
-                               Foreground="{DynamicResource Text.Muted}" HorizontalAlignment="Center" />
-                    <TextBlock x:Name="EmptyTitle" Margin="0,12,0,0" HorizontalAlignment="Center"
-                               Style="{StaticResource Type.SectionStyle}" />
-                    <TextBlock x:Name="EmptyBody" Margin="0,8,0,0" TextAlignment="Center"
-                               Style="{StaticResource Type.CaptionStyle}" />
-                </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Border x:Name="PreviewKindBadge" Background="{DynamicResource Surface.Inset}" CornerRadius="{StaticResource Radius.Chip}" Padding="8,3" Margin="0,0,8,0">
+                                <TextBlock x:Name="PreviewKindText" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Accent.Text}" />
+                            </Border>
+                            <Border x:Name="PreviewSealBadge" CornerRadius="{StaticResource Radius.Chip}" Padding="8,3" Margin="0,0,8,0"
+                                    Background="{DynamicResource Authority.Soft}" BorderBrush="{DynamicResource Authority.Border}" BorderThickness="1">
+                                <TextBlock x:Name="PreviewSealText" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Authority.Clearance}" />
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Drawer Actions -->
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,12">
+                            <Button Content="Copy Payload" Click="OnCopyPreviewPayload" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Copy raw payload to clipboard" />
+                            <Button Content="Export File" Click="OnExportArtefact" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Export payload to %LOCALAPPDATA%" />
+                            <Button x:Name="BtnViewLinkedFault" Content="View Fault" Click="OnViewLinkedFault" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Open associated finding in Faults workspace" />
+                        </StackPanel>
+
+                        <!-- Screenshot Image Container -->
+                        <Border x:Name="PreviewImageContainer" Background="{DynamicResource Surface.Void}" BorderBrush="{DynamicResource Border.Subtle}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Margin="0,0,0,12" Visibility="Collapsed" MaxHeight="320">
+                            <Image x:Name="PreviewImage" Stretch="Uniform" Margin="4" />
+                        </Border>
+
+                        <!-- Formatted Text/JSON Payload Container -->
+                        <TextBlock Text="PAYLOAD CONTENT" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,4,0,6" />
+                        <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Control}" Padding="10">
+                            <TextBox x:Name="PreviewPayloadText" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                                     Foreground="{DynamicResource Text.Primary}" FontFamily="{StaticResource Font.Mono}"
+                                     FontSize="10" TextWrapping="Wrap" MaxHeight="280" VerticalScrollBarVisibility="Auto" />
+                        </Border>
+
+                        <!-- Cryptographic Provenance Details -->
+                        <TextBlock Text="PROVENANCE &amp; CUSTODY" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,16,0,6" />
+                        <Border Background="{DynamicResource Surface.Inset}" CornerRadius="{StaticResource Radius.Control}" Padding="10">
+                            <StackPanel>
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Source:" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                    <TextBlock x:Name="PreviewSourceAdapter" HorizontalAlignment="Right" Style="{StaticResource Type.IdentifierStyle}" />
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Size:" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                    <TextBlock x:Name="PreviewSizeBytes" HorizontalAlignment="Right" Style="{StaticResource Type.MonoStyle}" />
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Captured:" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                    <TextBlock x:Name="PreviewCapturedAt" HorizontalAlignment="Right" Style="{StaticResource Type.CaptionStyle}" />
+                                </Grid>
+                                <TextBlock Text="SHA-256 Digest:" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,4,0,2" />
+                                <TextBlock x:Name="PreviewSha256" Style="{StaticResource Type.IdentifierStyle}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>

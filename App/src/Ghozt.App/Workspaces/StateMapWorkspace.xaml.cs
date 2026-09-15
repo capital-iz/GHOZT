@@ -43,6 +43,14 @@ public partial class StateMapWorkspace : UserControl
     private readonly List<(LatticeNode Node, FrameworkElement Element)> _renderedNodes = [];
     private IReadOnlyList<LatticeEdge> _currentEdges = [];
 
+    // Interactive node dragging state
+    private bool _isDraggingNode;
+    private FrameworkElement? _draggedElement;
+    private LatticeNode? _draggedNode;
+    private Point _dragStartPoint;
+    private double _nodeStartLeft;
+    private double _nodeStartTop;
+
     private void Attach()
     {
         if (DataContext is ShellViewModel shell && !_attached)
@@ -52,6 +60,11 @@ public partial class StateMapWorkspace : UserControl
         }
 
         Refresh();
+
+        if (!string.IsNullOrWhiteSpace(Shell?.RequestedNodeId))
+        {
+            FocusNode(Shell.RequestedNodeId);
+        }
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
@@ -61,6 +74,31 @@ public partial class StateMapWorkspace : UserControl
         if (e.PropertyName is nameof(ShellViewModel.Target))
         {
             Refresh();
+        }
+        else if (e.PropertyName is nameof(ShellViewModel.RequestedNodeId))
+        {
+            if (!string.IsNullOrWhiteSpace(Shell?.RequestedNodeId))
+            {
+                FocusNode(Shell.RequestedNodeId);
+            }
+        }
+    }
+
+    public void FocusNode(string nodeId)
+    {
+        var match = _renderedNodes.FirstOrDefault(rn => rn.Node.Id.Equals(nodeId, StringComparison.OrdinalIgnoreCase));
+        if (match.Node is not null && match.Element is not null)
+        {
+            var left = Canvas.GetLeft(match.Element);
+            var top = Canvas.GetTop(match.Element);
+            if (GraphScroll.ActualWidth > 50 && GraphScroll.ActualHeight > 50)
+            {
+                LatticeTranslate.X = (GraphScroll.ActualWidth / 2) - (left * _zoom);
+                LatticeTranslate.Y = (GraphScroll.ActualHeight / 2) - (top * _zoom);
+            }
+
+            HighlightNode(match.Node);
+            OpenNodeInspector(match.Node);
         }
     }
 
@@ -243,16 +281,23 @@ public partial class StateMapWorkspace : UserControl
 
         if (root is not null)
         {
-            positions[root.Id] = centre;
+            positions[root.Id] = (root.X > 0 && root.Y > 0) ? new Point(root.X, root.Y) : centre;
         }
 
         var radius = Math.Max(40.0, Math.Min(centre.X, centre.Y) * 0.62);
         for (var i = 0; i < children.Count; i++)
         {
-            var angle = (2 * Math.PI * i / Math.Max(children.Count, 1)) - (Math.PI / 2);
-            positions[children[i].Id] = new Point(
-                centre.X + (Math.Cos(angle) * radius),
-                centre.Y + (Math.Sin(angle) * radius));
+            if (children[i].X > 0 && children[i].Y > 0)
+            {
+                positions[children[i].Id] = new Point(children[i].X, children[i].Y);
+            }
+            else
+            {
+                var angle = (2 * Math.PI * i / Math.Max(children.Count, 1)) - (Math.PI / 2);
+                positions[children[i].Id] = new Point(
+                    centre.X + (Math.Cos(angle) * radius),
+                    centre.Y + (Math.Sin(angle) * radius));
+            }
         }
 
         // Edges first, so nodes draw over them.
@@ -444,8 +489,71 @@ public partial class StateMapWorkspace : UserControl
         });
 
         border.Child = stack;
-        border.MouseLeftButtonUp += (_, e) =>
+
+        border.MouseLeftButtonDown += (s, e) =>
         {
+            _isDraggingNode = true;
+            _draggedElement = border;
+            _draggedNode = node;
+            _dragStartPoint = e.GetPosition(Lattice);
+            _nodeStartLeft = Canvas.GetLeft(border);
+            _nodeStartTop = Canvas.GetTop(border);
+            border.CaptureMouse();
+            e.Handled = true;
+        };
+
+        border.MouseMove += (s, e) =>
+        {
+            if (_isDraggingNode && _draggedElement == border && _draggedNode == node)
+            {
+                var current = e.GetPosition(Lattice);
+                var deltaX = current.X - _dragStartPoint.X;
+                var deltaY = current.Y - _dragStartPoint.Y;
+                var newLeft = _nodeStartLeft + deltaX;
+                var newTop = _nodeStartTop + deltaY;
+
+                Canvas.SetLeft(border, newLeft);
+                Canvas.SetTop(border, newTop);
+
+                var centreX = newLeft + (border.ActualWidth > 0 ? border.ActualWidth / 2 : border.DesiredSize.Width / 2);
+                var centreY = newTop + (border.ActualHeight > 0 ? border.ActualHeight / 2 : border.DesiredSize.Height / 2);
+
+                foreach (var (edge, line) in _renderedEdges)
+                {
+                    if (edge.FromId == node.Id)
+                    {
+                        line.X1 = centreX;
+                        line.Y1 = centreY;
+                    }
+                    if (edge.ToId == node.Id)
+                    {
+                        line.X2 = centreX;
+                        line.Y2 = centreY;
+                    }
+                }
+                e.Handled = true;
+            }
+        };
+
+        border.MouseLeftButtonUp += (s, e) =>
+        {
+            if (_isDraggingNode && _draggedNode == node)
+            {
+                border.ReleaseMouseCapture();
+                _isDraggingNode = false;
+
+                var finalLeft = Canvas.GetLeft(border);
+                var finalTop = Canvas.GetTop(border);
+                var centreX = finalLeft + (border.ActualWidth > 0 ? border.ActualWidth / 2 : border.DesiredSize.Width / 2);
+                var centreY = finalTop + (border.ActualHeight > 0 ? border.ActualHeight / 2 : border.DesiredSize.Height / 2);
+
+                var updated = node with { X = centreX, Y = centreY };
+                App.Store.Save(updated);
+
+                Shell?.Log("LATTICE.NODE.MOVE", $"Repositioned '{node.Label}' to ({centreX:F0}, {centreY:F0}).",
+                    Severity.Info, detail: $"id={node.Id}");
+            }
+
             Shell.InspectorSubject = node;
             HighlightNode(node);
             OpenNodeInspector(node);
@@ -453,6 +561,14 @@ public partial class StateMapWorkspace : UserControl
         };
 
         return border;
+    }
+
+    private void OnViewNodeFaults(object sender, RoutedEventArgs e)
+    {
+        if (_selectedNode is not null)
+        {
+            Shell.NavigateToFaults(null, _selectedNode.Id);
+        }
     }
 
     private sealed record TransitionItem(string Direction, string TargetNode, string Relationship);

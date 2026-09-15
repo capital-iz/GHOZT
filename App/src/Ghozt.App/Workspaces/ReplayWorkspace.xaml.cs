@@ -64,6 +64,7 @@ public partial class ReplayWorkspace : UserControl
         }
 
         RefreshSweeps();
+        CheckRequestedNavigation();
     }
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
@@ -72,6 +73,69 @@ public partial class ReplayWorkspace : UserControl
         {
             RefreshSweeps();
         }
+        else if (e.PropertyName is nameof(ShellViewModel.RequestedSweepId) ||
+                 e.PropertyName is nameof(ShellViewModel.RequestedFindingId))
+        {
+            CheckRequestedNavigation();
+        }
+    }
+
+    private void CheckRequestedNavigation()
+    {
+        var sweepId = Shell?.RequestedSweepId;
+        var findingId = Shell?.RequestedFindingId;
+        if (sweepId is null && findingId is null)
+        {
+            return;
+        }
+
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            return;
+        }
+
+        var sweeps = App.Store.Sweeps(target.Id);
+        Sweep? targetSweep = null;
+
+        if (sweepId is not null)
+        {
+            targetSweep = sweeps.FirstOrDefault(s => s.Id == sweepId);
+        }
+
+        Finding? finding = null;
+        if (findingId is not null)
+        {
+            finding = App.Store.Findings(target.Id).FirstOrDefault(f => f.Id == findingId);
+            if (targetSweep is null && finding?.SweepId is not null)
+            {
+                targetSweep = sweeps.FirstOrDefault(s => s.Id == finding.SweepId);
+            }
+        }
+
+        if (targetSweep is not null)
+        {
+            SweepPicker.SelectedItem = targetSweep;
+            _currentSweep = targetSweep;
+            LoadSweep(targetSweep);
+
+            // If finding is specified, seek to the step matching this finding
+            if (finding is not null && _steps.Count > 0)
+            {
+                var stepIndex = _steps.FindIndex(s =>
+                    s.ScreenshotEvidence?.FindingId == finding.Id ||
+                    s.StateId == finding.NodeId ||
+                    !s.Success);
+
+                if (stepIndex >= 0)
+                {
+                    ShowStep(stepIndex);
+                }
+            }
+        }
+
+        Shell.RequestedSweepId = null;
+        Shell.RequestedFindingId = null;
     }
 
     private void OnRefreshClicked(object sender, RoutedEventArgs e) => RefreshSweeps();
@@ -693,5 +757,76 @@ public partial class ReplayWorkspace : UserControl
             Severity.Info,
             detail: _currentPackage.ToYaml(),
             related: finding.Id.ToString());
+    }
+
+    private void OnTriageInFaults(object sender, RoutedEventArgs e)
+    {
+        if (_steps.Count == 0 || _currentStepIndex < 0 || _currentStepIndex >= _steps.Count)
+        {
+            Shell?.NavigateToFaults();
+            return;
+        }
+
+        var step = _steps[_currentStepIndex];
+        if (step.ScreenshotEvidence?.FindingId is { } findingId)
+        {
+            Shell?.NavigateToFaults(findingId);
+            return;
+        }
+
+        var target = Shell?.Target;
+        if (target is not null && _currentSweep is not null)
+        {
+            var finding = App.Store.Findings(target.Id).FirstOrDefault(f => f.SweepId == _currentSweep.Id);
+            if (finding is not null)
+            {
+                Shell?.NavigateToFaults(finding.Id);
+                return;
+            }
+        }
+
+        Shell?.NavigateToFaults();
+    }
+
+    private void OnInspectInStateMap(object sender, RoutedEventArgs e)
+    {
+        if (_steps.Count == 0 || _currentStepIndex < 0 || _currentStepIndex >= _steps.Count)
+        {
+            Shell?.NavigateToStateMap();
+            return;
+        }
+
+        var step = _steps[_currentStepIndex];
+        if (!string.IsNullOrWhiteSpace(step.StateId))
+        {
+            Shell?.NavigateToStateMap(step.StateId);
+        }
+        else
+        {
+            Shell?.NavigateToStateMap();
+        }
+    }
+
+    private void OnInspectEvidence(object sender, RoutedEventArgs e)
+    {
+        if (_steps.Count == 0 || _currentStepIndex < 0 || _currentStepIndex >= _steps.Count)
+        {
+            Shell?.Workspace = WorkspaceKind.Evidence;
+            return;
+        }
+
+        var step = _steps[_currentStepIndex];
+        if (step.ScreenshotEvidence is not null)
+        {
+            Shell?.NavigateToEvidence(step.ScreenshotEvidence.Id);
+        }
+        else if (step.TreeEvidence is not null)
+        {
+            Shell?.NavigateToEvidence(step.TreeEvidence.Id);
+        }
+        else
+        {
+            Shell?.Workspace = WorkspaceKind.Evidence;
+        }
     }
 }

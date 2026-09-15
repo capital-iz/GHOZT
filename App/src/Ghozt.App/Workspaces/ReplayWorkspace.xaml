@@ -197,6 +197,13 @@
                                             <TextBlock x:Name="EvidenceTreeSha" Text="" Style="{StaticResource Type.MonoStyle}" TextWrapping="Wrap" FontSize="11" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
+
+                                    <TextBlock Text="CROSS-WORKSPACE ACTIONS" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,6,0,6" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                        <Button Content="Triage in Faults" Click="OnTriageInFaults" Margin="0,0,6,0" Padding="8,4" FontSize="10" ToolTip="Jump to linked fault finding in Faults workspace" />
+                                        <Button Content="Inspect State" Click="OnInspectInStateMap" Margin="0,0,6,0" Padding="8,4" FontSize="10" ToolTip="Locate state in State Map workspace" />
+                                        <Button Content="View Evidence" Click="OnInspectEvidence" Padding="8,4" FontSize="10" ToolTip="Open black-box artefact in Evidence workspace" />
+                                    </StackPanel>
                                 </StackPanel>
                             </ScrollViewer>
                         </TabItem>

@@ -87,7 +87,7 @@ public readonly record struct GhoztId
         "EVT" => IdKind.Event,
         "EVD" => IdKind.Evidence,
         "DEV" => IdKind.Deviation,
-        "FLT" => IdKind.Fault,
+        "FLT" or "FND" => IdKind.Fault,
         "RPR" => IdKind.Reproducer,
         "CFX" => IdKind.Counterfactual,
         "FXB" => IdKind.FixBrief,

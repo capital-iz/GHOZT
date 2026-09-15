@@ -295,6 +295,74 @@ public sealed class ShellViewModel : ObservableBase
         set => Set(ref _commandPaletteOpen, value);
     }
 
+    // ---- cross-workspace forensic navigation handoffs ----
+
+    private GhoztId? _requestedSweepId;
+    public GhoztId? RequestedSweepId
+    {
+        get => _requestedSweepId;
+        set => Set(ref _requestedSweepId, value);
+    }
+
+    private GhoztId? _requestedFindingId;
+    public GhoztId? RequestedFindingId
+    {
+        get => _requestedFindingId;
+        set => Set(ref _requestedFindingId, value);
+    }
+
+    private string? _requestedNodeId;
+    public string? RequestedNodeId
+    {
+        get => _requestedNodeId;
+        set => Set(ref _requestedNodeId, value);
+    }
+
+    private GhoztId? _requestedEvidenceId;
+    public GhoztId? RequestedEvidenceId
+    {
+        get => _requestedEvidenceId;
+        set => Set(ref _requestedEvidenceId, value);
+    }
+
+    public void NavigateToReplay(GhoztId sweepId, GhoztId? findingId = null)
+    {
+        RequestedSweepId = sweepId;
+        RequestedFindingId = findingId;
+        Workspace = WorkspaceKind.Replay;
+        Log("NAV.REPLAY", $"Navigating to Replay for sweep {sweepId}" + (findingId != null ? $" and finding {findingId}" : ""), Severity.Info);
+    }
+
+    public void NavigateToStateMap(string? nodeId = null)
+    {
+        RequestedNodeId = nodeId;
+        Workspace = WorkspaceKind.StateMap;
+        Log("NAV.STATEMAP", !string.IsNullOrWhiteSpace(nodeId)
+            ? $"Navigating to State Map for node {nodeId}"
+            : "Navigating to State Map", Severity.Info);
+    }
+
+    public void NavigateToFaults(GhoztId? findingId = null, string? nodeId = null)
+    {
+        RequestedFindingId = findingId;
+        RequestedNodeId = nodeId;
+        Workspace = WorkspaceKind.Faults;
+        Log("NAV.FAULTS", $"Navigating to Faults" + (findingId != null ? $" for finding {findingId}" : ""), Severity.Info);
+    }
+
+    public void NavigateToEvidence(GhoztId evidenceId)
+    {
+        RequestedEvidenceId = evidenceId;
+        Workspace = WorkspaceKind.Evidence;
+        Log("NAV.EVIDENCE", $"Navigating to Evidence for artefact {evidenceId}", Severity.Info);
+    }
+
+    public void NavigateToSweep(string? mode = null)
+    {
+        Workspace = WorkspaceKind.Sweep;
+        Log("NAV.SWEEP", "Navigating to Sweep workspace", Severity.Info);
+    }
+
     // ---- counts, for the workspace header's scope line ----
 
     public int EventCount => _store.CountEvents();

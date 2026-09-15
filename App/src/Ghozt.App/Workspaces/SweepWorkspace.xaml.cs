@@ -291,6 +291,11 @@ public partial class SweepWorkspace : UserControl
         StopButton.IsEnabled = true;
 
         PostSweepPanel.Visibility = Visibility.Collapsed;
+        LiveLogPanel.Visibility = Visibility.Visible;
+        LiveLogText.Clear();
+        LiveProbeStatus.Text = "Initiating pre-flight...";
+        LiveLogText.AppendText($"[{DateTime.Now:HH:mm:ss.fff}] Sweep execution started for {target.Name} (Mode: {mode}, Budget: {sweep.MaxStates} states, {sweep.MaxSeconds}s)\n");
+
         foreach (var item in _currentPlanItems)
         {
             item.SetState("Pending", "○", (Brush?)TryFindResource("Text.Muted") ?? Brushes.Gray);
@@ -307,12 +312,17 @@ public partial class SweepWorkspace : UserControl
         {
             // The stop path. RunAsync has already persisted the partial sweep and its evidence.
             PhaseText.Text = "Stopped";
+            LiveLogText.AppendText($"[{DateTime.Now:HH:mm:ss.fff}] Execution aborted by operator.\n");
         }
         finally
         {
             _cancellation?.Dispose();
             _cancellation = null;
             StopButton.IsEnabled = false;
+
+            LiveProbeStatus.Text = "Completed";
+            LiveLogText.AppendText($"[{DateTime.Now:HH:mm:ss.fff}] Sweep execution finished. Visited: {StatesPlate.Value}, Deviations: {DeviationPlate.Value}, Artefacts: {EvidencePlate.Value}.\n");
+            LiveLogText.ScrollToEnd();
 
             foreach (var item in _currentPlanItems)
             {
@@ -342,6 +352,13 @@ public partial class SweepWorkspace : UserControl
         StatesPlate.Value = progress.StatesVisited.ToString(CultureInfo.CurrentCulture);
         DeviationPlate.Value = progress.Deviations.ToString(CultureInfo.CurrentCulture);
         EvidencePlate.Value = progress.Evidence.ToString(CultureInfo.CurrentCulture);
+
+        LiveProbeStatus.Text = $"{progress.StatesVisited} visited · {progress.Deviations} deviations";
+        if (!string.IsNullOrWhiteSpace(progress.Detail))
+        {
+            LiveLogText.AppendText($"[{DateTime.Now:HH:mm:ss.fff}] [{progress.Phase}] {progress.Detail}\n");
+            LiveLogText.ScrollToEnd();
+        }
 
         var activeIndex = -1;
         for (var i = 0; i < _currentPlanItems.Count; i++)
@@ -399,5 +416,13 @@ public partial class SweepWorkspace : UserControl
     private void OnPostSweepClearance(object sender, RoutedEventArgs e)
     {
         Shell.Workspace = WorkspaceKind.Clearance;
+    }
+
+    private void OnReplayHistoryItem(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: GhoztId sweepId })
+        {
+            Shell.NavigateToReplay(sweepId);
+        }
     }
 }

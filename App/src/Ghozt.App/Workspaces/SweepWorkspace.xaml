@@ -210,6 +210,22 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+
+                    <!-- Live Streaming Probe & Engine Log -->
+                    <Border x:Name="LiveLogPanel" Visibility="Collapsed" Margin="0,14,0,0" Padding="12,10"
+                            Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}"
+                            BorderThickness="1" CornerRadius="{StaticResource Radius.Card}">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Text="LIVE PROBE TELEMETRY &amp; ENGINE STREAM" Style="{StaticResource Type.MicroLabelStyle}" />
+                                <TextBlock x:Name="LiveProbeStatus" HorizontalAlignment="Right" Style="{StaticResource Type.MonoStyle}" FontSize="10" />
+                            </Grid>
+                            <TextBox x:Name="LiveLogText" Margin="0,8,0,0" Height="100" IsReadOnly="True"
+                                     BorderThickness="0" Background="Transparent" Foreground="{DynamicResource Text.Secondary}"
+                                     FontFamily="{StaticResource Font.Mono}" FontSize="10" TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -245,13 +261,18 @@
                                                 <Run Text="artefacts" />
                                             </TextBlock>
                                         </StackPanel>
-                                        <Border Grid.Column="1" VerticalAlignment="Top" Padding="7,3"
-                                                CornerRadius="{StaticResource Radius.Chip}"
-                                                BorderThickness="1"
-                                                BorderBrush="{DynamicResource Border.Control}">
-                                            <TextBlock Text="{Binding State}" FontSize="9" FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource Text.Secondary}" />
-                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Right">
+                                            <Border Padding="7,3" HorizontalAlignment="Right"
+                                                    CornerRadius="{StaticResource Radius.Chip}"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{DynamicResource Border.Control}">
+                                                <TextBlock Text="{Binding State}" FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Text.Secondary}" />
+                                            </Border>
+                                            <Button Margin="0,6,0,0" Padding="8,3" FontSize="10" Content="Replay"
+                                                    Click="OnReplayHistoryItem" Tag="{Binding Id}"
+                                                    ToolTip="Open full step-by-step visual replay for this sweep" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

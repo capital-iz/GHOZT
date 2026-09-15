@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using Ghozt.App.Shell;
 using Ghozt.Core;
 
@@ -32,6 +34,7 @@ public partial class EvidenceWorkspace : UserControl
         }
 
         Refresh();
+        CheckRequestedEvidence();
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
@@ -44,6 +47,35 @@ public partial class EvidenceWorkspace : UserControl
         {
             Refresh();
         }
+        else if (e.PropertyName is nameof(ShellViewModel.RequestedEvidenceId))
+        {
+            CheckRequestedEvidence();
+        }
+    }
+
+    private void CheckRequestedEvidence()
+    {
+        if (Shell?.RequestedEvidenceId is not { } requestedId)
+        {
+            return;
+        }
+
+        var target = Shell.Target;
+        if (target is null)
+        {
+            return;
+        }
+
+        var all = App.Store.EvidenceItems(target.Id);
+        var match = all.FirstOrDefault(e => e.Id == requestedId);
+        if (match is not null)
+        {
+            Items.SelectedItem = match;
+            Items.ScrollIntoView(match);
+            OpenPreviewDrawer(match);
+        }
+
+        Shell.RequestedEvidenceId = null;
     }
 
     private void OnSearch(object sender, TextChangedEventArgs e)
@@ -134,6 +166,15 @@ public partial class EvidenceWorkspace : UserControl
         var artefact = Selected;
         Shell.InspectorSubject = artefact;
 
+        if (artefact is not null)
+        {
+            OpenPreviewDrawer(artefact);
+        }
+        else
+        {
+            EvidencePreviewDrawer.Visibility = Visibility.Collapsed;
+        }
+
         VerifyButton.IsEnabled = artefact is not null;
         ExportArtefactButton.IsEnabled = artefact is not null && !string.IsNullOrWhiteSpace(artefact.Payload);
         RedactButton.IsEnabled = artefact is not null && !artefact.Redacted;
@@ -153,6 +194,135 @@ public partial class EvidenceWorkspace : UserControl
                 : _verified.Contains(artefact.Id)
                     ? "Verifies the hash and records you as the reviewer"
                     : "Verify the hash first — a seal asserts the content is unchanged.";
+    }
+
+    private void OpenPreviewDrawer(Evidence artefact)
+    {
+        EvidencePreviewDrawer.Visibility = Visibility.Visible;
+        PreviewSummary.Text = artefact.Summary;
+        PreviewId.Text = artefact.Id.ToString();
+        PreviewKindText.Text = artefact.Kind.ToUpperInvariant();
+
+        PreviewSealBadge.Visibility = artefact.Sealed ? Visibility.Visible : Visibility.Collapsed;
+        PreviewSealText.Text = artefact.Sealed ? $"SEALED ({artefact.SealedBy})" : "";
+
+        PreviewSourceAdapter.Text = string.IsNullOrWhiteSpace(artefact.SourceAdapter) ? "Native Observer" : artefact.SourceAdapter;
+        PreviewSizeBytes.Text = $"{artefact.SizeBytes:N0} bytes";
+        PreviewCapturedAt.Text = artefact.CapturedAt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        PreviewSha256.Text = artefact.Sha256;
+
+        // Visual screenshot rendering
+        if (artefact.Kind.Contains("image", StringComparison.OrdinalIgnoreCase) ||
+            artefact.Kind.Contains("screenshot", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var bytes = Convert.FromBase64String(artefact.Payload);
+                using var ms = new MemoryStream(bytes);
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.StreamSource = ms;
+                bmp.EndInit();
+                bmp.Freeze();
+
+                PreviewImage.Source = bmp;
+                PreviewImageContainer.Visibility = Visibility.Visible;
+            }
+            catch
+            {
+                PreviewImage.Source = null;
+                PreviewImageContainer.Visibility = Visibility.Collapsed;
+            }
+
+            PreviewPayloadText.Text = $"[Binary Screenshot Artefact — {artefact.SizeBytes:N0} bytes]\nSHA-256: {artefact.Sha256}";
+        }
+        else
+        {
+            PreviewImage.Source = null;
+            PreviewImageContainer.Visibility = Visibility.Collapsed;
+
+            if (artefact.Kind.Contains("json", StringComparison.OrdinalIgnoreCase) ||
+                artefact.Payload.TrimStart().StartsWith('{') ||
+                artefact.Payload.TrimStart().StartsWith('['))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(artefact.Payload);
+                    PreviewPayloadText.Text = JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true });
+                }
+                catch
+                {
+                    PreviewPayloadText.Text = artefact.Payload;
+                }
+            }
+            else
+            {
+                PreviewPayloadText.Text = artefact.Payload;
+            }
+        }
+
+        // Cross-workspace link to finding
+        var target = Shell?.Target;
+        Finding? linkedFault = null;
+        if (artefact.FindingId is { } fId && target is not null)
+        {
+            linkedFault = App.Store.Findings(target.Id).FirstOrDefault(f => f.Id == fId);
+        }
+        else if (artefact.SweepId is { } sId && target is not null)
+        {
+            linkedFault = App.Store.Findings(target.Id).FirstOrDefault(f => f.SweepId == sId);
+        }
+
+        if (linkedFault is not null || artefact.FindingId is not null)
+        {
+            BtnViewLinkedFault.Visibility = Visibility.Visible;
+            BtnViewLinkedFault.Tag = linkedFault?.Id ?? artefact.FindingId;
+        }
+        else
+        {
+            BtnViewLinkedFault.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void OnClosePreview(object sender, RoutedEventArgs e)
+    {
+        EvidencePreviewDrawer.Visibility = Visibility.Collapsed;
+        Items.SelectedItem = null;
+    }
+
+    private void OnCopyPreviewPayload(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } artefact)
+        {
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(artefact.Payload);
+            Shell?.Log("EVD.COPY", $"Artefact {artefact.Id} payload copied to clipboard.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("EVD.COPY.ERR", $"Failed to copy artefact payload: {ex.Message}", Severity.Medium);
+        }
+    }
+
+    private void OnViewLinkedFault(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: GhoztId findingId })
+        {
+            Shell?.NavigateToFaults(findingId);
+        }
+        else if (Selected?.FindingId is { } fId)
+        {
+            Shell?.NavigateToFaults(fId);
+        }
+        else
+        {
+            Shell?.NavigateToFaults();
+        }
     }
 
     private readonly HashSet<GhoztId> _verified = [];

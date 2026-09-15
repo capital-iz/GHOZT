@@ -439,5 +439,111 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("AutomationControlType.Button", cs);
         Assert.Contains("public void Invoke()", cs);
     }
+
+    [Fact]
+    public void LatticeNodeCanStoreAndPersistCoordinatesWithoutDrift()
+    {
+        var targetId = _store.NextId(IdKind.Target);
+        var node = new LatticeNode
+        {
+            Id = "node:workspace:canvas",
+            TargetId = targetId,
+            Label = "Interactive Canvas State",
+            Kind = NodeKind.Feature,
+            State = "Observed",
+            Provenance = "Observed",
+            X = 425.5,
+            Y = 780.25,
+            LastSeenAt = DateTimeOffset.UtcNow,
+        };
+
+        _store.Save(node);
+
+        var retrieved = _store.Nodes(targetId).Single(n => n.Id == "node:workspace:canvas");
+        Assert.Equal(425.5, retrieved.X);
+        Assert.Equal(780.25, retrieved.Y);
+
+        var movedNode = retrieved with { X = 510.0, Y = 640.0 };
+        _store.Save(movedNode);
+
+        var updated = _store.Nodes(targetId).Single(n => n.Id == "node:workspace:canvas");
+        Assert.Equal(510.0, updated.X);
+        Assert.Equal(640.0, updated.Y);
+    }
+
+    [Fact]
+    public void WorkspacesForensicWorkflowSynthesisMarkupAndHandlersExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+
+        // State Map
+        var stateMapXaml = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml"));
+        var stateMapCs = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml.cs"));
+        Assert.Contains("CanvasContainer", stateMapXaml);
+        Assert.Contains("_isDraggingNode", stateMapCs);
+        Assert.Contains("MouseLeftButtonDown", stateMapCs);
+        Assert.Contains("MouseLeftButtonUp", stateMapCs);
+        Assert.Contains("FocusNode", stateMapCs);
+
+        // Faults
+        var faultsXaml = File.ReadAllText(Path.Combine(basePath, "FaultsWorkspace.xaml"));
+        var faultsCs = File.ReadAllText(Path.Combine(basePath, "FaultsWorkspace.xaml.cs"));
+        Assert.Contains("OnReplayFault", faultsXaml);
+        Assert.Contains("OnLocateOnStateMap", faultsXaml);
+        Assert.Contains("OnViewEvidence", faultsXaml);
+        Assert.Contains("CrossNavCard", faultsXaml);
+        Assert.Contains("NavigateToReplay", faultsCs);
+        Assert.Contains("NavigateToStateMap", faultsCs);
+
+        // Evidence
+        var evidenceXaml = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml"));
+        var evidenceCs = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml.cs"));
+        Assert.Contains("EvidencePreviewDrawer", evidenceXaml);
+        Assert.Contains("PreviewImage", evidenceXaml);
+        Assert.Contains("PreviewPayloadText", evidenceXaml);
+        Assert.Contains("OpenPreviewDrawer", evidenceCs);
+        Assert.Contains("OnCopyPreviewPayload", evidenceCs);
+        Assert.Contains("OnViewLinkedFault", evidenceCs);
+        Assert.Contains("CheckRequestedEvidence", evidenceCs);
+
+        // Replay
+        var replayXaml = File.ReadAllText(Path.Combine(basePath, "ReplayWorkspace.xaml"));
+        var replayCs = File.ReadAllText(Path.Combine(basePath, "ReplayWorkspace.xaml.cs"));
+        Assert.Contains("OnTriageInFaults", replayXaml);
+        Assert.Contains("OnInspectInStateMap", replayXaml);
+        Assert.Contains("OnInspectEvidence", replayXaml);
+        Assert.Contains("CheckRequestedNavigation", replayCs);
+
+        // Sweep
+        var sweepXaml = File.ReadAllText(Path.Combine(basePath, "SweepWorkspace.xaml"));
+        var sweepCs = File.ReadAllText(Path.Combine(basePath, "SweepWorkspace.xaml.cs"));
+        Assert.Contains("LiveLogPanel", sweepXaml);
+        Assert.Contains("LiveLogText", sweepXaml);
+        Assert.Contains("OnReplayHistoryItem", sweepXaml);
+        Assert.Contains("OnReplayHistoryItem", sweepCs);
+
+        // Clearance
+        var clearanceCs = File.ReadAllText(Path.Combine(basePath, "ClearanceWorkspace.xaml.cs"));
+        Assert.Contains("remediationPanel", clearanceCs);
+        Assert.Contains("Triage Open Faults", clearanceCs);
+        Assert.Contains("Review & Seal Evidence", clearanceCs);
+    }
+
+    [Fact]
+    public void ShellViewModelHandoffPropertiesAndNavigationContractsExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Shell"));
+        var cs = File.ReadAllText(Path.Combine(basePath, "ShellViewModel.cs"));
+
+        Assert.Contains("RequestedSweepId", cs);
+        Assert.Contains("RequestedFindingId", cs);
+        Assert.Contains("RequestedNodeId", cs);
+        Assert.Contains("RequestedEvidenceId", cs);
+        Assert.Contains("NavigateToReplay", cs);
+        Assert.Contains("NavigateToStateMap", cs);
+        Assert.Contains("NavigateToFaults", cs);
+        Assert.Contains("NavigateToEvidence", cs);
+        Assert.Contains("NavigateToSweep", cs);
+    }
 }
 
