@@ -138,6 +138,19 @@ public partial class EvidenceWorkspace : UserControl
 
         if (shown.Count > 0)
         {
+            if (Shell?.RequestedEvidenceId is { } reqEvId)
+            {
+                var match = shown.FirstOrDefault(e => e.Id == reqEvId);
+                if (match is not null)
+                {
+                    Items.SelectedItem = match;
+                    Items.ScrollIntoView(match);
+                }
+            }
+            else if (Items.SelectedItem is not Evidence ev || !shown.Contains(ev))
+            {
+                Items.SelectedIndex = 0;
+            }
             return;
         }
 

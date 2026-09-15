@@ -122,6 +122,44 @@ public partial class StateMapWorkspace : UserControl
         }
     }
 
+    private void OnNodeSearchChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!IsLoaded) return;
+
+        var query = NodeSearchBox?.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrEmpty(query))
+        {
+            foreach (var (_, element) in _renderedNodes)
+            {
+                element.Opacity = 1.0;
+            }
+            return;
+        }
+
+        LatticeNode? firstMatch = null;
+        foreach (var (node, element) in _renderedNodes)
+        {
+            var match = node.Label.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        node.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(node.Detail) && node.Detail.Contains(query, StringComparison.OrdinalIgnoreCase));
+
+            if (match)
+            {
+                element.Opacity = 1.0;
+                firstMatch ??= node;
+            }
+            else
+            {
+                element.Opacity = 0.25;
+            }
+        }
+
+        if (firstMatch is not null)
+        {
+            FocusNode(firstMatch.Id);
+        }
+    }
+
     private void OnZoomIn(object sender, RoutedEventArgs e) => SetZoom(_zoom + 0.15);
     private void OnZoomOut(object sender, RoutedEventArgs e) => SetZoom(_zoom - 0.15);
     private void OnZoomReset(object sender, RoutedEventArgs e)

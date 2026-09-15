@@ -148,6 +148,10 @@ public partial class FaultsWorkspace : UserControl
                     Queue.ScrollIntoView(match);
                 }
             }
+            else if (Queue.SelectedItem is null || !filtered.Contains((Finding)Queue.SelectedItem))
+            {
+                Queue.SelectedIndex = 0;
+            }
         }
     }
 
@@ -159,23 +163,17 @@ public partial class FaultsWorkspace : UserControl
         if (target is null)
         {
             EmptyTitle.Text = "No target selected";
-            EmptyBody.Text = "Select a target in Targets to see the findings recorded against it.";
+            EmptyBody.Text = "Select a target to see its backlog of findings.";
         }
         else if (sweeps.Count == 0)
         {
-            EmptyTitle.Text = "Nothing has been tested";
-            EmptyBody.Text = $"No sweep has run against {target.Name}. An empty fault queue here means "
-                             + "absence of testing, not absence of faults. Run a sweep to establish coverage.";
+            EmptyTitle.Text = "No sweeps recorded";
+            EmptyBody.Text = $"Nothing has been run against {target.Name} yet. Run a discovery or sweep to observe behaviour.";
         }
         else
         {
-            var partial = sweeps.Count(s => s.State is RunState.Partial or RunState.Cancelled);
-            EmptyTitle.Text = "No faults in tested scope";
-            EmptyBody.Text = partial > 0
-                ? $"{sweeps.Count} sweep(s) have run and found no deviations, but {partial} ended early. "
-                  + "The scope those runs did not reach remains untested rather than proven."
-                : $"{sweeps.Count} sweep(s) have run against {target.Name} with no deviations. "
-                  + "Coverage is bounded by the checks in those sweep modes.";
+            EmptyTitle.Text = "No open findings";
+            EmptyBody.Text = $"Every check on {target.Name} held. If something looks wrong, run a probe or explore a state to look deeper.";
         }
     }
 
@@ -241,7 +239,20 @@ public partial class FaultsWorkspace : UserControl
         {
             Clipboard.SetText(sb.ToString());
             Shell?.Log("FLT.EXPORT.BUG_REPORT", $"Copied defect bug report for {finding.Id} to clipboard.", Severity.Info);
-            MessageBox.Show("Defect bug report copied to clipboard in standard Markdown/GitHub issue format.", "Ghozt - Bug Report Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            if (ExportBugReportButton is not null)
+            {
+                ExportBugReportButton.Content = "Copied to Clipboard!";
+                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+                timer.Tick += (s, ev) =>
+                {
+                    timer.Stop();
+                    if (ExportBugReportButton is not null)
+                    {
+                        ExportBugReportButton.Content = "Export Bug Report";
+                    }
+                };
+                timer.Start();
+            }
         }
         catch (Exception ex)
         {

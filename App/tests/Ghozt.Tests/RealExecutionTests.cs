@@ -771,5 +771,31 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("report:sarif", evXaml);
         Assert.Contains("report:junit", evXaml);
     }
+
+    [Fact]
+    public void WorkspacesForensicPhase4ErgonomicInnovationsExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+
+        // State Map Node Search
+        var stateMapXaml = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml"));
+        var stateMapCs = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml.cs"));
+        Assert.Contains("NodeSearchBox", stateMapXaml);
+        Assert.Contains("OnNodeSearchChanged", stateMapCs);
+
+        // Faults Fluid Selection and Non-Blocking Export
+        var faultsCs = File.ReadAllText(Path.Combine(basePath, "FaultsWorkspace.xaml.cs"));
+        Assert.Contains("Queue.SelectedIndex = 0;", faultsCs);
+        Assert.Contains("Copied to Clipboard!", faultsCs);
+
+        // Evidence Fluid Selection
+        var evCs = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml.cs"));
+        Assert.Contains("Items.SelectedIndex = 0;", evCs);
+
+        // Algorithms Delta-Debugging Visual Token Triage
+        var algoCs = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml.cs"));
+        Assert.Contains("ISOLATED CRITICAL SUBSET", algoCs);
+        Assert.Contains("PRUNED OBSERVATIONAL NOISE", algoCs);
+    }
 }
 

@@ -532,8 +532,8 @@ public partial class AlgorithmsWorkspace : UserControl
             // Verify initial full vector satisfies failure criterion
             if (!PropertyViolation(fullVector))
             {
-                MinimiseSummaryText.Text = "Failure criterion was NOT satisfied by the initial full vector. Adjust inputs or criterion.";
-                MessageBox.Show("The initial input vector does not satisfy the selected failure criterion. At least one failing subset must exist for delta debugging.", "Delta Debugging Notice", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MinimiseSummaryText.Text = "Warning: Failure criterion was NOT satisfied by the initial full vector. Adjust inputs or criterion.";
+                Shell?.Log("ALG.MINIMISE.WARN", "Initial vector does not satisfy selected failure criterion.", Severity.Medium);
                 return;
             }
 
@@ -576,13 +576,18 @@ public partial class AlgorithmsWorkspace : UserControl
             };
             stack.Children.Add(meta);
 
-            var minTitle = new TextBlock
+            var grid = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var leftStack = new StackPanel { Margin = new Thickness(0, 0, 8, 0) };
+            leftStack.Children.Add(new TextBlock
             {
-                Text = "ISOLATED CRITICAL SUBSET (1-MINIMAL CAUSE):",
+                Text = $"ISOLATED CRITICAL SUBSET ({minimal.Count} ITEMS):",
                 Style = (Style)TryFindResource("Type.MicroLabelStyle"),
-                Margin = new Thickness(0, 6, 0, 4),
-            };
-            stack.Children.Add(minTitle);
+                Foreground = (Brush)TryFindResource("State.Fault"),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
 
             foreach (var item in minimal)
             {
@@ -600,9 +605,48 @@ public partial class AlgorithmsWorkspace : UserControl
                     Text = item,
                     Style = (Style)TryFindResource("Type.MonoStyle"),
                     Foreground = (Brush)TryFindResource("Text.Primary"),
+                    FontWeight = FontWeights.SemiBold,
                 };
-                stack.Children.Add(itemBorder);
+                leftStack.Children.Add(itemBorder);
             }
+
+            var rightStack = new StackPanel { Margin = new Thickness(8, 0, 0, 0) };
+            var pruned = fullVector.Where(t => !minimal.Contains(t)).ToList();
+            rightStack.Children.Add(new TextBlock
+            {
+                Text = $"PRUNED OBSERVATIONAL NOISE ({pruned.Count} ITEMS):",
+                Style = (Style)TryFindResource("Type.MicroLabelStyle"),
+                Foreground = (Brush)TryFindResource("Text.Muted"),
+                Margin = new Thickness(0, 0, 0, 4),
+            });
+
+            foreach (var item in pruned)
+            {
+                var itemBorder = new Border
+                {
+                    Background = (Brush)TryFindResource("Surface.Deep"),
+                    BorderBrush = (Brush)TryFindResource("Border.Subtle"),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10, 6, 10, 6),
+                    Margin = new Thickness(0, 0, 0, 4),
+                    Opacity = 0.6,
+                };
+                itemBorder.Child = new TextBlock
+                {
+                    Text = $"pruned: {item}",
+                    Style = (Style)TryFindResource("Type.MonoStyle"),
+                    Foreground = (Brush)TryFindResource("Text.Muted"),
+                    TextDecorations = TextDecorations.Strikethrough,
+                };
+                rightStack.Children.Add(itemBorder);
+            }
+
+            Grid.SetColumn(leftStack, 0);
+            Grid.SetColumn(rightStack, 1);
+            grid.Children.Add(leftStack);
+            grid.Children.Add(rightStack);
+            stack.Children.Add(grid);
 
             card.Child = stack;
             MinimisePanel.Children.Add(card);
