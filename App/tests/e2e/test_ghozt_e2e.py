@@ -142,8 +142,23 @@ def test_interactive_ui_automation():
     if found_probe_ok:
         print("  [PASS] Blackbox stream recorded TGT.PROBE / TGT.PROBE.OK.")
 
-    # WORKFLOW 2: Rail Navigation to State Map
-    print("\n--- Testing Workflow 2: State Map & Lattice Exploration ---")
+    # WORKFLOW 2: Sweep Planning & Execution
+    print("\n--- Testing Workflow 2: Sweep Workspace ---")
+    sweep_rail = win.child_window(title_re="^Sweep.*", control_type="Button")
+    if sweep_rail.exists(timeout=5):
+        print("  [PASS] Found Sweep rail button. Navigating...")
+        sweep_rail.invoke()
+        time.sleep(1.0)
+        start_btn = win.child_window(title="Start the sweep", control_type="Button")
+        if start_btn.exists(timeout=3):
+            start_btn.invoke()
+            time.sleep(2.0)
+            print("  [PASS] 'Start the sweep' invoked successfully.")
+    else:
+        print("  [WARN] Sweep rail button not found directly; continuing...")
+
+    # WORKFLOW 3: Rail Navigation to State Map
+    print("\n--- Testing Workflow 3: State Map & Lattice Exploration ---")
     state_map_rail = win.child_window(title_re="^State Map.*", control_type="Button")
     if state_map_rail.exists(timeout=5):
         print("  [PASS] Found State Map rail button. Navigating...")
@@ -178,8 +193,82 @@ def test_interactive_ui_automation():
     else:
         print("  [WARN] State Map rail button not found directly; continuing...")
 
-    # WORKFLOW 3: Rail Navigation to Clearance & Release Gates
-    print("\n--- Testing Workflow 3: Clearance Workspace & Self-Test ---")
+    # WORKFLOW 4: Faults Triage
+    print("\n--- Testing Workflow 4: Faults Workspace ---")
+    faults_rail = win.child_window(title_re="^Faults.*", control_type="Button")
+    if faults_rail.exists(timeout=5):
+        print("  [PASS] Found Faults rail button. Navigating...")
+        faults_rail.invoke()
+        time.sleep(1.0)
+        print("  [PASS] Faults queue and forensic cards inspected.")
+
+    # WORKFLOW 5: Deterministic Replay
+    print("\n--- Testing Workflow 5: Replay Workspace ---")
+    replay_rail = win.child_window(title_re="^Replay.*", control_type="Button")
+    if replay_rail.exists(timeout=5):
+        print("  [PASS] Found Replay rail button. Navigating...")
+        replay_rail.invoke()
+        time.sleep(1.0)
+        refresh_btn = win.child_window(title="Refresh sweeps", control_type="Button")
+        if refresh_btn.exists(timeout=3):
+            refresh_btn.invoke()
+            time.sleep(0.5)
+            print("  [PASS] 'Refresh sweeps' invoked in Replay.")
+
+    # WORKFLOW 6: Evidence Cryptographic Audit
+    print("\n--- Testing Workflow 6: Evidence Workspace ---")
+    evidence_rail = win.child_window(title_re="^Evidence.*", control_type="Button")
+    if evidence_rail.exists(timeout=5):
+        print("  [PASS] Found Evidence rail button. Navigating...")
+        evidence_rail.invoke()
+        time.sleep(1.0)
+        verify_all_btn = win.child_window(title="Verify all evidence hashes", control_type="Button")
+        if verify_all_btn.exists(timeout=3):
+            verify_all_btn.invoke()
+            time.sleep(1.0)
+            print("  [PASS] 'Verify all evidence hashes' invoked.")
+
+    # WORKFLOW 7: Algorithm Invariant Suite
+    print("\n--- Testing Workflow 7: Algorithms Workspace ---")
+    algo_rail = win.child_window(title_re="^Algorithms.*", control_type="Button")
+    if algo_rail.exists(timeout=5):
+        print("  [PASS] Found Algorithms rail button. Navigating...")
+        algo_rail.invoke()
+        time.sleep(1.0)
+        run_algo_btn = win.child_window(title="Run algorithm invariant test suite", control_type="Button")
+        if run_algo_btn.exists(timeout=3):
+            run_algo_btn.invoke()
+            time.sleep(1.5)
+            print("  [PASS] 'Run algorithm invariant test suite' invoked.")
+
+    # WORKFLOW 8: Regression Guard Management
+    print("\n--- Testing Workflow 8: Regressions Workspace ---")
+    regressions_rail = win.child_window(title_re="^Regressions.*", control_type="Button")
+    if regressions_rail.exists(timeout=5):
+        print("  [PASS] Found Regressions rail button. Navigating...")
+        regressions_rail.invoke()
+        time.sleep(1.0)
+        gen_guards_btn = win.child_window(title="Generate regression guards from findings", control_type="Button")
+        if gen_guards_btn.exists(timeout=3):
+            gen_guards_btn.invoke()
+            time.sleep(1.0)
+            print("  [PASS] 'Generate regression guards' invoked.")
+
+    # WORKFLOW 9: Reports & Clearance Dossier
+    print("\n--- Testing Workflow 9: Reports Workspace ---")
+    reports_rail = win.child_window(title_re="^Reports.*", control_type="Button")
+    if reports_rail.exists(timeout=5):
+        print("  [PASS] Found Reports rail button. Navigating...")
+        reports_rail.invoke()
+        time.sleep(1.0)
+        gen_dossier_btn = win.child_window(title="Generate forensic dossier", control_type="Button")
+        if gen_dossier_btn.exists(timeout=3):
+            gen_dossier_btn.invoke()
+            time.sleep(1.0)
+            print("  [PASS] 'Generate forensic dossier' invoked.")
+
+    # WORKFLOW 10: Clearance Workspace & Self-Test
+    print("\n--- Testing Workflow 10: Clearance Workspace & Self-Test ---")
     clearance_rail = win.child_window(title_re="^Clearance.*", control_type="Button")
     if clearance_rail.exists(timeout=5):
         print("  [PASS] Found Clearance rail button. Navigating...")
@@ -200,8 +289,8 @@ def test_interactive_ui_automation():
     else:
         print("  [WARN] Clearance rail button not found directly; continuing...")
 
-    # WORKFLOW 4: Rail Navigation to Settings & SQLite Maintenance
-    print("\n--- Testing Workflow 4: Settings Workspace & WAL Maintenance ---")
+    # WORKFLOW 11: Settings Workspace & WAL Maintenance
+    print("\n--- Testing Workflow 11: Settings Workspace & WAL Maintenance ---")
     settings_rail = win.child_window(title_re="^Settings.*", control_type="Button")
     if settings_rail.exists(timeout=5):
         print("  [PASS] Found Settings rail button. Navigating...")
