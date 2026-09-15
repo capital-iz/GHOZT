@@ -31,6 +31,10 @@
                             IsEnabled="{Binding HasTarget}"
                             ToolTip="Check whether the selected target is reachable and record the result"
                             AutomationProperties.Name="Probe the selected target" />
+                    <Button Margin="8,0,0,0" Content="Authority Grant" Click="OnToolbarAuthorityGrant"
+                            IsEnabled="{Binding HasTarget}"
+                            ToolTip="Issue or manage execution authority grant and isolation level (L0-L5) for selected target"
+                            AutomationProperties.Name="Manage target authority grant" />
                     <Button Margin="8,0,0,0" Content="Discover Manifest" Click="OnDiscoverManifest"
                             IsEnabled="{Binding HasTarget}"
                             ToolTip="Scans the target repository/address for feature manifests and maps them into the State Lattice"
@@ -144,6 +148,9 @@
                                                 <Button Content="Launch" Height="26" Padding="8,0" Margin="0,0,6,0"
                                                         Click="OnLaunchTarget" ToolTip="Launch target executable or verify running process"
                                                         AutomationProperties.Name="Launch target" />
+                                                <Button Content="Authority" Height="26" Padding="8,0" Margin="0,0,6,0"
+                                                        Click="OnTargetCardAuthorityGrant" ToolTip="Issue or manage execution authority grant (L0-L5)"
+                                                        AutomationProperties.Name="Manage target authority grant" />
                                                 <Button Content="State Lattice" Height="26" Padding="8,0" Margin="0,0,6,0"
                                                         Click="OnExploreTargetLattice" ToolTip="Jump to State Lattice for this target"
                                                         AutomationProperties.Name="Open State Lattice" />

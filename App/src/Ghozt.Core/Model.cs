@@ -16,6 +16,41 @@ public enum AccessClass
     Destructive,
 }
 
+/// <summary>
+/// Execution isolation level enforced against targets and sweep runners (Patent Table 70).
+/// </summary>
+public enum ExecutionIsolationLevel
+{
+    /// <summary>L0: Read-only source/runtime discovery. No target mutation; limited evidence collection.</summary>
+    L0_Observe = 0,
+
+    /// <summary>L1: UI/API actions in local/test environment. Reset/cleanup required; no destructive external side effects.</summary>
+    L1_ControlledInteraction = 1,
+
+    /// <summary>L2: Create/update controlled data, restart services, apply fixtures. Approval according to policy; snapshots/rollback.</summary>
+    L2_StateChanging = 2,
+
+    /// <summary>L3: Delete/corrupt/fail resources in disposable environment. Explicit approval, isolated blast radius and containment.</summary>
+    L3_DestructiveChaos = 3,
+
+    /// <summary>L4: Branch-bounded AI/developer repair. Allowed paths/commands, diff review and tests.</summary>
+    L4_CodeModification = 4,
+
+    /// <summary>L5: Approved production diagnostics or carefully bounded test. Strongest approval, minimised capture and immediate stop/containment.</summary>
+    L5_ProductionObservation = 5,
+}
+
+/// <summary>
+/// Classification of data sensitivity for target interaction and evidence storage (Patent §35).
+/// </summary>
+public enum DataSensitivityTier
+{
+    Public,
+    Internal,
+    Confidential,
+    Restricted,
+}
+
 /// <summary>Where a target runs. Drives the persistent environment band and the production gate.</summary>
 public enum TargetEnvironment
 {
@@ -398,4 +433,72 @@ public sealed record ClearanceGate
     public string WaiverReason { get; init; } = "";
 
     public string WaivedBy { get; init; } = "";
+}
+
+/// <summary>
+/// An immutable, signed authority grant issued to an operator or agent against a target (Patent Table 10, Table 70).
+/// </summary>
+public sealed record AuthorityGrant
+{
+    public required GhoztId GrantId { get; init; }
+
+    public required GhoztId TargetId { get; init; }
+
+    public required string Actor { get; init; }
+
+    public ExecutionIsolationLevel MaxLevel { get; init; } = ExecutionIsolationLevel.L1_ControlledInteraction;
+
+    public IReadOnlyList<string> AllowedActionClasses { get; init; } = Array.Empty<string>();
+
+    public DataSensitivityTier AllowedDataSensitivity { get; init; } = DataSensitivityTier.Internal;
+
+    public required DateTimeOffset IssuedAt { get; init; }
+
+    public required DateTimeOffset ExpiresAt { get; init; }
+
+    public string Approver { get; init; } = "";
+
+    public string ScopeJustification { get; init; } = "";
+
+    public string AuditSignature { get; init; } = "";
+
+    public bool IsExpired(DateTimeOffset? now = null) => (now ?? DateTimeOffset.Now) > ExpiresAt;
+}
+
+/// <summary>
+/// Result of an issue tracker backlog synchronization operation (Patent Table 75).
+/// </summary>
+public sealed record IssueSyncResult
+{
+    public required string Provider { get; init; } // GitHub, Jira, GitLab
+
+    public required string IssueIdentifier { get; init; }
+
+    public required string Title { get; init; }
+
+    public required string PayloadMarkdown { get; init; }
+
+    public required string FingerprintToken { get; init; }
+
+    public bool IsUpdate { get; init; }
+
+    public int RecurrenceCount { get; init; }
+
+    public DateTimeOffset SyncedAt { get; init; } = DateTimeOffset.Now;
+}
+
+/// <summary>
+/// Result of an observability ingestion operation (Patent Table 75).
+/// </summary>
+public sealed record ObservabilityIngestResult
+{
+    public required int IngestedCount { get; init; }
+
+    public required int RedactedCount { get; init; }
+
+    public required int MalformedCount { get; init; }
+
+    public required TimeSpan Duration { get; init; }
+
+    public required string BatchDigest { get; init; }
 }

@@ -225,7 +225,11 @@
                                 <TextBlock Text="7-Feature Decomposition:" FontWeight="SemiBold" FontSize="10" Margin="0,6,0,4" Foreground="{DynamicResource Text.Secondary}" />
                                 <StackPanel x:Name="FingerprintFeaturesList" />
 
-                                <Button Content="Copy Fingerprint" Click="OnCopyFingerprint" Margin="0,8,0,0" HorizontalAlignment="Left" ToolTip="Copy 32-character SHA-256 fingerprint digest" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="Copy Fingerprint" Click="OnCopyFingerprint" Margin="0,0,6,0" ToolTip="Copy 32-character SHA-256 fingerprint digest" />
+                                    <Button Content="Export Issue (GitHub)" Click="OnExportGitHubIssue" Margin="0,0,6,0" ToolTip="Formats GitHub Issue Markdown with Table 46 deduplication token" />
+                                    <Button Content="Export Issue (Jira)" Click="OnExportJiraIssue" ToolTip="Formats Jira Cloud JSON with Table 46 deduplication token" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 

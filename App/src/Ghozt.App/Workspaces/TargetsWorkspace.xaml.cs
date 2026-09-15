@@ -336,6 +336,33 @@ public partial class TargetsWorkspace : UserControl
         Shell.Refresh();
     }
 
+    private void OnToolbarAuthorityGrant(object sender, RoutedEventArgs e)
+    {
+        if (Shell.Target is { } target)
+        {
+            OpenAuthorityGrantDialog(target);
+        }
+    }
+
+    private void OnTargetCardAuthorityGrant(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: Target target })
+        {
+            OpenAuthorityGrantDialog(target);
+        }
+    }
+
+    private void OpenAuthorityGrantDialog(Target target)
+    {
+        var dialog = new AuthorityGrantDialog(target, App.Store) { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() == true)
+        {
+            Shell.ReloadTargets();
+            Shell.Target = App.Store.Targets().FirstOrDefault(t => t.Id == target.Id);
+            Shell.Refresh();
+        }
+    }
+
     private void OnRemove(object sender, RoutedEventArgs e)
     {
         if (Shell.Target is not { } target)

@@ -196,11 +196,26 @@ public sealed class GhoztStore : IDisposable
                 Detail    TEXT NOT NULL DEFAULT ''
             );
 
+            CREATE TABLE IF NOT EXISTS AuthorityGrants (
+                GrantId               TEXT PRIMARY KEY,
+                TargetId              TEXT NOT NULL,
+                Actor                 TEXT NOT NULL,
+                MaxLevel              INTEGER NOT NULL,
+                AllowedActionsJson    TEXT NOT NULL,
+                AllowedSensitivity    TEXT NOT NULL,
+                IssuedAt              TEXT NOT NULL,
+                ExpiresAt             TEXT NOT NULL,
+                Approver              TEXT NOT NULL DEFAULT '',
+                ScopeJustification    TEXT NOT NULL DEFAULT '',
+                AuditSignature        TEXT NOT NULL DEFAULT ''
+            );
+
             CREATE INDEX IF NOT EXISTS IX_Events_At       ON Events (At DESC);
             CREATE INDEX IF NOT EXISTS IX_Events_Sweep    ON Events (SweepId);
             CREATE INDEX IF NOT EXISTS IX_Findings_Target ON Findings (TargetId);
             CREATE INDEX IF NOT EXISTS IX_Evidence_Finding ON Evidence (FindingId);
             CREATE INDEX IF NOT EXISTS IX_Nodes_Target    ON LatticeNodes (TargetId);
+            CREATE INDEX IF NOT EXISTS IX_Grants_Target   ON AuthorityGrants (TargetId);
             """);
     }
 
@@ -870,6 +885,96 @@ public sealed class GhoztStore : IDisposable
 
             return targetFile;
         }
+    }
+
+    // ---------------------------------------------------------------- authority grants (Patent Table 10, Table 70)
+
+    public void Save(AuthorityGrant grant)
+    {
+        lock (_gate)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText =
+                """
+                INSERT INTO AuthorityGrants
+                  (GrantId, TargetId, Actor, MaxLevel, AllowedActionsJson, AllowedSensitivity, IssuedAt, ExpiresAt, Approver, ScopeJustification, AuditSignature)
+                VALUES
+                  ($id, $target, $actor, $level, $actions, $sens, $issued, $expires, $approver, $scope, $sig)
+                ON CONFLICT(GrantId) DO UPDATE SET
+                  Actor = excluded.Actor, MaxLevel = excluded.MaxLevel, AllowedActionsJson = excluded.AllowedActionsJson,
+                  AllowedSensitivity = excluded.AllowedSensitivity, ExpiresAt = excluded.ExpiresAt,
+                  Approver = excluded.Approver, ScopeJustification = excluded.ScopeJustification, AuditSignature = excluded.AuditSignature;
+                """;
+            command.Parameters.AddWithValue("$id", grant.GrantId.ToString());
+            command.Parameters.AddWithValue("$target", grant.TargetId.ToString());
+            command.Parameters.AddWithValue("$actor", grant.Actor);
+            command.Parameters.AddWithValue("$level", (int)grant.MaxLevel);
+            command.Parameters.AddWithValue("$actions", System.Text.Json.JsonSerializer.Serialize(grant.AllowedActionClasses));
+            command.Parameters.AddWithValue("$sens", grant.AllowedDataSensitivity.ToString());
+            command.Parameters.AddWithValue("$issued", Iso(grant.IssuedAt));
+            command.Parameters.AddWithValue("$expires", Iso(grant.ExpiresAt));
+            command.Parameters.AddWithValue("$approver", grant.Approver);
+            command.Parameters.AddWithValue("$scope", grant.ScopeJustification);
+            command.Parameters.AddWithValue("$sig", grant.AuditSignature);
+            command.ExecuteNonQuery();
+        }
+    }
+
+    public AuthorityGrant? ActiveGrantFor(GhoztId targetId)
+    {
+        lock (_gate)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText =
+                """
+                SELECT * FROM AuthorityGrants
+                WHERE TargetId = $target
+                ORDER BY ExpiresAt DESC
+                LIMIT 1;
+                """;
+            command.Parameters.AddWithValue("$target", targetId.ToString());
+            using var reader = command.ExecuteReader();
+            if (!reader.Read()) return null;
+            return ReadAuthorityGrant(reader);
+        }
+    }
+
+    public IReadOnlyList<AuthorityGrant> AuthorityGrantsFor(GhoztId targetId)
+    {
+        lock (_gate)
+        {
+            var list = new List<AuthorityGrant>();
+            using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT * FROM AuthorityGrants WHERE TargetId = $target ORDER BY ExpiresAt DESC;";
+            command.Parameters.AddWithValue("$target", targetId.ToString());
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(ReadAuthorityGrant(reader));
+            }
+            return list;
+        }
+    }
+
+    private static AuthorityGrant ReadAuthorityGrant(SqliteDataReader reader)
+    {
+        var actionsJson = reader.GetString(reader.GetOrdinal("AllowedActionsJson"));
+        var actions = System.Text.Json.JsonSerializer.Deserialize<List<string>>(actionsJson) ?? new List<string>();
+
+        return new AuthorityGrant
+        {
+            GrantId = GhoztId.Parse(reader.GetString(reader.GetOrdinal("GrantId"))),
+            TargetId = GhoztId.Parse(reader.GetString(reader.GetOrdinal("TargetId"))),
+            Actor = reader.GetString(reader.GetOrdinal("Actor")),
+            MaxLevel = (ExecutionIsolationLevel)reader.GetInt32(reader.GetOrdinal("MaxLevel")),
+            AllowedActionClasses = actions,
+            AllowedDataSensitivity = Enum<DataSensitivityTier>(reader.GetString(reader.GetOrdinal("AllowedSensitivity"))),
+            IssuedAt = ParseIso(reader.GetString(reader.GetOrdinal("IssuedAt"))),
+            ExpiresAt = ParseIso(reader.GetString(reader.GetOrdinal("ExpiresAt"))),
+            Approver = reader.GetString(reader.GetOrdinal("Approver")),
+            ScopeJustification = reader.GetString(reader.GetOrdinal("ScopeJustification")),
+            AuditSignature = reader.GetString(reader.GetOrdinal("AuditSignature")),
+        };
     }
 
     public void Dispose()

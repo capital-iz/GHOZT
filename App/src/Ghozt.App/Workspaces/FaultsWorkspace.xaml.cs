@@ -569,6 +569,57 @@ public partial class FaultsWorkspace : UserControl
         }
     }
 
+    private void OnExportGitHubIssue(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding || Shell.Target is not { } target) return;
+
+        try
+        {
+            var evidence = App.Store.EvidenceItems(findingId: finding.Id);
+            var markdown = IssueTrackerSyncEngine.FormatGitHubIssueMarkdown(finding, target, _currentHypothesis, evidence);
+            try { Clipboard.SetText(markdown); } catch { }
+
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz", "Ghozt", "Issues");
+            Directory.CreateDirectory(folder);
+            var path = Path.Combine(folder, $"{finding.Id}-github.md");
+            File.WriteAllText(path, markdown);
+
+            Shell.Log("ISSUE.EXPORT.GITHUB", $"Exported GitHub Issue for {finding.Id} with Table 46 fingerprint token (copied to clipboard & saved).",
+                Severity.Info, related: finding.Id.ToString());
+        }
+        catch (Exception ex)
+        {
+            Shell.Log("ISSUE.EXPORT.FAIL", $"Failed to export GitHub issue: {ex.Message}", Severity.Medium, related: finding.Id.ToString());
+        }
+    }
+
+    private void OnExportJiraIssue(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } finding || Shell.Target is not { } target) return;
+
+        try
+        {
+            var json = IssueTrackerSyncEngine.FormatJiraJson(finding, "GZT");
+            try { Clipboard.SetText(json); } catch { }
+
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz", "Ghozt", "Issues");
+            Directory.CreateDirectory(folder);
+            var path = Path.Combine(folder, $"{finding.Id}-jira.json");
+            File.WriteAllText(path, json);
+
+            Shell.Log("ISSUE.EXPORT.JIRA", $"Exported Jira Cloud JSON for {finding.Id} with Table 46 fingerprint token (copied to clipboard & saved).",
+                Severity.Info, related: finding.Id.ToString());
+        }
+        catch (Exception ex)
+        {
+            Shell.Log("ISSUE.EXPORT.FAIL", $"Failed to export Jira issue: {ex.Message}", Severity.Medium, related: finding.Id.ToString());
+        }
+    }
+
     private void OnWaiveFinding(object sender, RoutedEventArgs e)
     {
         if (Selected is not { } finding || Shell.Target is not { } target) return;
