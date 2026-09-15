@@ -13,6 +13,15 @@ public partial class ClearanceWorkspace : UserControl
     public ClearanceWorkspace()
     {
         InitializeComponent();
+        Loaded += OnClearanceLoaded;
+    }
+
+    private void OnClearanceLoaded(object sender, RoutedEventArgs e)
+    {
+        if (Shell?.Target is not null && _currentDecision is null)
+        {
+            OnEvaluate(this, new RoutedEventArgs());
+        }
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;

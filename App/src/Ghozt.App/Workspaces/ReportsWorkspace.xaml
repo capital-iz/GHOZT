@@ -10,50 +10,43 @@
 
         <!-- Command Header -->
         <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <WrapPanel Orientation="Horizontal">
+                <Button Style="{StaticResource Button.Primary}" Content="Generate Dossier"
+                        Click="OnGenerate" x:Name="GenerateButton" Margin="0,0,8,6"
+                        ToolTip="Compiles technical and executive examination report from active evidence"
+                        AutomationProperties.Name="Generate forensic dossier" />
+                <Button Margin="0,0,8,6" Content="Export Markdown" Click="OnExportMarkdown"
+                        x:Name="ExportMdButton" IsEnabled="False"
+                        ToolTip="Exports report as markdown document to artifacts" />
+                <Button Margin="0,0,8,6" Content="Export HTML" Click="OnExportHtml"
+                        x:Name="ExportHtmlButton" IsEnabled="False"
+                        ToolTip="Exports standalone styled HTML report" />
+                <Button Margin="0,0,8,6" Content="Export JSON" Click="OnExportJson"
+                        x:Name="ExportJsonButton" IsEnabled="False"
+                        ToolTip="Exports machine-readable evidence dataset" />
+                <Button Margin="0,0,8,6" Content="Export SARIF" Click="OnExportSarif"
+                        x:Name="ExportSarifButton" IsEnabled="False"
+                        ToolTip="Exports OASIS SARIF v2.1.0 report for CI/CD security scanning" />
+                <Button Margin="0,0,8,6" Content="Export JUnit" Click="OnExportJUnit"
+                        x:Name="ExportJUnitButton" IsEnabled="False"
+                        ToolTip="Exports JUnit XML testsuite report for CI engines" />
+                <Button Margin="0,0,8,6" Content="Open in Viewer" Click="OnOpenViewer"
+                        x:Name="OpenViewerButton" IsEnabled="False"
+                        ToolTip="Opens the exported dossier in the system's default viewer" />
+                <Button Margin="0,0,8,6" Content="Preview In-App" Click="OnPreviewInApp"
+                        x:Name="PreviewInAppButton" IsEnabled="False"
+                        ToolTip="Reads the exported dossier directly inside an embedded in-app viewer"
+                        AutomationProperties.Name="Preview report in-app" />
+                <Button Margin="0,0,16,6" Content="Portfolio Rollup" Click="OnPortfolioRollup"
+                        x:Name="PortfolioRollupButton"
+                        ToolTip="Generates an executive multi-target quality report across the entire Capital-Iz estate (Patent §41)"
+                        AutomationProperties.Name="Generate portfolio quality rollup" />
 
-                <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource Button.Primary}" Content="Generate Dossier"
-                            Click="OnGenerate" x:Name="GenerateButton"
-                            ToolTip="Compiles technical and executive examination report from active evidence"
-                            AutomationProperties.Name="Generate forensic dossier" />
-                    <Button Margin="8,0,0,0" Content="Export Markdown" Click="OnExportMarkdown"
-                            x:Name="ExportMdButton" IsEnabled="False"
-                            ToolTip="Exports report as markdown document to artifacts" />
-                    <Button Margin="8,0,0,0" Content="Export HTML" Click="OnExportHtml"
-                            x:Name="ExportHtmlButton" IsEnabled="False"
-                            ToolTip="Exports standalone styled HTML report" />
-                    <Button Margin="8,0,0,0" Content="Export JSON" Click="OnExportJson"
-                            x:Name="ExportJsonButton" IsEnabled="False"
-                            ToolTip="Exports machine-readable evidence dataset" />
-                    <Button Margin="8,0,0,0" Content="Export SARIF" Click="OnExportSarif"
-                            x:Name="ExportSarifButton" IsEnabled="False"
-                            ToolTip="Exports OASIS SARIF v2.1.0 report for CI/CD security scanning" />
-                    <Button Margin="8,0,0,0" Content="Export JUnit" Click="OnExportJUnit"
-                            x:Name="ExportJUnitButton" IsEnabled="False"
-                            ToolTip="Exports JUnit XML testsuite report for CI engines" />
-                    <Button Margin="8,0,0,0" Content="Open in Viewer" Click="OnOpenViewer"
-                            x:Name="OpenViewerButton" IsEnabled="False"
-                            ToolTip="Opens the exported dossier in the system's default viewer" />
-                    <Button Margin="8,0,0,0" Content="Preview In-App" Click="OnPreviewInApp"
-                            x:Name="PreviewInAppButton" IsEnabled="False"
-                            ToolTip="Reads the exported dossier directly inside an embedded in-app viewer"
-                            AutomationProperties.Name="Preview report in-app" />
-                    <Button Margin="8,0,0,0" Content="Portfolio Rollup" Click="OnPortfolioRollup"
-                            x:Name="PortfolioRollupButton"
-                            ToolTip="Generates an executive multi-target quality report across the entire Capital-Iz estate (Patent §41)"
-                            AutomationProperties.Name="Generate portfolio quality rollup" />
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Border Margin="0,0,0,6" Background="{DynamicResource Surface.CardFaint}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="10,4" VerticalAlignment="Center">
                     <TextBlock x:Name="StatusText" Text="Select target and click 'Generate Dossier'"
                                Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
-                </StackPanel>
-            </Grid>
+                </Border>
+            </WrapPanel>
         </Border>
 
         <!-- Report Content -->

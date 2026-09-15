@@ -14,54 +14,48 @@
         </Grid.RowDefinitions>
 
         <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <WrapPanel Orientation="Horizontal">
+                <!-- Action Buttons -->
+                <Button x:Name="SealButton" Style="{StaticResource Button.Approval}"
+                        Content="Seal artefact" MinWidth="120" Margin="0,0,6,6" Click="OnSeal" IsEnabled="False"
+                        ToolTip="Verifies the hash and records you as the reviewer"
+                        AutomationProperties.Name="Seal the selected evidence artefact" />
+                <Button Margin="0,0,6,6" x:Name="VerifyButton" Content="Verify hash"
+                        Click="OnVerify" IsEnabled="False"
+                        ToolTip="Recomputes the content hash and compares it with the recorded value"
+                        AutomationProperties.Name="Verify the artefact hash" />
+                <Button Margin="0,0,6,6" x:Name="VerifyAllButton" Content="Verify all"
+                        Click="OnVerifyAll"
+                        ToolTip="Recomputes hashes for all artefacts captured against this target"
+                        AutomationProperties.Name="Verify all evidence hashes" />
+                <Button Margin="0,0,6,6" x:Name="ExportArtefactButton" Content="Export payload"
+                        Click="OnExportArtefact" IsEnabled="False"
+                        ToolTip="Exports raw payload data to %LOCALAPPDATA%\Capital-Iz\Ghozt\EvidenceExport"
+                        AutomationProperties.Name="Export evidence payload to file" />
+                <Button Margin="0,0,6,6" x:Name="RedactButton" Content="Redact"
+                        Click="OnRedact" IsEnabled="False"
+                        ToolTip="Masks the payload while preserving the original under permission"
+                        AutomationProperties.Name="Redact the artefact payload" />
+                <Button Margin="0,0,6,6" x:Name="RedactAllButton" Content="Redact secrets"
+                        Click="OnRedactAll"
+                        ToolTip="Scans all artefacts for sensitive tokens, passwords and keys, replacing them with redaction markers"
+                        AutomationProperties.Name="Redact sensitive data in all artefacts" />
+                <Button Margin="0,0,16,6" x:Name="FreezeRingBufferButton" Content="Freeze ring buffer"
+                        Click="OnFreezeRingBuffer"
+                        ToolTip="Seals in-memory pre-failure ring buffer telemetry into an immutable forensic evidence artefact (Patent §23)"
+                        AutomationProperties.Name="Freeze pre-failure ring buffer" />
 
-                <StackPanel Orientation="Horizontal">
-                    <Button x:Name="SealButton" Style="{StaticResource Button.Approval}"
-                            Content="Seal artefact" MinWidth="130" Click="OnSeal" IsEnabled="False"
-                            ToolTip="Verifies the hash and records you as the reviewer"
-                            AutomationProperties.Name="Seal the selected evidence artefact" />
-                    <Button Margin="6,0,0,0" x:Name="VerifyButton" Content="Verify hash"
-                            Click="OnVerify" IsEnabled="False"
-                            ToolTip="Recomputes the content hash and compares it with the recorded value"
-                            AutomationProperties.Name="Verify the artefact hash" />
-                    <Button Margin="6,0,0,0" x:Name="VerifyAllButton" Content="Verify all"
-                            Click="OnVerifyAll"
-                            ToolTip="Recomputes hashes for all artefacts captured against this target"
-                            AutomationProperties.Name="Verify all evidence hashes" />
-                    <Button Margin="6,0,0,0" x:Name="ExportArtefactButton" Content="Export payload"
-                            Click="OnExportArtefact" IsEnabled="False"
-                            ToolTip="Exports raw payload data to %LOCALAPPDATA%\Capital-Iz\Ghozt\EvidenceExport"
-                            AutomationProperties.Name="Export evidence payload to file" />
-                    <Button Margin="6,0,0,0" x:Name="RedactButton" Content="Redact"
-                            Click="OnRedact" IsEnabled="False"
-                            ToolTip="Masks the payload while preserving the original under permission"
-                            AutomationProperties.Name="Redact the artefact payload" />
-                    <Button Margin="6,0,0,0" x:Name="RedactAllButton" Content="Redact secrets"
-                            Click="OnRedactAll"
-                            ToolTip="Scans all artefacts for sensitive tokens, passwords and keys, replacing them with redaction markers"
-                            AutomationProperties.Name="Redact sensitive data in all artefacts" />
-                    <Button Margin="6,0,0,0" x:Name="FreezeRingBufferButton" Content="Freeze ring buffer"
-                            Click="OnFreezeRingBuffer"
-                            ToolTip="Seals in-memory pre-failure ring buffer telemetry into an immutable forensic evidence artefact (Patent §23)"
-                            AutomationProperties.Name="Freeze pre-failure ring buffer" />
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Margin="16,0,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Filters and Search -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,6" VerticalAlignment="Center">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SEARCH" />
-                        <TextBox x:Name="Search" Width="160" HorizontalAlignment="Left" Height="26"
+                        <TextBox x:Name="Search" Width="150" HorizontalAlignment="Left" Height="26"
                                  TextChanged="OnSearch"
                                  AutomationProperties.Name="Search evidence by summary, kind or hash" />
                     </StackPanel>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="KIND" />
-                        <ComboBox x:Name="KindFilter" Width="120" Height="26" SelectionChanged="OnKindFilterChanged"
+                        <ComboBox x:Name="KindFilter" Width="155" Height="26" SelectionChanged="OnKindFilterChanged"
                                   AutomationProperties.Name="Filter evidence by kind">
                             <ComboBoxItem Content="All Kinds" IsSelected="True" />
                             <ComboBoxItem Content="ui-tree" />
@@ -79,7 +73,7 @@
                     </StackPanel>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="CAPTURE MODE" />
-                        <ComboBox x:Name="CaptureModeFilter" Width="120" Height="26" SelectionChanged="OnCaptureModeChanged"
+                        <ComboBox x:Name="CaptureModeFilter" Width="135" Height="26" SelectionChanged="OnCaptureModeChanged"
                                   AutomationProperties.Name="Select active capture fidelity mode">
                             <ComboBoxItem Content="Baseline" IsSelected="True" />
                             <ComboBoxItem Content="Anomaly" />
@@ -91,11 +85,12 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                <!-- Measured Completeness Ratio -->
+                <StackPanel VerticalAlignment="Center" Margin="0,0,0,6">
                     <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="COMPLETENESS" />
                     <TextBlock x:Name="Completeness" Style="{StaticResource Type.MonoStyle}" />
                 </StackPanel>
-            </Grid>
+            </WrapPanel>
         </Border>
 
         <Grid Grid.Row="1">
@@ -230,7 +225,7 @@
 
                         <!-- Drawer Actions -->
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,12">
-                            <Button Content="Copy Payload" Click="OnCopyPreviewPayload" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Copy raw payload to clipboard" />
+                            <Button x:Name="CopyPayloadButton" Content="Copy Payload" Click="OnCopyPreviewPayload" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Copy raw payload to clipboard" />
                             <Button Content="Export File" Click="OnExportArtefact" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Export payload to %LOCALAPPDATA%" />
                             <Button x:Name="BtnViewLinkedFault" Content="View Fault" Click="OnViewLinkedFault" Margin="0,0,6,0" Padding="8,3" FontSize="10" ToolTip="Open associated finding in Faults workspace" />
                         </StackPanel>

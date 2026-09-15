@@ -150,7 +150,7 @@
                 </Border>
 
                 <!-- Minimiser Results Body -->
-                <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" x:Name="MinimiseScrollViewer" Padding="20,16" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <!-- Interactive Input Vector Configuration Card -->
                         <Border Margin="0,0,0,16" Padding="16" Background="{DynamicResource Surface.Card}"

@@ -14,9 +14,18 @@ public partial class ReportsWorkspace : UserControl
     public ReportsWorkspace()
     {
         InitializeComponent();
+        Loaded += OnReportsLoaded;
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
+
+    private void OnReportsLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_currentReport is null && Shell?.Target is not null)
+        {
+            OnGenerate(this, new RoutedEventArgs());
+        }
+    }
 
     private void OnGenerate(object sender, RoutedEventArgs e)
     {
@@ -158,6 +167,19 @@ public partial class ReportsWorkspace : UserControl
         return dir;
     }
 
+    private static void ShowTemporaryButtonConfirmation(Button? button, string confirmationText, string originalText)
+    {
+        if (button is null) return;
+        button.Content = confirmationText;
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+        timer.Tick += (s, ev) =>
+        {
+            timer.Stop();
+            button.Content = originalText;
+        };
+        timer.Start();
+    }
+
     private void OnExportMarkdown(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
@@ -166,6 +188,7 @@ public partial class ReportsWorkspace : UserControl
         StatusText.Text = $"Exported to {_lastExportedPath}";
         Shell?.Log("RPT.EXPORT.MD", $"Exported markdown dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        ShowTemporaryButtonConfirmation(ExportMdButton, "Exported!", "Export Markdown");
         OpenViewerButton.IsEnabled = true;
     }
 
@@ -177,6 +200,7 @@ public partial class ReportsWorkspace : UserControl
         StatusText.Text = $"Exported to {_lastExportedPath}";
         Shell?.Log("RPT.EXPORT.HTML", $"Exported HTML dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        ShowTemporaryButtonConfirmation(ExportHtmlButton, "Exported!", "Export HTML");
         OpenViewerButton.IsEnabled = true;
     }
 
@@ -188,6 +212,7 @@ public partial class ReportsWorkspace : UserControl
         StatusText.Text = $"Exported to {_lastExportedPath}";
         Shell?.Log("RPT.EXPORT.JSON", $"Exported JSON dataset {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        ShowTemporaryButtonConfirmation(ExportJsonButton, "Exported!", "Export JSON");
         OpenViewerButton.IsEnabled = true;
     }
 
@@ -199,6 +224,7 @@ public partial class ReportsWorkspace : UserControl
         StatusText.Text = $"Exported SARIF to {_lastExportedPath}";
         Shell?.Log("RPT.EXPORT.SARIF", $"Exported OASIS SARIF v2.1.0 dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        ShowTemporaryButtonConfirmation(ExportSarifButton, "Exported!", "Export SARIF");
         OpenViewerButton.IsEnabled = true;
         PreviewInAppButton.IsEnabled = true;
     }
@@ -211,6 +237,7 @@ public partial class ReportsWorkspace : UserControl
         StatusText.Text = $"Exported JUnit XML to {_lastExportedPath}";
         Shell?.Log("RPT.EXPORT.JUNIT", $"Exported JUnit XML report {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
+        ShowTemporaryButtonConfirmation(ExportJUnitButton, "Exported!", "Export JUnit");
         OpenViewerButton.IsEnabled = true;
         PreviewInAppButton.IsEnabled = true;
     }

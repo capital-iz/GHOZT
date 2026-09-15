@@ -88,7 +88,7 @@
                         <DataTemplate>
                             <!-- A target card. Every reading that gates what may be done is on the
                                  card, not behind a click: environment, access class, authority. -->
-                            <Border Width="380" Margin="0,0,14,14" Padding="14"
+                            <Border Width="400" Margin="0,0,14,14" Padding="14"
                                     Background="{DynamicResource Surface.Card}"
                                     BorderThickness="1.5"
                                     CornerRadius="{StaticResource Radius.CardLarge}"
@@ -101,42 +101,44 @@
                                     </MultiBinding>
                                 </Border.BorderBrush>
                                 <StackPanel>
-                                    <Grid>
+                                    <Grid Margin="0,0,0,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Type.HeadingStyle}" />
-                                            <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" />
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Type.HeadingStyle}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Id}" Style="{StaticResource Type.IdentifierStyle}" Margin="0,2,0,0" />
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                                            <Border Padding="6,2" Margin="0,0,6,0"
-                                                    CornerRadius="{StaticResource Radius.Chip}"
-                                                    Background="{DynamicResource Accent.Fill}">
-                                                <Border.Visibility>
-                                                    <MultiBinding Converter="{StaticResource TargetActiveVisibility}">
-                                                        <Binding Path="Id" />
-                                                        <Binding Path="DataContext.Target" RelativeSource="{RelativeSource AncestorType=UserControl}" />
-                                                    </MultiBinding>
-                                                </Border.Visibility>
-                                                <TextBlock Text="ACTIVE" FontSize="9" FontWeight="Bold"
-                                                           Foreground="{DynamicResource Text.OnAccent}" />
-                                            </Border>
-                                            <Border Padding="6,2" Margin="0,0,6,0"
-                                                    CornerRadius="{StaticResource Radius.Chip}"
-                                                    Background="{DynamicResource Surface.Inset}">
-                                                <TextBlock Text="{Binding Kind}" FontSize="9"
-                                                           Foreground="{DynamicResource Text.Secondary}" />
-                                            </Border>
-                                            <Border Padding="6,2"
-                                                    CornerRadius="{StaticResource Radius.Chip}"
-                                                    Background="{DynamicResource Surface.Inset}">
-                                                <TextBlock Text="{Binding Reachable, StringFormat='Reachable: {0}'}" FontSize="9"
-                                                           Foreground="{DynamicResource Text.Secondary}" />
-                                            </Border>
-                                        </StackPanel>
+                                        <Border Grid.Column="1" Padding="8,3" VerticalAlignment="Top"
+                                                CornerRadius="{StaticResource Radius.Chip}"
+                                                Background="{DynamicResource Accent.Fill}">
+                                            <Border.Visibility>
+                                                <MultiBinding Converter="{StaticResource TargetActiveVisibility}">
+                                                    <Binding Path="Id" />
+                                                    <Binding Path="DataContext.Target" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                                </MultiBinding>
+                                            </Border.Visibility>
+                                            <TextBlock Text="ACTIVE" FontSize="9" FontWeight="Bold"
+                                                       Foreground="{DynamicResource Text.OnAccent}" />
+                                        </Border>
                                     </Grid>
+
+                                    <!-- Chips row for Kind and Reachability -->
+                                    <WrapPanel Orientation="Horizontal" Margin="0,2,0,4">
+                                        <Border Padding="6,2" Margin="0,0,6,0"
+                                                CornerRadius="{StaticResource Radius.Chip}"
+                                                Background="{DynamicResource Surface.Inset}">
+                                            <TextBlock Text="{Binding Kind}" FontSize="9"
+                                                       Foreground="{DynamicResource Text.Secondary}" />
+                                        </Border>
+                                        <Border Padding="6,2"
+                                                CornerRadius="{StaticResource Radius.Chip}"
+                                                Background="{DynamicResource Surface.Inset}">
+                                            <TextBlock Text="{Binding Reachable, StringFormat='Reachable: {0}'}" FontSize="9"
+                                                       Foreground="{DynamicResource Text.Secondary}" />
+                                        </Border>
+                                    </WrapPanel>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                         <shell:StatusPlate Label="ENVIRONMENT" Value="{Binding Environment}" Strong="True" />

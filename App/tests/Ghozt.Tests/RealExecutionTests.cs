@@ -797,5 +797,50 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("ISOLATED CRITICAL SUBSET", algoCs);
         Assert.Contains("PRUNED OBSERVATIONAL NOISE", algoCs);
     }
+
+    [Fact]
+    public void WorkspacesExperientialPhase5SynthesisAndPolishExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+
+        // 1. Clearance Workspace Responsive WrapPanel and Auto-Evaluation on Loaded
+        var clearanceXaml = File.ReadAllText(Path.Combine(basePath, "ClearanceWorkspace.xaml"));
+        var clearanceCs = File.ReadAllText(Path.Combine(basePath, "ClearanceWorkspace.xaml.cs"));
+        Assert.Contains("<WrapPanel Orientation=\"Horizontal\"", clearanceXaml);
+        Assert.Contains("Loaded += OnClearanceLoaded;", clearanceCs);
+        Assert.Contains("ClearanceSummaryText", clearanceXaml);
+
+        // 2. Faults Workspace Responsive WrapPanel and Filter Widening
+        var faultsXaml = File.ReadAllText(Path.Combine(basePath, "FaultsWorkspace.xaml"));
+        Assert.Contains("<WrapPanel Orientation=\"Horizontal\">", faultsXaml);
+        Assert.Contains("Width=\"135\"", faultsXaml);
+        Assert.Contains("Width=\"140\"", faultsXaml);
+
+        // 3. Targets Workspace Unclipped Header and Dedicated Chip Row
+        var targetsXaml = File.ReadAllText(Path.Combine(basePath, "TargetsWorkspace.xaml"));
+        Assert.Contains("Width=\"400\"", targetsXaml);
+        Assert.Contains("Grid.Row=\"1\"", targetsXaml);
+
+        // 4. Algorithms Invariant Proofs Auto-Evaluation and ScrollViewer
+        var algoXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
+        var algoCs = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml.cs"));
+        Assert.Contains("x:Name=\"MinimiseScrollViewer\"", algoXaml);
+        Assert.Contains("Loaded += OnAlgorithmsLoaded;", algoCs);
+
+        // 5. Evidence Workspace WrapPanel, Widened KindFilter, and In-Button Confirmation
+        var evXaml = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml"));
+        var evCs = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml.cs"));
+        Assert.Contains("<WrapPanel Orientation=\"Horizontal\">", evXaml);
+        Assert.Contains("Width=\"155\"", evXaml);
+        Assert.Contains("Hashes Verified!", evCs);
+        Assert.Contains("Hash Verified!", evCs);
+
+        // 6. Reports Workspace WrapPanel, Loaded Auto-Render, and In-Button Confirmation
+        var rptXaml = File.ReadAllText(Path.Combine(basePath, "ReportsWorkspace.xaml"));
+        var rptCs = File.ReadAllText(Path.Combine(basePath, "ReportsWorkspace.xaml.cs"));
+        Assert.Contains("<WrapPanel Orientation=\"Horizontal\">", rptXaml);
+        Assert.Contains("Loaded += OnReportsLoaded;", rptCs);
+        Assert.Contains("ShowTemporaryButtonConfirmation", rptCs);
+    }
 }
 

@@ -10,45 +10,36 @@
 
         <!-- Command Header -->
         <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Orientation="Horizontal">
-                    <Button Style="{StaticResource Button.Primary}" Content="Evaluate Clearance"
-                            Click="OnEvaluate" x:Name="EvaluateButton"
-                            ToolTip="Evaluates release policy gates against target evidence"
-                            AutomationProperties.Name="Evaluate target release clearance" />
-                    <Button Margin="8,0,0,0" Content="Sign Release Decision" Click="OnSignDecision"
-                            x:Name="SignButton" IsEnabled="False"
-                            ToolTip="Issues a signed release decision sealed into the evidence plane"
-                            AutomationProperties.Name="Sign and seal release decision" />
-                    <Button Margin="8,0,0,0" Content="Export Certificate" Click="OnExportCertificate"
-                            x:Name="ExportCertButton" IsEnabled="False"
-                            ToolTip="Exports cryptographically sealed release certificate to disk"
-                            AutomationProperties.Name="Export release certificate" />
-                    <Button Margin="8,0,0,0" Content="Verify Certificate" Click="OnVerifyCertificate"
-                            x:Name="VerifyCertButton"
-                            ToolTip="Verifies certificate cryptographic seal and audits evidence plane against tampering"
-                            AutomationProperties.Name="Verify release certificate integrity" />
-                    <Button Margin="8,0,0,0" Content="Self-Test Engine" Click="OnRunSelfTest"
-                            x:Name="SelfTestButton"
-                            ToolTip="Runs Ghozt autonomous 12-domain self-test suite and issues a Self-Hosting Quality Certificate"
-                            AutomationProperties.Name="Run Ghozt autonomous self-test suite" />
-                    <Button Margin="8,0,0,0" Content="Security &amp; Compatibility Assay" Click="OnRunSecurityAndCompatibilityAssay"
-                            x:Name="AssayButton"
-                            ToolTip="Assays target across Patent Table 36 (8 Security Areas) and Table 38 (5 Compatibility Axes)"
-                            AutomationProperties.Name="Run Security and Compatibility Assay" />
-                </StackPanel>
-
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource Button.Primary}" Content="Evaluate Clearance"
+                        Click="OnEvaluate" x:Name="EvaluateButton"
+                        ToolTip="Evaluates release policy gates against target evidence"
+                        AutomationProperties.Name="Evaluate target release clearance" />
+                <Button Margin="8,0,0,0" Content="Sign Release Decision" Click="OnSignDecision"
+                        x:Name="SignButton" IsEnabled="False"
+                        ToolTip="Issues a signed release decision sealed into the evidence plane"
+                        AutomationProperties.Name="Sign and seal release decision" />
+                <Button Margin="8,0,0,0" Content="Export Certificate" Click="OnExportCertificate"
+                        x:Name="ExportCertButton" IsEnabled="False"
+                        ToolTip="Exports cryptographically sealed release certificate to disk"
+                        AutomationProperties.Name="Export release certificate" />
+                <Button Margin="8,0,0,0" Content="Verify Certificate" Click="OnVerifyCertificate"
+                        x:Name="VerifyCertButton"
+                        ToolTip="Verifies certificate cryptographic seal and audits evidence plane against tampering"
+                        AutomationProperties.Name="Verify release certificate integrity" />
+                <Button Margin="8,0,0,0" Content="Self-Test Engine" Click="OnRunSelfTest"
+                        x:Name="SelfTestButton"
+                        ToolTip="Runs Ghozt autonomous 12-domain self-test suite and issues a Self-Hosting Quality Certificate"
+                        AutomationProperties.Name="Run Ghozt autonomous self-test suite" />
+                <Button Margin="8,0,0,0" Content="Security &amp; Compatibility Assay" Click="OnRunSecurityAndCompatibilityAssay"
+                        x:Name="AssayButton"
+                        ToolTip="Assays target across Patent Table 36 (8 Security Areas) and Table 38 (5 Compatibility Axes)"
+                        AutomationProperties.Name="Run Security and Compatibility Assay" />
+                <Border Margin="16,0,0,0" Background="{DynamicResource Surface.CardFaint}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="10,4" VerticalAlignment="Center">
                     <TextBlock x:Name="ClearanceSummaryText" Text="Select target to evaluate release policy gates"
                                Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" />
-                </StackPanel>
-            </Grid>
+                </Border>
+            </WrapPanel>
         </Border>
 
         <!-- Gates Content -->

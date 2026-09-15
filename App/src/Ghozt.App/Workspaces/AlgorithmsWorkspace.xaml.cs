@@ -14,7 +14,16 @@ public partial class AlgorithmsWorkspace : UserControl
     public AlgorithmsWorkspace()
     {
         InitializeComponent();
-        Loaded += (_, _) => InitVectorEditor();
+        Loaded += OnAlgorithmsLoaded;
+    }
+
+    private void OnAlgorithmsLoaded(object sender, RoutedEventArgs e)
+    {
+        InitVectorEditor();
+        if (_lastReport is null)
+        {
+            OnRunSuite(this, new RoutedEventArgs());
+        }
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
@@ -650,6 +659,7 @@ public partial class AlgorithmsWorkspace : UserControl
 
             card.Child = stack;
             MinimisePanel.Children.Add(card);
+            MinimiseScrollViewer.ScrollToBottom();
 
             Shell?.Log("ALG.MINIMISE.OK",
                 $"Delta-debugging reduced input from {fullVector.Length} to {minimal.Count} items ({reductionPercent:F0}% reduction).",

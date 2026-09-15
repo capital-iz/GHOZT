@@ -315,6 +315,20 @@ public partial class EvidenceWorkspace : UserControl
         {
             Clipboard.SetText(artefact.Payload);
             Shell?.Log("EVD.COPY", $"Artefact {artefact.Id} payload copied to clipboard.", Severity.Info);
+            if (CopyPayloadButton is not null)
+            {
+                CopyPayloadButton.Content = "Copied!";
+                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.0) };
+                timer.Tick += (s, ev) =>
+                {
+                    timer.Stop();
+                    if (CopyPayloadButton is not null)
+                    {
+                        CopyPayloadButton.Content = "Copy Payload";
+                    }
+                };
+                timer.Start();
+            }
         }
         catch (Exception ex)
         {
@@ -373,6 +387,21 @@ public partial class EvidenceWorkspace : UserControl
             failed == 0 ? Severity.Info : Severity.Critical,
             related: target.Id.ToString());
 
+        if (VerifyAllButton is not null)
+        {
+            VerifyAllButton.Content = failed == 0 ? "Hashes Verified!" : $"{failed} Mismatches!";
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+            timer.Tick += (s, ev) =>
+            {
+                timer.Stop();
+                if (VerifyAllButton is not null)
+                {
+                    VerifyAllButton.Content = "Verify all";
+                }
+            };
+            timer.Start();
+        }
+
         UpdateActionGates();
         Refresh();
         Shell.Refresh();
@@ -405,6 +434,21 @@ public partial class EvidenceWorkspace : UserControl
             Shell.Log("EVD.EXPORT", $"Artefact {artefact.Id} exported to {fullPath}.", Severity.Info,
                 detail: $"sha256={artefact.Sha256}; size={artefact.SizeBytes} bytes",
                 related: artefact.Id.ToString());
+
+            if (ExportArtefactButton is not null)
+            {
+                ExportArtefactButton.Content = "Exported!";
+                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+                timer.Tick += (s, ev) =>
+                {
+                    timer.Stop();
+                    if (ExportArtefactButton is not null)
+                    {
+                        ExportArtefactButton.Content = "Export payload";
+                    }
+                };
+                timer.Start();
+            }
 
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
@@ -455,6 +499,21 @@ public partial class EvidenceWorkspace : UserControl
             matches ? Severity.Info : Severity.Critical,
             detail: $"recorded={artefact.Sha256}\nrecomputed={recomputed}",
             related: artefact.Id.ToString());
+
+        if (VerifyButton is not null)
+        {
+            VerifyButton.Content = matches ? "Hash Verified!" : "Hash Mismatch!";
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+            timer.Tick += (s, ev) =>
+            {
+                timer.Stop();
+                if (VerifyButton is not null)
+                {
+                    VerifyButton.Content = "Verify hash";
+                }
+            };
+            timer.Start();
+        }
 
         // Re-evaluate the seal gate now that the verification result has changed.
         UpdateActionGates();
