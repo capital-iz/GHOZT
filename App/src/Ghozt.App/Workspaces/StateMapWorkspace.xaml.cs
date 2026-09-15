@@ -146,6 +146,55 @@ public partial class StateMapWorkspace : UserControl
         }
     }
 
+    private void OnAutoArrange(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null) return;
+
+        var allNodes = App.Store.Nodes(target.Id);
+        if (allNodes.Count == 0) return;
+
+        var w = double.IsNaN(Lattice.Width) || Lattice.Width <= 0 ? 1300.0 : Lattice.Width;
+        var h = double.IsNaN(Lattice.Height) || Lattice.Height <= 0 ? 750.0 : Lattice.Height;
+        var centre = new Point(w / 2, h / 2);
+
+        var root = allNodes.FirstOrDefault(n => n.Kind == NodeKind.System);
+        var others = allNodes.Where(n => n != root).ToList();
+
+        if (root is not null)
+        {
+            App.Store.Save(root with { X = centre.X, Y = centre.Y });
+        }
+
+        // Tiered concentric radial rings: features in inner ring, endpoints/actions/data in outer ring
+        var features = others.Where(n => n.Kind == NodeKind.Feature).ToList();
+        var outerNodes = others.Where(n => n.Kind != NodeKind.Feature).ToList();
+
+        var innerRadius = Math.Max(70.0, Math.Min(centre.X, centre.Y) * 0.42);
+        for (var i = 0; i < features.Count; i++)
+        {
+            var angle = (2 * Math.PI * i / Math.Max(features.Count, 1)) - (Math.PI / 2);
+            var x = centre.X + (Math.Cos(angle) * innerRadius);
+            var y = centre.Y + (Math.Sin(angle) * innerRadius);
+            App.Store.Save(features[i] with { X = x, Y = y });
+        }
+
+        var outerRadius = Math.Max(140.0, Math.Min(centre.X, centre.Y) * 0.78);
+        for (var i = 0; i < outerNodes.Count; i++)
+        {
+            var angle = (2 * Math.PI * i / Math.Max(outerNodes.Count, 1)) - (Math.PI / 2);
+            var x = centre.X + (Math.Cos(angle) * outerRadius);
+            var y = centre.Y + (Math.Sin(angle) * outerRadius);
+            App.Store.Save(outerNodes[i] with { X = x, Y = y });
+        }
+
+        LatticeTranslate.X = 0;
+        LatticeTranslate.Y = 0;
+        SetZoom(1.0);
+        Shell?.Log("LATTICE.AUTO_ARRANGE", $"Auto-arranged {allNodes.Count} nodes in tiered radial topology for target {target.Name}.", Severity.Info);
+        Refresh();
+    }
+
     private void SetZoom(double zoom)
     {
         _zoom = Math.Clamp(zoom, 0.25, 4.0);
@@ -163,7 +212,7 @@ public partial class StateMapWorkspace : UserControl
 
     private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton is MouseButton.Middle or MouseButton.Left)
+        if (e.ChangedButton is MouseButton.Middle or MouseButton.Right or MouseButton.Left)
         {
             _isPanning = true;
             _lastPanPoint = e.GetPosition(GraphScroll);
@@ -342,6 +391,42 @@ public partial class StateMapWorkspace : UserControl
             Canvas.SetTop(element, position.Y - (element.DesiredSize.Height / 2));
             Lattice.Children.Add(element);
             _renderedNodes.Add((node, element));
+        }
+    }
+
+    private void HighlightNodePreview(LatticeNode? preview)
+    {
+        if (_selectedNode is not null) return;
+
+        if (preview is null)
+        {
+            HighlightNode(null);
+            return;
+        }
+
+        var connectedNodeIds = new HashSet<string>(StringComparer.Ordinal) { preview.Id };
+        foreach (var (edge, line) in _renderedEdges)
+        {
+            var isIncident = edge.FromId == preview.Id || edge.ToId == preview.Id;
+            if (isIncident)
+            {
+                connectedNodeIds.Add(edge.FromId);
+                connectedNodeIds.Add(edge.ToId);
+                line.StrokeThickness = 2.5;
+                line.Opacity = 1.0;
+                line.Stroke = edge.Relationship == "counterfactual" ? B("Ghozt.Counterfactual") : B("Ghozt.Live");
+            }
+            else
+            {
+                line.StrokeThickness = 1;
+                line.Opacity = 0.2;
+                line.Stroke = B("Border.Subtle");
+            }
+        }
+
+        foreach (var (n, element) in _renderedNodes)
+        {
+            element.Opacity = connectedNodeIds.Contains(n.Id) ? 1.0 : 0.3;
         }
     }
 
@@ -558,6 +643,22 @@ public partial class StateMapWorkspace : UserControl
             HighlightNode(node);
             OpenNodeInspector(node);
             e.Handled = true;
+        };
+
+        border.MouseEnter += (s, e) =>
+        {
+            if (_selectedNode is null && !_isDraggingNode)
+            {
+                HighlightNodePreview(node);
+            }
+        };
+
+        border.MouseLeave += (s, e) =>
+        {
+            if (_selectedNode is null && !_isDraggingNode)
+            {
+                HighlightNodePreview(null);
+            }
         };
 
         return border;

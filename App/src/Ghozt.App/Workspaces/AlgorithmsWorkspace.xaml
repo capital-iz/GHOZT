@@ -151,15 +151,84 @@
 
                 <!-- Minimiser Results Body -->
                 <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="MinimisePanel">
-                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
-                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="Algorithmic Input Minimisation (ddmin)" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Margin="0,8,0,0" Text="Applies Delta Debugging to prune observational noise from complex input vectors, isolating the exact minimal critical inputs causing an algorithm failure or metamorphic contradiction."
-                                           Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="520" HorizontalAlignment="Center" />
+                    <StackPanel>
+                        <!-- Interactive Input Vector Configuration Card -->
+                        <Border Margin="0,0,0,16" Padding="16" Background="{DynamicResource Surface.Card}"
+                                BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.CardLarge}">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="INTERACTIVE INPUT VECTOR &amp; FAILURE CRITERION" Style="{StaticResource Type.MicroLabelStyle}" />
+                                        <TextBlock Text="Paste or edit failing input tokens/parameters (one per line). Delta Debugging will systematically isolate the 1-minimal subset triggering the failure."
+                                                   Style="{StaticResource Type.CaptionStyle}" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="PRESET:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <ComboBox x:Name="VectorPresetPicker" Width="220" Height="26" SelectionChanged="OnPresetChanged"
+                                                  AutomationProperties.Name="Select test vector preset">
+                                            <ComboBoxItem Content="Unbalanced Recursion (12 items)" IsSelected="True" />
+                                            <ComboBoxItem Content="Memory Leak Flags (16 items)" />
+                                            <ComboBoxItem Content="Complex CLI Flags (14 items)" />
+                                            <ComboBoxItem Content="Schema Properties (10 items)" />
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,4,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="260" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Margin="0,0,14,0">
+                                        <TextBlock Text="INPUT TOKENS (ONE PER LINE)" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,0,0,4" />
+                                        <TextBox x:Name="CustomInputVectorText" Height="110" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                                 FontFamily="{StaticResource Font.Mono}" FontSize="11" Padding="8,6"
+                                                 Background="{DynamicResource Surface.Deep}" Foreground="{DynamicResource Text.Primary}"
+                                                 BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1"
+                                                 ToolTip="Enter input elements separated by newlines"
+                                                 AutomationProperties.Name="Custom input tokens editor" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="FAILURE CRITERION / ORACLE" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="FailureConditionPicker" Height="26" Margin="0,0,0,8" SelectionChanged="OnConditionChanged"
+                                                  AutomationProperties.Name="Select failure criterion">
+                                            <ComboBoxItem Content="Contains both 'trigger:' tokens" IsSelected="True" />
+                                            <ComboBoxItem Content="Contains any 'trigger:' token" />
+                                            <ComboBoxItem Content="Contains custom keyword" />
+                                            <ComboBoxItem Content="Total token count >= 4" />
+                                        </ComboBox>
+
+                                        <TextBlock Text="CUSTOM KEYWORD (IF SELECTED)" Style="{StaticResource Type.MicroLabelStyle}" Margin="0,0,0,4" />
+                                        <TextBox x:Name="CustomKeywordText" Height="26" Margin="0,0,0,8" Text="unbalanced"
+                                                 FontFamily="{StaticResource Font.Mono}" FontSize="11" Padding="6,2"
+                                                 Background="{DynamicResource Surface.Deep}" Foreground="{DynamicResource Text.Primary}"
+                                                 BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1"
+                                                 AutomationProperties.Name="Custom keyword matching criterion" />
+
+                                        <Button Content="Reset Vector" Height="26" Margin="0,4,0,0" Click="OnResetVector"
+                                                ToolTip="Restore preset tokens" AutomationProperties.Name="Reset vector" />
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
                         </Border>
+
+                        <StackPanel x:Name="MinimisePanel">
+                            <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                    BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Algorithmic Input Minimisation (ddmin)" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                                    <TextBlock Margin="0,8,0,0" Text="Applies Delta Debugging to prune observational noise from complex input vectors, isolating the exact minimal critical inputs causing an algorithm failure or metamorphic contradiction."
+                                               Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="520" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

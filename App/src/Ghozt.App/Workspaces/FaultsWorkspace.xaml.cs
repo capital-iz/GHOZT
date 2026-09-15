@@ -40,6 +40,7 @@ public partial class FaultsWorkspace : UserControl
     private ShellViewModel Shell => (ShellViewModel)DataContext;
 
     private Finding? Selected => Queue.SelectedItem as Finding;
+    private IReadOnlyList<Finding> _allFindings = [];
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -52,16 +53,86 @@ public partial class FaultsWorkspace : UserControl
     private void Refresh()
     {
         var target = Shell?.Target;
-        var findings = target is null ? [] : App.Store.Findings(target.Id);
+        _allFindings = target is null ? [] : App.Store.Findings(target.Id);
+        ApplyFilters();
+    }
 
-        Queue.ItemsSource = findings;
-        EmptyPanel.Visibility = findings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    private void OnFilterChanged(object sender, RoutedEventArgs e)
+    {
+        if (IsLoaded)
+        {
+            ApplyFilters();
+        }
+    }
 
-        if (findings.Count > 0)
+    private void ApplyFilters()
+    {
+        if (_allFindings.Count == 0)
+        {
+            Queue.ItemsSource = Array.Empty<Finding>();
+            if (QueueStatsText is not null) QueueStatsText.Text = "0 findings";
+            UpdateEmptyPanel();
+            return;
+        }
+
+        var query = SearchBox?.Text?.Trim() ?? string.Empty;
+        var selectedSev = (SeverityFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All Severities";
+        var selectedState = (StateFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All States";
+
+        var filtered = _allFindings.Where(f =>
+        {
+            // Query filter: title, ID, actual, expected, or fingerprint
+            if (!string.IsNullOrEmpty(query))
+            {
+                var match = f.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                            f.Id.ToString().Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                            (!string.IsNullOrEmpty(f.Actual) && f.Actual.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(f.Expected) && f.Expected.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(f.Fingerprint) && f.Fingerprint.Contains(query, StringComparison.OrdinalIgnoreCase));
+                if (!match) return false;
+            }
+
+            // Severity filter
+            if (selectedSev != "All Severities")
+            {
+                if (!f.Severity.ToString().Equals(selectedSev, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            // Lifecycle State filter
+            if (selectedState != "All States")
+            {
+                if (!f.Maturity.ToString().Equals(selectedState, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return true;
+        }).ToList();
+
+        Queue.ItemsSource = filtered;
+        if (QueueStatsText is not null)
+        {
+            QueueStatsText.Text = filtered.Count == _allFindings.Count
+                ? $"{filtered.Count} findings"
+                : $"{filtered.Count} of {_allFindings.Count} findings";
+        }
+
+        EmptyPanel.Visibility = filtered.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (filtered.Count == 0 && _allFindings.Count > 0)
+        {
+            EmptyTitle.Text = "No matching findings";
+            EmptyBody.Text = "No findings match the current search query or filter combination. Clear or adjust filters to view items.";
+        }
+        else if (_allFindings.Count == 0)
+        {
+            UpdateEmptyPanel();
+        }
+
+        if (filtered.Count > 0)
         {
             if (Shell?.RequestedFindingId is { } reqId)
             {
-                var match = findings.FirstOrDefault(f => f.Id == reqId);
+                var match = filtered.FirstOrDefault(f => f.Id == reqId);
                 if (match is not null)
                 {
                     Queue.SelectedItem = match;
@@ -70,16 +141,19 @@ public partial class FaultsWorkspace : UserControl
             }
             else if (!string.IsNullOrWhiteSpace(Shell?.RequestedNodeId))
             {
-                var match = findings.FirstOrDefault(f => f.NodeId.Equals(Shell.RequestedNodeId, StringComparison.OrdinalIgnoreCase));
+                var match = filtered.FirstOrDefault(f => f.NodeId.Equals(Shell.RequestedNodeId, StringComparison.OrdinalIgnoreCase));
                 if (match is not null)
                 {
                     Queue.SelectedItem = match;
                     Queue.ScrollIntoView(match);
                 }
             }
-            return;
         }
+    }
 
+    private void UpdateEmptyPanel()
+    {
+        var target = Shell?.Target;
         var sweeps = target is null ? [] : App.Store.Sweeps(target.Id);
 
         if (target is null)
@@ -105,6 +179,76 @@ public partial class FaultsWorkspace : UserControl
         }
     }
 
+    private void OnExportBugReport(object sender, RoutedEventArgs e)
+    {
+        var finding = Selected;
+        var target = Shell?.Target;
+        if (finding is null || target is null) return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"# [DEFECT] {finding.Title} ({finding.Severity})");
+        sb.AppendLine();
+        sb.AppendLine($"- **ID:** `{finding.Id}`");
+        sb.AppendLine($"- **Fingerprint:** `{(string.IsNullOrEmpty(finding.Fingerprint) ? "None" : finding.Fingerprint)}`");
+        sb.AppendLine($"- **Lifecycle State:** {finding.Maturity}");
+        sb.AppendLine($"- **Affected State Node:** `{finding.NodeId}`");
+        sb.AppendLine($"- **Target:** {target.Name} (`{target.Id}`)");
+        sb.AppendLine($"- **Environment:** {target.Environment} · Access: {target.Access}");
+        sb.AppendLine($"- **First Observed:** {finding.FirstSeenAt:yyyy-MM-dd HH:mm:ss zzz}");
+        if (!string.IsNullOrEmpty(finding.Owner))
+        {
+            sb.AppendLine($"- **Owner:** {finding.Owner}");
+        }
+        sb.AppendLine();
+        sb.AppendLine("## Expected Behavior");
+        sb.AppendLine("```");
+        sb.AppendLine(string.IsNullOrWhiteSpace(finding.Expected) ? "[No explicit oracle contract recorded]" : finding.Expected);
+        sb.AppendLine("```");
+        sb.AppendLine();
+        sb.AppendLine("## Actual Observed Deviation");
+        sb.AppendLine("```");
+        sb.AppendLine(string.IsNullOrWhiteSpace(finding.Actual) ? "[No actual detail recorded]" : finding.Actual);
+        sb.AppendLine("```");
+        sb.AppendLine();
+        sb.AppendLine("## Reproduction & Trace");
+        if (finding.SweepId is not null)
+        {
+            sb.AppendLine($"- Originating Sweep: `{finding.SweepId}`");
+        }
+        sb.AppendLine($"- Attempts / Successes: {finding.ReproAttempts} / {finding.ReproSuccesses}");
+        sb.AppendLine($"- Reproducibility Rate: {(finding.Reproducibility.HasValue ? $"{finding.Reproducibility.Value * 100:F1}%" : "Untested")}");
+        sb.AppendLine($"- 95% Wilson Confidence: [{finding.WilsonConfidence.Lower:F2} .. {finding.WilsonConfidence.Upper:F2}]");
+        sb.AppendLine();
+        sb.AppendLine("## Cryptographic Evidence Hashes");
+        var evList = App.Store.EvidenceItems(findingId: finding.Id);
+        if (evList.Count > 0)
+        {
+            foreach (var ev in evList)
+            {
+                sb.AppendLine($"- **Evidence ID:** `{ev.Id}` · **Kind:** `{ev.Kind}`");
+                sb.AppendLine($"  - SHA-256: `{ev.Sha256}`");
+            }
+        }
+        else
+        {
+            sb.AppendLine("- No evidence artifact directly bound to this finding.");
+        }
+        sb.AppendLine();
+        sb.AppendLine("---");
+        sb.AppendLine("*Generated by Capital-Iz Ghozt — Autonomous Application & Forensic Testing Engine*");
+
+        try
+        {
+            Clipboard.SetText(sb.ToString());
+            Shell?.Log("FLT.EXPORT.BUG_REPORT", $"Copied defect bug report for {finding.Id} to clipboard.", Severity.Info);
+            MessageBox.Show("Defect bug report copied to clipboard in standard Markdown/GitHub issue format.", "Ghozt - Bug Report Export", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("FLT.EXPORT.FAIL", $"Failed to copy to clipboard: {ex.Message}", Severity.Medium);
+        }
+    }
+
     private void OnSelect(object sender, SelectionChangedEventArgs e)
     {
         var finding = Selected;
@@ -117,6 +261,7 @@ public partial class FaultsWorkspace : UserControl
         FixBriefButton.IsEnabled = finding is not null;
         VerifyRepairButton.IsEnabled = finding is not null;
         AssignButton.IsEnabled = finding is not null;
+        if (ExportBugReportButton is not null) ExportBugReportButton.IsEnabled = finding is not null;
         if (ReplayFaultButton is not null) ReplayFaultButton.IsEnabled = finding is not null;
         if (LocateMapButton is not null) LocateMapButton.IsEnabled = finding is not null;
         if (ViewEvidenceButton is not null) ViewEvidenceButton.IsEnabled = finding is not null;

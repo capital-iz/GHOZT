@@ -65,6 +65,10 @@
                                   AutomationProperties.Name="Filter evidence by kind">
                             <ComboBoxItem Content="All Kinds" IsSelected="True" />
                             <ComboBoxItem Content="ui-tree" />
+                            <ComboBoxItem Content="ui:screenshot/png" />
+                            <ComboBoxItem Content="application/json" />
+                            <ComboBoxItem Content="report:sarif" />
+                            <ComboBoxItem Content="report:junit" />
                             <ComboBoxItem Content="action-frame" />
                             <ComboBoxItem Content="stdout" />
                             <ComboBoxItem Content="stderr" />

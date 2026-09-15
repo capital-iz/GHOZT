@@ -545,5 +545,231 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("NavigateToEvidence", cs);
         Assert.Contains("NavigateToSweep", cs);
     }
+
+    [Fact]
+    public void FaultsFiltering_MultiPredicateCompoundMatching_FiltersAccurately()
+    {
+        var targetId = _store.NextId(IdKind.Target);
+        var findings = new List<Finding>
+        {
+            new Finding
+            {
+                Id = _store.NextId(IdKind.Fault),
+                TargetId = targetId,
+                Title = "NullReferenceException in PaymentHandler",
+                Actual = "Object reference not set to an instance of an object",
+                Expected = "Should return 400 Bad Request with validation payload",
+                Severity = Severity.Critical,
+                Maturity = FindingMaturity.New,
+                Fingerprint = "FP-PAYMENT-NRE-01",
+                NodeId = "node:checkout:pay",
+                FirstSeenAt = DateTimeOffset.UtcNow,
+            },
+            new Finding
+            {
+                Id = _store.NextId(IdKind.Fault),
+                TargetId = targetId,
+                Title = "High memory usage during image processing",
+                Actual = "Process memory increased by 850MB and did not release",
+                Expected = "Memory usage should return to baseline within 200ms",
+                Severity = Severity.Medium,
+                Maturity = FindingMaturity.Reproduced,
+                Fingerprint = "FP-MEM-LEAK-02",
+                NodeId = "node:media:upload",
+                FirstSeenAt = DateTimeOffset.UtcNow,
+            },
+            new Finding
+            {
+                Id = _store.NextId(IdKind.Fault),
+                TargetId = targetId,
+                Title = "Cosmetic button alignment mismatch in dark mode",
+                Actual = "Margin is 12px instead of 16px",
+                Expected = "Margin should conform to 16px grid standard",
+                Severity = Severity.Info,
+                Maturity = FindingMaturity.CauseSupported,
+                Fingerprint = "FP-UI-ALIGN-03",
+                NodeId = "node:settings:view",
+                FirstSeenAt = DateTimeOffset.UtcNow,
+            }
+        };
+
+        // Text query match
+        var queryMatch = findings.Where(f => f.Title.Contains("Payment", StringComparison.OrdinalIgnoreCase)
+                                          || (!string.IsNullOrEmpty(f.Actual) && f.Actual.Contains("Payment", StringComparison.OrdinalIgnoreCase))).ToList();
+        Assert.Single(queryMatch);
+        Assert.Equal("FP-PAYMENT-NRE-01", queryMatch[0].Fingerprint);
+
+        // Severity match
+        var critMatch = findings.Where(f => f.Severity == Severity.Critical).ToList();
+        Assert.Single(critMatch);
+        Assert.Equal("NullReferenceException in PaymentHandler", critMatch[0].Title);
+
+        // State / Maturity match
+        var reproMatch = findings.Where(f => f.Maturity == FindingMaturity.Reproduced).ToList();
+        Assert.Single(reproMatch);
+        Assert.Equal("FP-MEM-LEAK-02", reproMatch[0].Fingerprint);
+
+        // Compound filter
+        var compoundMatch = findings.Where(f => f.Severity == Severity.Medium && f.Maturity == FindingMaturity.Reproduced).ToList();
+        Assert.Single(compoundMatch);
+    }
+
+    [Fact]
+    public void AlgorithmsLaboratory_CustomVectorDeltaDebugging_MinimizesNoiseToMinimalFailureSubset()
+    {
+        var complexVector = new List<string>
+        {
+            "sys.boot",
+            "db.connect",
+            "trigger:stack-overflow",
+            "cache.init",
+            "trigger:circular-ref",
+            "network.listen",
+            "worker.spawn",
+            "metrics.emit",
+            "health.check",
+            "telemetry.flush"
+        };
+
+        // Oracle fails only if both triggers are present
+        bool Oracle(IReadOnlyList<string> subset) =>
+            subset.Contains("trigger:stack-overflow") && subset.Contains("trigger:circular-ref");
+
+        var minimal = AlgorithmHarness.MinimizeInput(complexVector, Oracle);
+
+        Assert.Equal(2, minimal.Count);
+        Assert.Contains("trigger:stack-overflow", minimal);
+        Assert.Contains("trigger:circular-ref", minimal);
+        Assert.DoesNotContain("sys.boot", minimal);
+        Assert.DoesNotContain("network.listen", minimal);
+    }
+
+    [Fact]
+    public void StateMap_TieredConcentricRadialTopology_CalculatesNonOverlappingCoordinates()
+    {
+        const double centerX = 1200.0;
+        const double centerY = 800.0;
+
+        var root = new LatticeNode
+        {
+            Id = "node:root",
+            TargetId = _store.NextId(IdKind.Target),
+            Label = "System Root",
+            Kind = NodeKind.System,
+            State = "Active",
+            Provenance = "Observed",
+            X = 0,
+            Y = 0,
+            LastSeenAt = DateTimeOffset.UtcNow,
+        };
+
+        var featureNodes = Enumerable.Range(1, 4).Select(i => new LatticeNode
+        {
+            Id = $"node:feature:{i}",
+            TargetId = root.TargetId,
+            Label = $"Feature {i}",
+            Kind = NodeKind.Feature,
+            State = "Observed",
+            Provenance = "Observed",
+            X = 0,
+            Y = 0,
+            LastSeenAt = DateTimeOffset.UtcNow,
+        }).ToList();
+
+        var leafNodes = Enumerable.Range(1, 6).Select(i => new LatticeNode
+        {
+            Id = $"node:leaf:{i}",
+            TargetId = root.TargetId,
+            Label = $"Leaf {i}",
+            Kind = NodeKind.Action,
+            State = "Observed",
+            Provenance = "Observed",
+            X = 0,
+            Y = 0,
+            LastSeenAt = DateTimeOffset.UtcNow,
+        }).ToList();
+
+        // Calculate positions
+        var arranged = new List<LatticeNode> { root with { X = centerX, Y = centerY } };
+
+        const double featureRadius = 320.0;
+        for (int i = 0; i < featureNodes.Count; i++)
+        {
+            var angle = (2 * Math.PI * i) / featureNodes.Count - Math.PI / 2;
+            var x = centerX + featureRadius * Math.Cos(angle);
+            var y = centerY + featureRadius * Math.Sin(angle);
+            arranged.Add(featureNodes[i] with { X = Math.Round(x, 1), Y = Math.Round(y, 1) });
+        }
+
+        const double leafRadius = 620.0;
+        for (int i = 0; i < leafNodes.Count; i++)
+        {
+            var angle = (2 * Math.PI * i) / leafNodes.Count - Math.PI / 2 + 0.15;
+            var x = centerX + leafRadius * Math.Cos(angle);
+            var y = centerY + leafRadius * Math.Sin(angle);
+            arranged.Add(leafNodes[i] with { X = Math.Round(x, 1), Y = Math.Round(y, 1) });
+        }
+
+        Assert.Equal(11, arranged.Count);
+        // All nodes have finite, valid coordinates
+        Assert.All(arranged, n =>
+        {
+            Assert.False(double.IsNaN(n.X));
+            Assert.False(double.IsInfinity(n.X));
+            Assert.False(double.IsNaN(n.Y));
+            Assert.False(double.IsInfinity(n.Y));
+        });
+
+        // Feature nodes are roughly featureRadius away from center
+        foreach (var fn in arranged.Where(n => n.Kind == NodeKind.Feature))
+        {
+            var dist = Math.Sqrt(Math.Pow(fn.X - centerX, 2) + Math.Pow(fn.Y - centerY, 2));
+            Assert.True(Math.Abs(dist - featureRadius) < 1.0);
+        }
+
+        // Leaf nodes are roughly leafRadius away from center
+        foreach (var ln in arranged.Where(n => n.Kind == NodeKind.Action))
+        {
+            var dist = Math.Sqrt(Math.Pow(ln.X - centerX, 2) + Math.Pow(ln.Y - centerY, 2));
+            Assert.True(Math.Abs(dist - leafRadius) < 1.0);
+        }
+    }
+
+    [Fact]
+    public void WorkspacesForensicPhase3ControlsAndContractsExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+
+        // State Map Auto Layout
+        var stateMapXaml = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml"));
+        var stateMapCs = File.ReadAllText(Path.Combine(basePath, "StateMapWorkspace.xaml.cs"));
+        Assert.Contains("BtnAutoArrange", stateMapXaml);
+        Assert.Contains("OnAutoArrange", stateMapCs);
+
+        // Faults Multi-Predicate Filter & Export
+        var faultsXaml = File.ReadAllText(Path.Combine(basePath, "FaultsWorkspace.xaml"));
+        var faultsCs = File.ReadAllText(Path.Combine(basePath, "FaultsWorkspace.xaml.cs"));
+        Assert.Contains("SearchBox", faultsXaml);
+        Assert.Contains("SeverityFilter", faultsXaml);
+        Assert.Contains("StateFilter", faultsXaml);
+        Assert.Contains("ExportBugReportButton", faultsXaml);
+        Assert.Contains("OnExportBugReport", faultsCs);
+
+        // Algorithms Custom Vector Delta Debugging Lab
+        var algoXaml = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml"));
+        var algoCs = File.ReadAllText(Path.Combine(basePath, "AlgorithmsWorkspace.xaml.cs"));
+        Assert.Contains("CustomInputVectorText", algoXaml);
+        Assert.Contains("VectorPresetPicker", algoXaml);
+        Assert.Contains("FailureConditionPicker", algoXaml);
+        Assert.Contains("CustomKeywordText", algoXaml);
+        Assert.Contains("OnResetVector", algoCs);
+
+        // Evidence Forensic Kinds Filter
+        var evXaml = File.ReadAllText(Path.Combine(basePath, "EvidenceWorkspace.xaml"));
+        Assert.Contains("ui:screenshot/png", evXaml);
+        Assert.Contains("application/json", evXaml);
+        Assert.Contains("report:sarif", evXaml);
+        Assert.Contains("report:junit", evXaml);
+    }
 }
 

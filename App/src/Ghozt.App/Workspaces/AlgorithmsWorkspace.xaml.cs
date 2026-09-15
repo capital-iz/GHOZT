@@ -14,6 +14,7 @@ public partial class AlgorithmsWorkspace : UserControl
     public AlgorithmsWorkspace()
     {
         InitializeComponent();
+        Loaded += (_, _) => InitVectorEditor();
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
@@ -381,32 +382,160 @@ public partial class AlgorithmsWorkspace : UserControl
         Shell.Refresh();
     }
 
+    private static readonly string[] PresetUnbalanced =
+    [
+        "input_schema:v1",
+        "param:auth_bearer",
+        "param:filter_active=true",
+        "trigger:unbalanced_recursion_depth=16",
+        "param:sort_descending=false",
+        "param:page_size=50",
+        "trigger:cyclic_reference_pointer",
+        "param:cache_control=no_store",
+        "param:format=json",
+        "param:locale=en_US",
+        "param:retry_count=3",
+        "param:compression=gzip",
+    ];
+
+    private static readonly string[] PresetMemoryLeak =
+    [
+        "flag:enable_telemetry",
+        "flag:buffer_pool_size=1024",
+        "trigger:alloc_untracked_native_buffer",
+        "flag:log_level=debug",
+        "flag:gc_concurrent=true",
+        "trigger:leak_l2_cache_handle",
+        "flag:timeout_ms=5000",
+        "flag:thread_priority=normal",
+        "flag:compression=lz4",
+        "flag:keepalive_interval=30",
+        "flag:dns_cache_ttl=60",
+        "flag:ssl_renegotiate=false",
+        "flag:batch_window=100",
+        "flag:worker_count=4",
+        "flag:trace_sampling=0.1",
+        "flag:max_connections=256",
+    ];
+
+    private static readonly string[] PresetCliFlags =
+    [
+        "--target=wpf",
+        "--mode=forensic",
+        "--verbose",
+        "trigger:--null-dereference-guard=off",
+        "--depth=8",
+        "--timeout=120",
+        "--allow-destructive=false",
+        "--palette=spectral-black",
+        "trigger:--corrupt-manifest-override",
+        "--export-format=sarif",
+        "--sandbox-db=temp.db",
+        "--verify-hashes",
+        "--concurrency=2",
+        "--stream-logs",
+    ];
+
+    private static readonly string[] PresetSchemaProperties =
+    [
+        "id:GZT-001",
+        "name:TestTarget",
+        "kind:Desktop",
+        "environment:Staging",
+        "access:Unrestricted",
+        "trigger:invalid_enum_payload",
+        "base_address:127.0.0.1",
+        "authority:AdminGrant",
+        "created_at:2026-09-15",
+        "trigger:schema_field_drift",
+    ];
+
+    private void InitVectorEditor()
+    {
+        if (CustomInputVectorText is not null && string.IsNullOrWhiteSpace(CustomInputVectorText.Text))
+        {
+            CustomInputVectorText.Text = string.Join(Environment.NewLine, PresetUnbalanced);
+        }
+    }
+
+    private void OnPresetChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || CustomInputVectorText is null) return;
+        var selected = (VectorPresetPicker?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+        if (selected.StartsWith("Unbalanced", StringComparison.OrdinalIgnoreCase))
+        {
+            CustomInputVectorText.Text = string.Join(Environment.NewLine, PresetUnbalanced);
+        }
+        else if (selected.StartsWith("Memory", StringComparison.OrdinalIgnoreCase))
+        {
+            CustomInputVectorText.Text = string.Join(Environment.NewLine, PresetMemoryLeak);
+        }
+        else if (selected.StartsWith("Complex CLI", StringComparison.OrdinalIgnoreCase))
+        {
+            CustomInputVectorText.Text = string.Join(Environment.NewLine, PresetCliFlags);
+        }
+        else if (selected.StartsWith("Schema", StringComparison.OrdinalIgnoreCase))
+        {
+            CustomInputVectorText.Text = string.Join(Environment.NewLine, PresetSchemaProperties);
+        }
+    }
+
+    private void OnConditionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // React to criterion change
+    }
+
+    private void OnResetVector(object sender, RoutedEventArgs e)
+    {
+        OnPresetChanged(sender, null!);
+    }
+
     private void OnRunMinimisation(object sender, RoutedEventArgs e)
     {
         RunMinimiseButton.IsEnabled = false;
         try
         {
-            // Demonstration test vector containing 12 elements with noise and 2 critical triggering tokens
-            var fullVector = new[]
-            {
-                "input_schema:v1",
-                "param:auth_bearer",
-                "param:filter_active=true",
-                "trigger:unbalanced_recursion_depth=16",
-                "param:sort_descending=false",
-                "param:page_size=50",
-                "trigger:cyclic_reference_pointer",
-                "param:cache_control=no_store",
-                "param:format=json",
-                "param:locale=en_US",
-                "param:retry_count=3",
-                "param:compression=gzip",
-            };
+            var rawLines = CustomInputVectorText?.Text
+                .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .ToArray();
 
-            // Property failure occurs if and only if both triggers are present
-            static bool PropertyViolation(IReadOnlyList<string> sub) =>
-                sub.Contains("trigger:unbalanced_recursion_depth=16") &&
-                sub.Contains("trigger:cyclic_reference_pointer");
+            var fullVector = rawLines is not null && rawLines.Length > 0
+                ? rawLines
+                : PresetUnbalanced;
+
+            var cond = (FailureConditionPicker?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Contains both 'trigger:' tokens";
+            var keyword = CustomKeywordText?.Text?.Trim() ?? "unbalanced";
+
+            bool PropertyViolation(IReadOnlyList<string> sub)
+            {
+                if (cond.Contains("both 'trigger:'", StringComparison.OrdinalIgnoreCase))
+                {
+                    return sub.Count(s => s.Contains("trigger:", StringComparison.OrdinalIgnoreCase)) >= 2;
+                }
+                if (cond.Contains("any 'trigger:'", StringComparison.OrdinalIgnoreCase))
+                {
+                    return sub.Any(s => s.Contains("trigger:", StringComparison.OrdinalIgnoreCase));
+                }
+                if (cond.Contains("custom keyword", StringComparison.OrdinalIgnoreCase))
+                {
+                    return sub.Any(s => s.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+                }
+                if (cond.Contains(">= 4", StringComparison.OrdinalIgnoreCase))
+                {
+                    return sub.Count >= 4;
+                }
+                return sub.Count(s => s.Contains("trigger:", StringComparison.OrdinalIgnoreCase)) >= 2;
+            }
+
+            // Verify initial full vector satisfies failure criterion
+            if (!PropertyViolation(fullVector))
+            {
+                MinimiseSummaryText.Text = "Failure criterion was NOT satisfied by the initial full vector. Adjust inputs or criterion.";
+                MessageBox.Show("The initial input vector does not satisfy the selected failure criterion. At least one failing subset must exist for delta debugging.", "Delta Debugging Notice", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var minimal = AlgorithmHarness.MinimizeInput(fullVector, PropertyViolation);
@@ -440,7 +569,7 @@ public partial class AlgorithmsWorkspace : UserControl
 
             var meta = new TextBlock
             {
-                Text = $"Input vector size {fullVector.Length} reduced to {minimal.Count} critical factors · Noise eliminated: {reductionPercent:F1}% · Elapsed: {sw.Elapsed.TotalMilliseconds:F2}ms",
+                Text = $"Input vector size {fullVector.Length} reduced to {minimal.Count} critical factors · Noise eliminated: {reductionPercent:F1}% · Criterion: '{cond}' · Elapsed: {sw.Elapsed.TotalMilliseconds:F2}ms",
                 Style = (Style)TryFindResource("Type.CaptionStyle"),
                 Foreground = (Brush)TryFindResource("State.Verified"),
                 Margin = new Thickness(0, 4, 0, 10),
@@ -449,7 +578,7 @@ public partial class AlgorithmsWorkspace : UserControl
 
             var minTitle = new TextBlock
             {
-                Text = "ISOLATED CRITICAL SUBSET:",
+                Text = "ISOLATED CRITICAL SUBSET (1-MINIMAL CAUSE):",
                 Style = (Style)TryFindResource("Type.MicroLabelStyle"),
                 Margin = new Thickness(0, 6, 0, 4),
             };
