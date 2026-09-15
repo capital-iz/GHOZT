@@ -498,6 +498,261 @@ public partial class ClearanceWorkspace : UserControl
             ClearanceContainer.Children.Add(dBorder);
         }
     }
+
+    private void OnRunSecurityAndCompatibilityAssay(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            ClearanceSummaryText.Text = "No target selected";
+            return;
+        }
+
+        var grant = App.Store.ActiveGrantFor(target.Id);
+        var secReport = SecurityAuditEngine.RunAudit(target, App.Store, grant);
+        var compatReport = CompatibilityMatrixEngine.EvaluateCompatibility(target, App.Store);
+
+        RenderAssayResults(target, secReport, compatReport);
+    }
+
+    private void RenderAssayResults(Target target, SecurityAuditReport sec, CompatibilityMatrixReport compat)
+    {
+        ClearanceContainer.Children.Clear();
+        var allPassed = sec.Passed && compat.Passed;
+        ClearanceSummaryText.Text = $"Assay Verdict: {(allPassed ? "PASSED" : "FAILED")} · {sec.PassedAreas}/8 Security Areas · {compat.PassedAxes}/5 Compatibility Axes";
+
+        // Summary Header Card
+        var summaryCard = new Border
+        {
+            Background = (Brush)TryFindResource("Surface.Card"),
+            BorderBrush = (Brush)(allPassed ? TryFindResource("Authority.Clearance") : TryFindResource("Border.Card")),
+            BorderThickness = new Thickness(allPassed ? 2 : 1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(20),
+            Margin = new Thickness(0, 0, 0, 16),
+        };
+
+        var summaryStack = new StackPanel();
+        var sHeader = new Grid();
+        sHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        sHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var sTitlePanel = new StackPanel();
+        sTitlePanel.Children.Add(new TextBlock
+        {
+            Text = "Security Audit & Compatibility Matrix Assay",
+            FontSize = 18,
+            FontWeight = FontWeights.Bold,
+            Foreground = (Brush)TryFindResource("Text.Primary"),
+        });
+        sTitlePanel.Children.Add(new TextBlock
+        {
+            Text = $"Target: {target.Name} ({target.Id}) · Evaluated: {sec.EvaluatedAt:yyyy-MM-dd HH:mm:ss} · Patent Table 36 & Table 38",
+            Style = (Style)TryFindResource("Type.CaptionStyle"),
+            Foreground = (Brush)TryFindResource("Text.Muted"),
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+        Grid.SetColumn(sTitlePanel, 0);
+        sHeader.Children.Add(sTitlePanel);
+
+        var sBadge = new Border
+        {
+            Background = (Brush)(allPassed ? TryFindResource("Authority.Soft") : TryFindResource("State.FaultSoft")),
+            BorderBrush = (Brush)(allPassed ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(14, 6, 14, 6),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        sBadge.Child = new TextBlock
+        {
+            Text = allPassed ? "COMPLIANT" : "BREACH DETECTED",
+            FontWeight = FontWeights.Bold,
+            FontSize = 12,
+            Foreground = (Brush)(allPassed ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault")),
+        };
+        Grid.SetColumn(sBadge, 1);
+        sHeader.Children.Add(sBadge);
+
+        summaryStack.Children.Add(sHeader);
+
+        summaryStack.Children.Add(new TextBlock
+        {
+            Text = $"Security Audit Signature: {sec.AuditSignature[..16]}... | Compatibility Digest: {compat.MatrixDigest[..16]}...",
+            Style = (Style)TryFindResource("Type.MonoStyle"),
+            FontSize = 11,
+            Foreground = (Brush)TryFindResource("Text.Secondary"),
+            Margin = new Thickness(0, 10, 0, 0),
+        });
+
+        summaryCard.Child = summaryStack;
+        ClearanceContainer.Children.Add(summaryCard);
+
+        // Section 1: Compatibility Matrix (Patent Table 38)
+        var compatHeader = new TextBlock
+        {
+            Text = $"Compatibility Matrix (Patent Table 38) — {compat.PassedAxes}/{compat.TotalAxesAssayed} Axes Verified",
+            FontWeight = FontWeights.Bold,
+            FontSize = 15,
+            Foreground = (Brush)TryFindResource("Text.Primary"),
+            Margin = new Thickness(0, 8, 0, 8),
+        };
+        ClearanceContainer.Children.Add(compatHeader);
+
+        foreach (var axis in compat.AxisResults)
+        {
+            var axisBorder = new Border
+            {
+                Background = (Brush)TryFindResource("Surface.Card"),
+                BorderBrush = (Brush)(axis.Passed ? TryFindResource("State.Verified") : TryFindResource("State.Fault")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(16, 12, 16, 12),
+                Margin = new Thickness(0, 0, 0, 10),
+            };
+
+            var aStack = new StackPanel();
+            var aGrid = new Grid();
+            aGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            aGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var aTitle = new TextBlock
+            {
+                Text = $"{axis.Axis}: {axis.Name}",
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 13,
+                Foreground = (Brush)TryFindResource("Text.Primary"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(aTitle, 0);
+            aGrid.Children.Add(aTitle);
+
+            var aBadge = new Border
+            {
+                Background = (Brush)(axis.Passed ? TryFindResource("State.VerifiedSoft") : TryFindResource("State.FaultSoft")),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 2, 8, 2),
+            };
+            aBadge.Child = new TextBlock
+            {
+                Text = axis.Passed ? "COMPATIBLE" : "INCOMPATIBLE",
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = (Brush)(axis.Passed ? TryFindResource("State.Verified") : TryFindResource("State.Fault")),
+            };
+            Grid.SetColumn(aBadge, 1);
+            aGrid.Children.Add(aBadge);
+
+            aStack.Children.Add(aGrid);
+            aStack.Children.Add(new TextBlock
+            {
+                Text = axis.Assessment,
+                Style = (Style)TryFindResource("Type.CaptionStyle"),
+                Foreground = (Brush)TryFindResource("Text.Secondary"),
+                Margin = new Thickness(0, 4, 0, 4),
+            });
+
+            var diagText = string.Join(" · ", axis.Diagnostics.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+            aStack.Children.Add(new TextBlock
+            {
+                Text = diagText,
+                Style = (Style)TryFindResource("Type.MonoStyle"),
+                FontSize = 10,
+                Foreground = (Brush)TryFindResource("Text.Muted"),
+            });
+
+            axisBorder.Child = aStack;
+            ClearanceContainer.Children.Add(axisBorder);
+        }
+
+        // Section 2: Security Validation Areas (Patent Table 36)
+        var secHeader = new TextBlock
+        {
+            Text = $"Authorised Security Audit (Patent Table 36) — {sec.PassedAreas}/{sec.TotalAreasChecked} Areas Cleared",
+            FontWeight = FontWeights.Bold,
+            FontSize = 15,
+            Foreground = (Brush)TryFindResource("Text.Primary"),
+            Margin = new Thickness(0, 16, 0, 8),
+        };
+        ClearanceContainer.Children.Add(secHeader);
+
+        foreach (var area in sec.AreaResults)
+        {
+            var areaBorder = new Border
+            {
+                Background = (Brush)TryFindResource("Surface.Card"),
+                BorderBrush = (Brush)(area.Passed ? TryFindResource("State.Verified") : (area.Severity >= Severity.High ? TryFindResource("State.Fault") : TryFindResource("State.Warning"))),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(16, 12, 16, 12),
+                Margin = new Thickness(0, 0, 0, 10),
+            };
+
+            var areaStack = new StackPanel();
+            var areaGrid = new Grid();
+            areaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            areaGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var areaTitle = new StackPanel { Orientation = Orientation.Horizontal };
+            areaTitle.Children.Add(new TextBlock
+            {
+                Text = area.DiagnosticCode,
+                Style = (Style)TryFindResource("Type.MonoStyle"),
+                Foreground = (Brush)TryFindResource("Text.Muted"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0),
+            });
+            areaTitle.Children.Add(new TextBlock
+            {
+                Text = $"{area.Area}: {area.Title}",
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 13,
+                Foreground = (Brush)TryFindResource("Text.Primary"),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            Grid.SetColumn(areaTitle, 0);
+            areaGrid.Children.Add(areaTitle);
+
+            var areaBadge = new Border
+            {
+                Background = (Brush)(area.Passed ? TryFindResource("State.VerifiedSoft") : TryFindResource("State.FaultSoft")),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 2, 8, 2),
+            };
+            areaBadge.Child = new TextBlock
+            {
+                Text = area.Passed ? "CLEARED" : area.Severity.ToString().ToUpperInvariant(),
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = (Brush)(area.Passed ? TryFindResource("State.Verified") : TryFindResource("State.Fault")),
+            };
+            Grid.SetColumn(areaBadge, 1);
+            areaGrid.Children.Add(areaBadge);
+
+            areaStack.Children.Add(areaGrid);
+            areaStack.Children.Add(new TextBlock
+            {
+                Text = area.Details,
+                Style = (Style)TryFindResource("Type.CaptionStyle"),
+                Foreground = (Brush)TryFindResource("Text.Secondary"),
+                Margin = new Thickness(0, 4, 0, 2),
+            });
+
+            if (!string.IsNullOrWhiteSpace(area.RemediativeGuidance))
+            {
+                areaStack.Children.Add(new TextBlock
+                {
+                    Text = $"Remediation: {area.RemediativeGuidance}",
+                    FontSize = 11,
+                    Foreground = (Brush)TryFindResource("Authority.Clearance"),
+                    Margin = new Thickness(0, 2, 0, 0),
+                });
+            }
+
+            areaBorder.Child = areaStack;
+            ClearanceContainer.Children.Add(areaBorder);
+        }
+    }
 }
 
 

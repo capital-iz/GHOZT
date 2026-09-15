@@ -977,6 +977,35 @@ public sealed class GhoztStore : IDisposable
         };
     }
 
+    /// <summary>
+    /// Evaluates database structural integrity and relational foreign key consistency (Patent Table 38).
+    /// </summary>
+    public (bool Passed, string Details) VerifyDatabaseIntegrity()
+    {
+        lock (_gate)
+        {
+            using var integrityCmd = _connection.CreateCommand();
+            integrityCmd.CommandText = "PRAGMA integrity_check;";
+            var integrityResult = Convert.ToString(integrityCmd.ExecuteScalar()) ?? "unknown";
+
+            using var fkCmd = _connection.CreateCommand();
+            fkCmd.CommandText = "PRAGMA foreign_key_check;";
+            using var fkReader = fkCmd.ExecuteReader();
+            var fkViolations = 0;
+            while (fkReader.Read())
+            {
+                fkViolations++;
+            }
+
+            var passed = string.Equals(integrityResult, "ok", StringComparison.OrdinalIgnoreCase) && fkViolations == 0;
+            var details = passed
+                ? "SQLite database integrity verified (PRAGMA integrity_check = ok, 0 foreign key violations)."
+                : $"Integrity breach: integrity_check='{integrityResult}', foreign_key_violations={fkViolations}.";
+
+            return (passed, details);
+        }
+    }
+
     public void Dispose()
     {
         _connection.Close();

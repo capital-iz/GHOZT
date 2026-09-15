@@ -211,6 +211,40 @@ public sealed class ClearanceEngine
                 : (tamperedEvidence > 0 ? $"{tamperedEvidence} evidence item(s) have invalid SHA-256 payload checksums." : "Clearance rejected: all sweeps traversed 0 authentic states."),
         });
 
+        // Gate 11: Compatibility Matrix Envelope (Patent §22, Table 38)
+        var compatReport = CompatibilityMatrixEngine.EvaluateCompatibility(target, _store);
+        var compatPassed = compatReport.Passed;
+        gates.Add(new ClearanceGate
+        {
+            Id = "GATE.COMPATIBILITY_MATRIX",
+            Name = "Compatibility Matrix Envelope",
+            Requirement = "Target and runtime environment must satisfy all 5 Table 38 compatibility axes (OS, Scaling, Locale, Runtime, Migration).",
+            PolicySource = "Patent §22 & Table 38 Compatibility Matrix Canon",
+            Mandatory = true,
+            Passed = compatPassed,
+            Result = compatPassed ? "Passed" : $"Failed ({compatReport.TotalAxesAssayed - compatReport.PassedAxes} axis failure(s))",
+            EvidenceNote = compatPassed
+                ? $"All {compatReport.TotalAxesAssayed} compatibility axes verified (Digest: {compatReport.MatrixDigest[..8]})."
+                : $"Compatibility failure(s) detected across {compatReport.TotalAxesAssayed - compatReport.PassedAxes} axis/axes.",
+        });
+
+        // Gate 12: Governed Security Audit Clearance (Patent §22, Table 36)
+        var activeGrant = _store.ActiveGrantFor(target.Id);
+        var secReport = SecurityAuditEngine.RunAudit(target, _store, activeGrant);
+        var secPassed = secReport.Passed;
+        gates.Add(new ClearanceGate
+        {
+            Id = "GATE.SECURITY_AUDIT",
+            Name = "Governed Security Audit Clearance",
+            Requirement = "Target must satisfy all 8 Table 36 security validation areas with zero unmitigated High or Critical security breaches.",
+            PolicySource = "Patent §22 & Table 36 Security Audit Canon",
+            Mandatory = true,
+            Passed = secPassed,
+            Result = secPassed ? "Passed" : $"Failed ({secReport.FailedAreas} security area violation(s))",
+            EvidenceNote = secPassed
+                ? $"All {secReport.TotalAreasChecked} security areas verified with 0 critical breaches (Signature: {secReport.AuditSignature[..8]})."
+                : $"{secReport.FailedAreas} security validation area(s) breached with high/critical severity.",
+        });
 
         // Compute Outcome
         var mandatoryFailed = gates.Any(g => g.Mandatory && !g.Passed);

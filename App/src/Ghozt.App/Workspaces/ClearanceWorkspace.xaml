@@ -37,6 +37,10 @@
                             x:Name="SelfTestButton"
                             ToolTip="Runs Ghozt autonomous 12-domain self-test suite and issues a Self-Hosting Quality Certificate"
                             AutomationProperties.Name="Run Ghozt autonomous self-test suite" />
+                    <Button Margin="8,0,0,0" Content="Security &amp; Compatibility Assay" Click="OnRunSecurityAndCompatibilityAssay"
+                            x:Name="AssayButton"
+                            ToolTip="Assays target across Patent Table 36 (8 Security Areas) and Table 38 (5 Compatibility Axes)"
+                            AutomationProperties.Name="Run Security and Compatibility Assay" />
                 </StackPanel>
 
 

@@ -502,3 +502,86 @@ public sealed record ObservabilityIngestResult
 
     public required string BatchDigest { get; init; }
 }
+
+/// <summary>
+/// Canonical security validation areas (Patent Table 36).
+/// </summary>
+public enum SecurityValidationArea
+{
+    IdentityAndSession,
+    Authorisation,
+    InputHandling,
+    SecretsAndCredentials,
+    TransportAndTrust,
+    ClientStorage,
+    AbuseAndRateControl,
+    SecurityObservability,
+}
+
+/// <summary>
+/// Canonical compatibility matrix validation axes (Patent Table 38).
+/// </summary>
+public enum CompatibilityAxis
+{
+    OperatingSystem,
+    DisplayAndScaling,
+    LocaleAndCulture,
+    RuntimeAndDependencies,
+    UpgradeAndMigration,
+}
+
+/// <summary>
+/// Result for an individual security area validation assay (Patent Table 36).
+/// </summary>
+public sealed record SecurityAuditAreaResult
+{
+    public required SecurityValidationArea Area { get; init; }
+    public required string Title { get; init; }
+    public required bool Passed { get; init; }
+    public required Severity Severity { get; init; }
+    public required string Details { get; init; }
+    public required string DiagnosticCode { get; init; }
+    public string RemediativeGuidance { get; init; } = "";
+}
+
+/// <summary>
+/// Complete Security Audit Report evaluating all 8 Table 36 areas.
+/// </summary>
+public sealed record SecurityAuditReport
+{
+    public required GhoztId TargetId { get; init; }
+    public required bool Passed { get; init; }
+    public required int TotalAreasChecked { get; init; }
+    public required int PassedAreas { get; init; }
+    public required int FailedAreas { get; init; }
+    public required IReadOnlyList<SecurityAuditAreaResult> AreaResults { get; init; }
+    public required DateTimeOffset EvaluatedAt { get; init; } = DateTimeOffset.Now;
+    public required string AuditSignature { get; init; }
+}
+
+/// <summary>
+/// Result for an individual compatibility axis assay (Patent Table 38).
+/// </summary>
+public sealed record CompatibilityAxisResult
+{
+    public required CompatibilityAxis Axis { get; init; }
+    public required string Name { get; init; }
+    public required bool Passed { get; init; }
+    public required string Assessment { get; init; }
+    public required IReadOnlyDictionary<string, string> Diagnostics { get; init; }
+}
+
+/// <summary>
+/// Complete Compatibility Matrix Report evaluating all 5 Table 38 axes.
+/// </summary>
+public sealed record CompatibilityMatrixReport
+{
+    public required GhoztId TargetId { get; init; }
+    public required bool Passed { get; init; }
+    public required int TotalAxesAssayed { get; init; }
+    public required int PassedAxes { get; init; }
+    public required IReadOnlyList<CompatibilityAxisResult> AxisResults { get; init; }
+    public required DateTimeOffset EvaluatedAt { get; init; } = DateTimeOffset.Now;
+    public required string MatrixDigest { get; init; }
+}
+
