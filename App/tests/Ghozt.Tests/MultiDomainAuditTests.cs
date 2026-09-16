@@ -210,4 +210,104 @@ public sealed class MultiDomainAuditTests
             if (System.IO.File.Exists(shm)) System.IO.File.Delete(shm);
         }
     }
+
+    [Fact]
+    public void PatchApplicator_AppliesPatchAndCreatesBackup()
+    {
+        var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ghozt_patch_{Guid.NewGuid():N}");
+        System.IO.Directory.CreateDirectory(tempDir);
+        try
+        {
+            var targetFile = System.IO.Path.Combine(tempDir, "sample_code.cs");
+            System.IO.File.WriteAllText(targetFile, "public class Sample { public void Foo() { int x = 1; } }");
+
+            const string diff = """
+            --- a/sample_code.cs
+            +++ b/sample_code.cs
+            @@ -1,1 +1,1 @@
+            -int x = 1;
+            +int x = 42; // Self-healed
+            """;
+
+            var result = PatchApplicator.ApplyPatch(diff, tempDir);
+            Assert.True(result.Success, $"Patch application failed: {result.Message}");
+            Assert.True(System.IO.File.Exists(targetFile + ".bak"), "Backup file must be created");
+
+            var updatedContent = System.IO.File.ReadAllText(targetFile);
+            Assert.Contains("int x = 42;", updatedContent);
+        }
+        finally
+        {
+            if (System.IO.Directory.Exists(tempDir))
+            {
+                System.IO.Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void LogcatStreaming_ParsesViolationsAndProvidesSummary()
+    {
+        var streamResult = MobileAuditEngine.FetchLiveLogcat(null, "*", 60);
+        Assert.NotNull(streamResult);
+        Assert.NotEmpty(streamResult.Lines);
+        Assert.Contains("Streamed", streamResult.Summary);
+
+        // Deterministic violation parsing assertions
+        const string mockViolationLog = "E/SQLiteDatabase: Error executing: PRAGMA journal_mode = WAL\nQueries can be performed using SQLiteDatabase query or rawQuery methods only\n" +
+                                        "E/flutter: A RenderFlex overflowed by 48 pixels on the bottom.";
+        Assert.True(MobileAuditEngine.DetectSqliteRowExecSqlViolation(mockViolationLog));
+        var overflow = MobileAuditEngine.DetectFlutterOverflow(mockViolationLog);
+        Assert.NotNull(overflow);
+        Assert.Equal(48, overflow.Pixels);
+    }
+
+    [Fact]
+    public void DesktopInspection_EnumeratesWindowAndControls()
+    {
+        var inspection = DesktopRuntimeAuditEngine.InspectProcessWindowControls();
+        Assert.NotNull(inspection);
+        Assert.True(inspection.Pid > 0, "PID must be positive");
+        Assert.False(string.IsNullOrWhiteSpace(inspection.ProcessName), "ProcessName must not be empty");
+        Assert.NotEmpty(inspection.Controls);
+        Assert.Contains(inspection.Controls, c => c.AutomationId == "RunAuditButton");
+        Assert.Contains(inspection.Controls, c => c.AutomationId == "AuditConsoleTextBox");
+    }
+
+    [Fact]
+    public void EnergyTrajectory_VerletRemainsBoundedWhileEulerDiverges()
+    {
+        var trajectory = ScientificMathAuditEngine.ComputeEnergyTrajectory(dt: 0.05, steps: 200);
+        Assert.Equal(201, trajectory.Count);
+
+        var first = trajectory[0];
+        var last = trajectory[^1];
+
+        Assert.Equal(0.0, first.EulerDrift);
+        Assert.True(last.EulerDrift > 0.5, "Forward Euler must diverge (> 50% energy pump) over 200 steps");
+        var verletRelDrift = Math.Abs(last.VerletEnergy - first.VerletEnergy) / first.VerletEnergy;
+        Assert.True(verletRelDrift < 0.01, "Symplectic Verlet energy drift must be strictly bounded (< 1%)");
+
+        var ascii = ScientificMathAuditEngine.FormatAsciiEnergyTrajectory(trajectory);
+        Assert.Contains("HAMILTONIAN ENERGY PHASE PORTRAIT", ascii);
+        Assert.Contains("DIVERGED", ascii);
+    }
+
+    [Fact]
+    public void AgentReasoningDag_TracesFiveLayersAndFormulas()
+    {
+        var steps = AgenticAiAuditEngine.TraceAgenticReasoningDag();
+        Assert.Equal(5, steps.Count);
+        Assert.All(steps, s => Assert.True(s.Passed, $"Layer {s.Layer} failed invariant: {s.InvariantAssertion}"));
+
+        Assert.Equal("MarketFeedIngestion", steps[0].NodeName);
+        Assert.Equal("RegimeFeatureExtraction", steps[1].NodeName);
+        Assert.Equal("RiskKernelSovereignty", steps[2].NodeName);
+        Assert.Equal("UtcpToolGateway", steps[3].NodeName);
+        Assert.Equal("AgentCycleGovernor", steps[4].NodeName);
+
+        var trace = AgenticAiAuditEngine.FormatAgentDagTrace(steps);
+        Assert.Contains("AUTONOMOUS AGENT REASONING DAG", trace);
+        Assert.Contains("DAG SOVEREIGNTY SEAL", trace);
+    }
 }

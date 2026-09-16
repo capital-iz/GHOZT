@@ -303,6 +303,8 @@
                                 <TextBox x:Name="MathEpsilonBox" Text="1e-12" Width="70" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center" />
                                 <Button Content="Run Invariant Proofs" Click="OnRunConfigurableMathAudit" Height="24" Padding="10,0,10,0"
                                         ToolTip="Executes mathematical simulation with custom parameters" AutomationProperties.Name="Run parameterized mathematical proofs" />
+                                <Button Content="Plot Energy Curve" Click="OnPlotMathTrajectory" Height="24" Padding="8,0,8,0" Margin="8,0,0,0"
+                                        ToolTip="Plots 200-step Hamiltonian energy trajectory (Verlet vs Euler)" AutomationProperties.Name="Plot energy trajectory" />
                             </StackPanel>
                         </Grid>
 
@@ -318,8 +320,10 @@
                                 <TextBox x:Name="AiDepthBox" Text="3" Width="40" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center" />
                                 <Button Content="Run AI Hardening Suite" Click="OnRunConfigurableAiAudit" Height="24" Padding="10,0,10,0" Margin="0,0,6,0"
                                         ToolTip="Executes AI validation with custom parameters" AutomationProperties.Name="Run parameterized AI hardening suite" />
-                                <Button Content="Test Cycle Breaker" Click="OnTestAgentCycleBreaker" Height="24" Padding="8,0,8,0"
+                                <Button Content="Test Cycle Breaker" Click="OnTestAgentCycleBreaker" Height="24" Padding="8,0,8,0" Margin="0,0,6,0"
                                         ToolTip="Simulates a recursive tool calling cycle to test cycle governor" AutomationProperties.Name="Test agent cycle breaker" />
+                                <Button Content="Trace Agent DAG" Click="OnTraceAgentDag" Height="24" Padding="8,0,8,0"
+                                        ToolTip="Traces 5-layer autonomous agent execution and risk sovereignty DAG" AutomationProperties.Name="Trace agent DAG" />
                             </StackPanel>
                         </Grid>
 
@@ -331,8 +335,12 @@
                                 <TextBox x:Name="MobileAvdBox" Text="Medium_Phone_API_36.1" Width="140" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
                                 <Button Content="Query ADB" Click="OnQueryLiveAdbDevices" Height="24" Padding="8,0,8,0" Margin="0,0,6,0"
                                         ToolTip="Scans local ADB for active devices and emulators" AutomationProperties.Name="Query ADB devices" />
-                                <Button Content="Toggle Airplane" Click="OnToggleAirplaneMode" Height="24" Padding="8,0,8,0" Margin="0,0,10,0"
+                                <Button Content="Toggle Airplane" Click="OnToggleAirplaneMode" Height="24" Padding="8,0,8,0" Margin="0,0,8,0"
                                         ToolTip="Toggles airplane mode on attached Android device" AutomationProperties.Name="Toggle airplane mode via ADB" />
+                                <TextBlock Text="Filter:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="MobileFilterBox" Text="*" Width="60" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <Button Content="Fetch Logcat" Click="OnFetchLogcatStream" Height="24" Padding="8,0,8,0" Margin="0,0,10,0"
+                                        ToolTip="Fetches live Logcat lines and scans for SQLite and RenderFlex violations" AutomationProperties.Name="Fetch live Logcat stream" />
                                 <TextBlock Text="GESTURES:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,6,0" />
                                 <Button Content="Tap" Click="OnDispatchTapGesture" Height="24" Padding="6,0,6,0" Margin="0,0,4,0" ToolTip="Dispatches tap at (540, 1200)" AutomationProperties.Name="Dispatch tap gesture" />
                                 <Button Content="Swipe" Click="OnDispatchSwipeGesture" Height="24" Padding="6,0,6,0" Margin="0,0,4,0" ToolTip="Dispatches swipe up" AutomationProperties.Name="Dispatch swipe gesture" />
@@ -355,6 +363,8 @@
                                         ToolTip="Inspects Windows Application Event Log for crashes and exceptions" AutomationProperties.Name="Scan Windows Event Log" />
                                 <Button Content="Verify DB WAL" Click="OnVerifySqliteDbWal" Height="24" Padding="8,0,8,0"
                                         ToolTip="Executes PRAGMA integrity_check against SQLite evidence store" AutomationProperties.Name="Verify SQLite WAL integrity" />
+                                <Button Content="Inspect UI Tree" Click="OnInspectDesktopControls" Height="24" Padding="8,0,8,0" Margin="6,0,0,0"
+                                        ToolTip="Inspects window HWND and enumerates primary UI automation controls" AutomationProperties.Name="Inspect desktop UI controls" />
                             </StackPanel>
                         </Grid>
                     </Grid>

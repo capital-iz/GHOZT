@@ -168,16 +168,25 @@ To achieve full operational maturity beyond synthetic testing, Ghozt incorporate
    - **Win32 & Event Log Supervisor**: Real-time inspection of active Windows processes via `GetProcessMemoryInfo` and live event querying against the Windows `Application` Event Log for `.NET Runtime` and `Application Error` entries.
    - **SQLite WAL Integrity Probe**: Direct database connection running `PRAGMA integrity_check = ok` and `PRAGMA journal_mode = wal`.
 
-3. **Autonomous Self-Healing Fix Briefs & Patch Diff Generators**:
+3. **Autonomous Self-Healing Fix Briefs & 1-Click Patch Applicator (`PatchApplicator`)**:
    - For every detected violation, the engine synthesizes an actionable, syntax-highlighted code patch:
      * **Android execSQL Row Leak**: Generates unified diff refactoring `db.execute("PRAGMA ...")` to `db.rawQuery("PRAGMA ...")`.
      * **Flutter RenderFlex Overflow**: Generates unified diff wrapping the overflowing `Column`/`Row` in `SingleChildScrollView` or `Expanded`.
      * **Catastrophic Cancellation**: Generates mathematically stabilized formulation with signed $\varepsilon$-damping.
      * **Agentic Recursive Loop**: Generates deterministic loop breaker interceptor and cycle detection hooks.
    - Interactive UI provides a 1-click **[Copy Fix Diff]** button that immediately copies the unified patch to the host OS clipboard.
+   - **Autonomous Patch Applicator (`PatchApplicator.ApplyPatch`)**:
+     * Parses unified diff header (`--- a/...`, `+++ b/...`).
+     * Locates target file on disk, creates verified `.bak` backup copy, and replaces targeted hunks cleanly.
+     * For synthetic, external, or cross-platform targets, persists verified patch to `%LOCALAPPDATA%\Capital-Iz\Ghozt\Patches\<slug>.patch` ready for `git apply`.
+     * Renders interactive **[Apply Patch]** button on remediation cards that transitions to "Applied!" upon execution.
 
 4. **Live Execution Console / Streaming Telemetry Drawer**:
    - An embedded monospace stream terminal within the Audit Lab that displays live step logs, ADB command output, Win32 process telemetry, and calculation iterations in real time.
+   - **Live Logcat Stream Fetcher (`MobileAuditEngine.FetchLiveLogcat`)**: Streams recent Android Logcat lines with configurable package filters (e.g. `*`, `com.capitaliz`), automatically flagging fatal crashes, SQLite `execSQL` violations, and `RenderFlex` overflows in the console.
+   - **Hamiltonian Energy Trajectory Phase Portrait (`ScientificMathAuditEngine.ComputeEnergyTrajectory`)**: Computes and formats 200-step trajectory comparisons between Symplectic Verlet ($\Delta E < 10^{-6}$, strictly bounded) and Forward Euler ($\Delta E > +50\%$, exponential pump divergence).
+   - **Autonomous Agent Reasoning DAG Trace (`AgenticAiAuditEngine.TraceAgenticReasoningDag`)**: Traces 5-layer execution pipeline (Ingestion, Regime Extraction, Kelly Sizing, UTCP Gateway, Cycle Governor), verifying central risk kernel sovereignty and latency bounds.
+   - **Desktop UI Automation Control Inspector (`DesktopRuntimeAuditEngine.InspectProcessWindowControls`)**: Probes live HWND, window titles, and enumerates primary UI automation controls (ControlType, AutomationId, Bounds) directly into the console.
 
 ---
 
