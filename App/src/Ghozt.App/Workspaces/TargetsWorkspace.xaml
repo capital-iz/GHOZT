@@ -194,7 +194,7 @@
 
                 <!-- Empty state: explains what a target is and offers the next valid action, rather
                      than showing a generic empty dashboard. -->
-                <Border Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
+                <Border x:Name="EmptyState" Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
                         VerticalAlignment="Top" HorizontalAlignment="Center"
                         Visibility="{Binding Targets.Count, Converter={StaticResource IsEmpty}}">
                     <StackPanel>
@@ -207,6 +207,22 @@
                         <Button Style="{StaticResource Button.Primary}" Margin="0,16,0,0"
                                 HorizontalAlignment="Center" Content="Register your first target"
                                 Click="OnRegister" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Filter empty state: gives clear feedback when filters exclude all targets -->
+                <Border x:Name="FilterEmptyState" Style="{StaticResource Surface.EmptySlot}" MaxWidth="560" Margin="0,40,0,0"
+                        VerticalAlignment="Top" HorizontalAlignment="Center" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="&#xE721;" FontFamily="{StaticResource Font.Icon}" FontSize="24"
+                                   Foreground="{DynamicResource Accent.Text}" HorizontalAlignment="Center" />
+                        <TextBlock Margin="0,12,0,0" HorizontalAlignment="Center"
+                                   Style="{StaticResource Type.SectionStyle}" Text="No matching targets" />
+                        <TextBlock x:Name="FilterEmptyDetail" Margin="0,8,0,0" TextAlignment="Center" Style="{StaticResource Type.CaptionStyle}"
+                                   Text="No registered targets match the current query or kind filter." />
+                        <Button Margin="0,16,0,0" Padding="14,6"
+                                HorizontalAlignment="Center" Content="Clear filter"
+                                Click="OnClearFilter" />
                     </StackPanel>
                 </Border>
             </Grid>

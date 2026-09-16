@@ -873,6 +873,60 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("OnPostSweepReplay", sweepCs);
         Assert.Contains("_lastSweepId = sweep.Id;", sweepCs);
     }
+
+    [Fact]
+    public void WorkspacesExperientialPhase7MultiTargetReactivityAndHotkeysPolishExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App"));
+
+        var wsPath = Path.Combine(basePath, "Workspaces");
+        var shellPath = Path.Combine(basePath, "Shell");
+
+        // 1. Targets Workspace Filter Empty State & Reset Handler
+        var tgtXaml = File.ReadAllText(Path.Combine(wsPath, "TargetsWorkspace.xaml"));
+        var tgtCs = File.ReadAllText(Path.Combine(wsPath, "TargetsWorkspace.xaml.cs"));
+        Assert.Contains("x:Name=\"FilterEmptyState\"", tgtXaml);
+        Assert.Contains("x:Name=\"FilterEmptyDetail\"", tgtXaml);
+        Assert.Contains("OnClearFilter", tgtCs);
+        Assert.Contains("FilterEmptyState.Visibility", tgtCs);
+        Assert.Contains("EmptyState.Visibility", tgtCs);
+
+        // 2. Command Palette Empty Search Feedback
+        var palXaml = File.ReadAllText(Path.Combine(shellPath, "CommandPalette.xaml"));
+        var palCs = File.ReadAllText(Path.Combine(shellPath, "CommandPalette.xaml.cs"));
+        Assert.Contains("x:Name=\"NoMatchesNotice\"", palXaml);
+        Assert.Contains("NoMatchesNotice.Visibility", palCs);
+
+        // 3. Clearance Workspace Target Switch Re-evaluation & Invalidation
+        var clrCs = File.ReadAllText(Path.Combine(wsPath, "ClearanceWorkspace.xaml.cs"));
+        Assert.Contains("shell.PropertyChanged += OnShellChanged;", clrCs);
+        Assert.Contains("nameof(ShellViewModel.Target)", clrCs);
+        Assert.Contains("ClearanceContainer.Children.Add(EmptyState);", clrCs);
+
+        // 4. Reports Workspace Target Switch Re-generation & Invalidation
+        var rptCs = File.ReadAllText(Path.Combine(wsPath, "ReportsWorkspace.xaml.cs"));
+        Assert.Contains("shell.PropertyChanged += OnShellChanged;", rptCs);
+        Assert.Contains("nameof(ShellViewModel.Target)", rptCs);
+        Assert.Contains("ReportContainer.Children.Add(EmptyState);", rptCs);
+
+        // 5. Algorithms Workspace Target Switch SealButton Reactivity
+        var algCs = File.ReadAllText(Path.Combine(wsPath, "AlgorithmsWorkspace.xaml.cs"));
+        Assert.Contains("shell.PropertyChanged += OnShellChanged;", algCs);
+        Assert.Contains("nameof(ShellViewModel.Target)", algCs);
+        Assert.Contains("SealButton.IsEnabled = Shell?.Target is not null", algCs);
+
+        // 6. Main Window Hotkey Ergonomics (NumPad Workspaces & Ctrl+L Tray Expansion)
+        var mainCs = File.ReadAllText(Path.Combine(shellPath, "MainWindow.xaml.cs"));
+        Assert.Contains("TrayState.Peek", mainCs);
+        Assert.Contains("Key.NumPad1", mainCs);
+        Assert.Contains("Key.NumPad0", mainCs);
+
+        // 7. Shell ViewModel TGT.ACTIVE Audit Event Emission
+        var vmCs = File.ReadAllText(Path.Combine(shellPath, "ShellViewModel.cs"));
+        Assert.Contains("Log(\"TGT.ACTIVE\", $\"Active target switched to", vmCs);
+        Assert.Contains("Log(\"TGT.ACTIVE\", \"Active target cleared", vmCs);
+    }
 }
 
 

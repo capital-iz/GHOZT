@@ -98,6 +98,11 @@ public partial class CommandPalette : UserControl
         }
 
         Results.ItemsSource = entries;
+        if (NoMatchesNotice is not null)
+        {
+            NoMatchesNotice.Visibility = entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         if (entries.Count > 0)
         {
             Results.SelectedIndex = 0;

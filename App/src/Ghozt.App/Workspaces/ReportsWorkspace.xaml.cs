@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,17 +11,55 @@ namespace Ghozt.App.Workspaces;
 public partial class ReportsWorkspace : UserControl
 {
     private ForensicReport? _currentReport;
+    private bool _attached;
 
     public ReportsWorkspace()
     {
         InitializeComponent();
         Loaded += OnReportsLoaded;
+        DataContextChanged += (_, _) => Attach();
+    }
+
+    private void Attach()
+    {
+        if (DataContext is ShellViewModel shell && !_attached)
+        {
+            shell.PropertyChanged += OnShellChanged;
+            _attached = true;
+        }
+    }
+
+    private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.Target))
+        {
+            if (Shell?.Target is null)
+            {
+                _currentReport = null;
+                ReportContainer.Children.Clear();
+                ReportContainer.Children.Add(EmptyState);
+                StatusText.Text = "No target selected";
+                ExportMdButton.IsEnabled = false;
+                ExportHtmlButton.IsEnabled = false;
+                ExportJsonButton.IsEnabled = false;
+                ExportSarifButton.IsEnabled = false;
+                ExportJUnitButton.IsEnabled = false;
+                OpenViewerButton.IsEnabled = false;
+                PreviewInAppButton.IsEnabled = false;
+            }
+            else
+            {
+                _currentReport = null;
+                OnGenerate(this, new RoutedEventArgs());
+            }
+        }
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
 
     private void OnReportsLoaded(object sender, RoutedEventArgs e)
     {
+        Attach();
         if (_currentReport is null && Shell?.Target is not null)
         {
             OnGenerate(this, new RoutedEventArgs());

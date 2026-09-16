@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,15 +10,48 @@ namespace Ghozt.App.Workspaces;
 public partial class ClearanceWorkspace : UserControl
 {
     private ClearanceDecision? _currentDecision;
+    private bool _attached;
 
     public ClearanceWorkspace()
     {
         InitializeComponent();
         Loaded += OnClearanceLoaded;
+        DataContextChanged += (_, _) => Attach();
+    }
+
+    private void Attach()
+    {
+        if (DataContext is ShellViewModel shell && !_attached)
+        {
+            shell.PropertyChanged += OnShellChanged;
+            _attached = true;
+        }
+    }
+
+    private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.Target))
+        {
+            if (Shell?.Target is null)
+            {
+                _currentDecision = null;
+                ClearanceContainer.Children.Clear();
+                ClearanceContainer.Children.Add(EmptyState);
+                ClearanceSummaryText.Text = "No target selected";
+                SignButton.IsEnabled = false;
+                ExportCertButton.IsEnabled = false;
+            }
+            else
+            {
+                _currentDecision = null;
+                OnEvaluate(this, new RoutedEventArgs());
+            }
+        }
     }
 
     private void OnClearanceLoaded(object sender, RoutedEventArgs e)
     {
+        Attach();
         if (Shell?.Target is not null && _currentDecision is null)
         {
             OnEvaluate(this, new RoutedEventArgs());

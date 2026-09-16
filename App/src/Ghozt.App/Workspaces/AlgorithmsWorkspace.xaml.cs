@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,15 +11,38 @@ namespace Ghozt.App.Workspaces;
 public partial class AlgorithmsWorkspace : UserControl
 {
     private AlgorithmSuiteReport? _lastReport;
+    private bool _attached;
 
     public AlgorithmsWorkspace()
     {
         InitializeComponent();
         Loaded += OnAlgorithmsLoaded;
+        DataContextChanged += (_, _) => Attach();
+    }
+
+    private void Attach()
+    {
+        if (DataContext is ShellViewModel shell && !_attached)
+        {
+            shell.PropertyChanged += OnShellChanged;
+            _attached = true;
+        }
+    }
+
+    private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.Target))
+        {
+            if (SealButton is not null)
+            {
+                SealButton.IsEnabled = Shell?.Target is not null && _lastReport is not null && (string)SealButton.Content != "Sealed";
+            }
+        }
     }
 
     private void OnAlgorithmsLoaded(object sender, RoutedEventArgs e)
     {
+        Attach();
         InitVectorEditor();
         if (_lastReport is null)
         {

@@ -21,11 +21,12 @@ public partial class TargetsWorkspace : UserControl
             {
                 shell.PropertyChanged += (_, e) =>
                 {
-                    if (e.PropertyName is nameof(ShellViewModel.Targets))
+                    if (e.PropertyName is nameof(ShellViewModel.Targets) or nameof(ShellViewModel.Target))
                     {
                         ApplyFilter();
                     }
                 };
+                shell.Targets.CollectionChanged += (_, _) => ApplyFilter();
             }
             ApplyFilter();
         };
@@ -36,6 +37,12 @@ public partial class TargetsWorkspace : UserControl
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
     private void OnKindFilterChanged(object sender, SelectionChangedEventArgs e) => ApplyFilter();
+
+    private void OnClearFilter(object sender, RoutedEventArgs e)
+    {
+        if (SearchBox is not null) SearchBox.Text = "";
+        if (KindFilter is not null) KindFilter.SelectedIndex = 0;
+    }
 
     private void ApplyFilter()
     {
@@ -57,6 +64,31 @@ public partial class TargetsWorkspace : UserControl
         }).ToList();
 
         TargetsList.ItemsSource = filtered;
+
+        if (Shell.Targets.Count == 0)
+        {
+            if (EmptyState is not null) EmptyState.Visibility = Visibility.Visible;
+            if (FilterEmptyState is not null) FilterEmptyState.Visibility = Visibility.Collapsed;
+        }
+        else if (filtered.Count == 0)
+        {
+            if (EmptyState is not null) EmptyState.Visibility = Visibility.Collapsed;
+            if (FilterEmptyState is not null)
+            {
+                FilterEmptyState.Visibility = Visibility.Visible;
+                if (FilterEmptyDetail is not null)
+                {
+                    FilterEmptyDetail.Text = !string.IsNullOrWhiteSpace(query)
+                        ? $"No registered targets match query \"{query}\"."
+                        : $"No registered targets match kind \"{kind}\".";
+                }
+            }
+        }
+        else
+        {
+            if (EmptyState is not null) EmptyState.Visibility = Visibility.Collapsed;
+            if (FilterEmptyState is not null) FilterEmptyState.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void OnLaunchTarget(object sender, RoutedEventArgs e)

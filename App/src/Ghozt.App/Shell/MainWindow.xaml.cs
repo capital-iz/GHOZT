@@ -197,16 +197,30 @@ public partial class MainWindow : Window
         void Bind(Key key, ModifierKeys modifiers, Action action) =>
             InputBindings.Add(new KeyBinding(new RelayCommand(action), key, modifiers));
 
-        Bind(Key.K, ModifierKeys.Control, () => _shell.CommandPaletteOpen = true);
-        Bind(Key.P, ModifierKeys.Control, () => _shell.CommandPaletteOpen = true);
+        Bind(Key.K, ModifierKeys.Control, () => _shell.CommandPaletteOpen = !_shell.CommandPaletteOpen);
+        Bind(Key.P, ModifierKeys.Control, () => _shell.CommandPaletteOpen = !_shell.CommandPaletteOpen);
         Bind(Key.OemComma, ModifierKeys.Control, () => _shell.Workspace = WorkspaceKind.Settings);
-        Bind(Key.L, ModifierKeys.Control, () => StreamFilter.Focus());
+        Bind(Key.L, ModifierKeys.Control, () =>
+        {
+            if (_shell.Tray == TrayState.Collapsed)
+            {
+                _shell.Tray = TrayState.Peek;
+            }
+            StreamFilter.Focus();
+        });
 
         var keys = new[] { Key.D1, Key.D2, Key.D3, Key.D4, Key.D5, Key.D6, Key.D7, Key.D8, Key.D9, Key.D0 };
         for (var i = 0; i < keys.Length && i < WorkspaceDefinition.All.Count; i++)
         {
             var kind = WorkspaceDefinition.All[i].Kind;
             Bind(keys[i], ModifierKeys.Alt, () => _shell.Workspace = kind);
+        }
+
+        var numPadKeys = new[] { Key.NumPad1, Key.NumPad2, Key.NumPad3, Key.NumPad4, Key.NumPad5, Key.NumPad6, Key.NumPad7, Key.NumPad8, Key.NumPad9, Key.NumPad0 };
+        for (var i = 0; i < numPadKeys.Length && i < WorkspaceDefinition.All.Count; i++)
+        {
+            var kind = WorkspaceDefinition.All[i].Kind;
+            Bind(numPadKeys[i], ModifierKeys.Alt, () => _shell.Workspace = kind);
         }
 
         // F6 cycles the shell regions, which is what makes the whole frame keyboard-navigable rather

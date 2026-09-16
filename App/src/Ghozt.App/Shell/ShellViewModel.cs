@@ -60,7 +60,7 @@ public sealed class ShellViewModel : ObservableBase
         ToggleTray = new RelayCommand(() =>
             Tray = Tray == TrayState.Collapsed ? TrayState.Peek : TrayState.Collapsed);
 
-        OpenCommandPalette = new RelayCommand(() => CommandPaletteOpen = true);
+        OpenCommandPalette = new RelayCommand(() => CommandPaletteOpen = !CommandPaletteOpen);
 
         // Emergency control. Reachable during any execution, and it names what it does rather than
         // presenting one ambiguous "stop".
@@ -145,6 +145,15 @@ public sealed class ShellViewModel : ObservableBase
                 OnPropertyChanged(nameof(ConnectionLabel));
                 OnPropertyChanged(nameof(ConnectionToken));
                 Refresh();
+
+                if (_target is not null)
+                {
+                    Log("TGT.ACTIVE", $"Active target switched to {_target.Name} ({_target.Id}).", Severity.Info, related: _target.Id.ToString());
+                }
+                else
+                {
+                    Log("TGT.ACTIVE", "Active target cleared (no target selected).", Severity.Medium);
+                }
             }
         }
     }
@@ -425,6 +434,7 @@ public sealed class ShellViewModel : ObservableBase
         var selected = _target?.Id;
         Targets.Reset(_store.Targets());
         _target = selected is null ? Targets.FirstOrDefault() : Targets.FirstOrDefault(t => t.Id == selected.Value);
+        OnPropertyChanged(nameof(Targets));
         OnPropertyChanged(nameof(Target));
         OnPropertyChanged(nameof(HasTarget));
         OnPropertyChanged(nameof(TargetName));
