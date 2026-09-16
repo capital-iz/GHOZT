@@ -9,7 +9,7 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class RegressionsWorkspace : UserControl
+public partial class RegressionsWorkspace : UserControl, IRefreshableWorkspace
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private bool _attached;
@@ -42,7 +42,7 @@ public partial class RegressionsWorkspace : UserControl
         }
     }
 
-    private void Refresh()
+    public void Refresh()
     {
         if (MutationScoreBadge is not null)
         {

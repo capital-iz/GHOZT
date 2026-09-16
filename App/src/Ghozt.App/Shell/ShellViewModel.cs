@@ -79,6 +79,8 @@ public sealed class ShellViewModel : ObservableBase
                 Recording ? Severity.Info : Severity.Medium);
         });
 
+        CopyVisibleEvents = new RelayCommand(ExecuteCopyVisibleEvents);
+
         Refresh();
 
         if (Targets.Count > 0)
@@ -108,6 +110,45 @@ public sealed class ShellViewModel : ObservableBase
     public RelayCommand PauseAll { get; }
 
     public RelayCommand ToggleRecorder { get; }
+
+    public RelayCommand CopyVisibleEvents { get; }
+
+    public event Action? RefreshRequested;
+
+    public event Action? FocusSearchRequested;
+
+    public void RequestRefresh()
+    {
+        Refresh();
+        RefreshRequested?.Invoke();
+        Log("SYS.REFRESH", $"Operator refreshed {CurrentWorkspace.Title} workspace.", Severity.Info);
+    }
+
+    public void RequestFocusSearch()
+    {
+        FocusSearchRequested?.Invoke();
+    }
+
+    private void ExecuteCopyVisibleEvents()
+    {
+        if (Events.Count == 0) return;
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"# Black-Box Event Stream Export — {TargetName} ({Events.Count} events at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss})");
+            sb.AppendLine("Timestamp\tID\tCode\tSeverity\tMessage\tActor\tDetail");
+            foreach (var evt in Events)
+            {
+                sb.AppendLine($"{evt.At:HH:mm:ss.fff}\t{evt.Id}\t{evt.Code}\t{evt.Severity}\t{evt.Message}\t{evt.Actor}\t{evt.Detail}");
+            }
+            Clipboard.SetText(sb.ToString());
+            Log("EVT.COPY", $"Copied {Events.Count} visible events to clipboard.", Severity.Info);
+        }
+        catch
+        {
+            // Safe clipboard access handling on native desktop
+        }
+    }
 
     public IReadOnlyList<WorkspaceDefinition> Workspaces => WorkspaceDefinition.All;
 
@@ -451,6 +492,7 @@ public sealed class ShellViewModel : ObservableBase
 
         Findings.Reset(_target is null ? [] : _store.Findings(_target.Id));
 
+        OnPropertyChanged(nameof(Findings));
         OnPropertyChanged(nameof(ScopeLine));
         OnPropertyChanged(nameof(EventCount));
         OnPropertyChanged(nameof(IsAnyRunActive));

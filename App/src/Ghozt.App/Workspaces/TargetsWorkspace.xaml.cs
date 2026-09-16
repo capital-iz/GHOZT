@@ -8,7 +8,7 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class TargetsWorkspace : UserControl
+public partial class TargetsWorkspace : UserControl, IRefreshableWorkspace
 {
     private static readonly HttpClient Probe = new() { Timeout = TimeSpan.FromSeconds(4) };
 
@@ -31,6 +31,12 @@ public partial class TargetsWorkspace : UserControl
             ApplyFilter();
         };
         Loaded += (_, _) => ApplyFilter();
+    }
+
+    public void Refresh()
+    {
+        Shell?.ReloadTargets();
+        ApplyFilter();
     }
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;

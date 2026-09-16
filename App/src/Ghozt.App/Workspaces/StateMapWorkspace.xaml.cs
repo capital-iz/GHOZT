@@ -10,7 +10,7 @@ using Ghozt.Theming;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class StateMapWorkspace : UserControl
+public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
 {
     public StateMapWorkspace()
     {
@@ -287,7 +287,7 @@ public partial class StateMapWorkspace : UserControl
 
     private Brush B(string token) => (Brush?)TryFindResource(token) ?? Brushes.Gray;
 
-    private void Refresh()
+    public void Refresh()
     {
         Lattice.Children.Clear();
         Tree.Items.Clear();

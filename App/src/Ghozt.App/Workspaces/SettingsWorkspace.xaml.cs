@@ -10,9 +10,15 @@ using Ghozt.Theming;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class SettingsWorkspace : UserControl
+public partial class SettingsWorkspace : UserControl, IRefreshableWorkspace
 {
     private bool _loading = true;
+
+    public void Refresh()
+    {
+        LoadFromTheme();
+        UpdateDigest();
+    }
 
     public SettingsWorkspace()
     {

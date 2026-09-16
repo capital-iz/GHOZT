@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -8,10 +9,15 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class AlgorithmsWorkspace : UserControl
+public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
 {
     private AlgorithmSuiteReport? _lastReport;
     private bool _attached;
+
+    public void Refresh()
+    {
+        OnRunSuite(this, new RoutedEventArgs());
+    }
 
     public AlgorithmsWorkspace()
     {
@@ -692,6 +698,311 @@ public partial class AlgorithmsWorkspace : UserControl
         finally
         {
             RunMinimiseButton.IsEnabled = true;
+        }
+    }
+
+    // =========================================================================
+    // Multi-Domain Audit Lab: Scientific, AI/ML, Mobile, and Desktop Harnesses
+    // =========================================================================
+
+    private IReadOnlyList<MathAuditResult>? _lastMathResults;
+    private IReadOnlyList<AiAuditResult>? _lastAiResults;
+    private IReadOnlyList<MobileAuditResult>? _lastMobileResults;
+    private IReadOnlyList<DesktopAuditResult>? _lastDesktopResults;
+    private string _lastDossierMarkdown = "";
+    private string _lastDossierTitle = "";
+
+    private void OnAuditDomainChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AuditResultsPanel is null) return;
+        // Reset summary text
+        AuditSummaryText.Text = $"Click 'Run Multi-Domain Audit' to evaluate {((ComboBoxItem)AuditDomainPicker.SelectedItem).Content}";
+    }
+
+    private void OnRunMultiDomainAudit(object sender, RoutedEventArgs e)
+    {
+        RunAuditButton.IsEnabled = false;
+        try
+        {
+            var selectedIndex = AuditDomainPicker.SelectedIndex;
+            AuditResultsPanel.Children.Clear();
+
+            switch (selectedIndex)
+            {
+                case 0: // Scientific & Mathematical Engine
+                    var mathEngine = new ScientificMathAuditEngine();
+                    _lastMathResults = mathEngine.RunFullAudit();
+                    _lastDossierMarkdown = ScientificMathAuditEngine.GenerateMarkdownDossier(_lastMathResults);
+                    _lastDossierTitle = "ScientificMathAudit";
+                    RenderMathAuditResults(_lastMathResults);
+                    AuditSummaryText.Text = $"Scientific Engine: {_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} invariants verified";
+                    Shell?.Log("AUDIT.MATH.RUN", $"Executed first-principles mathematical audit ({_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} passed).", Severity.Info);
+                    break;
+
+                case 1: // Machine Learning & Agentic AI System
+                    var aiEngine = new AgenticAiAuditEngine();
+                    _lastAiResults = aiEngine.RunFullAudit();
+                    _lastDossierMarkdown = AgenticAiAuditEngine.GenerateMarkdownDossier(_lastAiResults);
+                    _lastDossierTitle = "AgenticAiHardeningAudit";
+                    RenderAiAuditResults(_lastAiResults);
+                    AuditSummaryText.Text = $"Agentic AI/ML: {_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} hardening gates passed";
+                    Shell?.Log("AUDIT.AI.RUN", $"Executed agentic AI & ML hardening audit ({_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} passed).", Severity.Info);
+                    break;
+
+                case 2: // Android Mobile Emulator Runtime
+                    var mobileEngine = new MobileAuditEngine();
+                    _lastMobileResults = mobileEngine.RunFullAudit();
+                    _lastDossierMarkdown = MobileAuditEngine.GenerateMarkdownDossier(_lastMobileResults);
+                    _lastDossierTitle = "MobileEmulatorAudit";
+                    RenderMobileAuditResults(_lastMobileResults);
+                    AuditSummaryText.Text = $"Mobile Emulator: {_lastMobileResults.Count(r => r.Passed)}/{_lastMobileResults.Count} runtime sentry checks verified";
+                    Shell?.Log("AUDIT.MOBILE.RUN", $"Executed mobile emulator runtime audit ({_lastMobileResults.Count(r => r.Passed)}/{_lastMobileResults.Count} passed).", Severity.Info);
+                    break;
+
+                case 3: // Windows Desktop Native Application
+                    var desktopEngine = new DesktopRuntimeAuditEngine();
+                    _lastDesktopResults = desktopEngine.RunFullAudit();
+                    _lastDossierMarkdown = DesktopRuntimeAuditEngine.GenerateMarkdownDossier(_lastDesktopResults);
+                    _lastDossierTitle = "DesktopRuntimeAudit";
+                    RenderDesktopAuditResults(_lastDesktopResults);
+                    AuditSummaryText.Text = $"Desktop Runtime: {_lastDesktopResults.Count(r => r.Passed)}/{_lastDesktopResults.Count} vitality gates passed";
+                    Shell?.Log("AUDIT.DESKTOP.RUN", $"Executed Windows desktop runtime audit ({_lastDesktopResults.Count(r => r.Passed)}/{_lastDesktopResults.Count} passed).", Severity.Info);
+                    break;
+            }
+
+            ExportAuditDossierButton.IsEnabled = true;
+            var activeTarget = Shell?.Target ?? App.Store.Targets().FirstOrDefault();
+            if (Shell is not null && Shell.Target is null && activeTarget is not null)
+            {
+                Shell.Target = activeTarget;
+            }
+            SealAuditEvidenceButton.IsEnabled = activeTarget is not null;
+            SealAuditEvidenceButton.Content = "Seal to Evidence";
+        }
+        finally
+        {
+            RunAuditButton.IsEnabled = true;
+        }
+    }
+
+    private void RenderMathAuditResults(IReadOnlyList<MathAuditResult> results)
+    {
+        foreach (var r in results)
+        {
+            var card = CreateAuditCard(r.AuditName, r.Domain.ToString(), r.Passed, r.Summary, r.TheoreticalRationale,
+                $"Metric: {r.MetricValue:E3} | Bound: {r.MetricBound:E3}", r.RemediationAdvice);
+            AuditResultsPanel.Children.Add(card);
+        }
+    }
+
+    private void RenderAiAuditResults(IReadOnlyList<AiAuditResult> results)
+    {
+        foreach (var r in results)
+        {
+            var card = CreateAuditCard(r.AuditName, r.Category.ToString(), r.Passed, r.Summary, r.TechnicalContext,
+                $"Value: {r.MetricValue:F2} | Threshold: {r.MetricThreshold:F2}", r.RemediationAdvice);
+            AuditResultsPanel.Children.Add(card);
+        }
+    }
+
+    private void RenderMobileAuditResults(IReadOnlyList<MobileAuditResult> results)
+    {
+        foreach (var r in results)
+        {
+            var card = CreateAuditCard(r.AuditName, r.Category.ToString(), r.Passed, r.Summary, r.TechnicalDetail,
+                "ADB / Logcat Telemetry Sentry", r.RemediationAdvice);
+            AuditResultsPanel.Children.Add(card);
+        }
+    }
+
+    private void RenderDesktopAuditResults(IReadOnlyList<DesktopAuditResult> results)
+    {
+        foreach (var r in results)
+        {
+            var card = CreateAuditCard(r.AuditName, r.Category.ToString(), r.Passed, r.Summary, r.TechnicalDetail,
+                "Windows UIA & Win32 Telemetry", r.RemediationAdvice);
+            AuditResultsPanel.Children.Add(card);
+        }
+    }
+
+    private Border CreateAuditCard(string title, string category, bool passed, string summary, string detail, string metrics, string advice)
+    {
+        var card = new Border
+        {
+            Background = (Brush)TryFindResource("Surface.Card"),
+            BorderBrush = (Brush)TryFindResource(passed ? "Border.Card" : "State.Fault"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = (CornerRadius)TryFindResource("Radius.Card"),
+            Padding = new Thickness(14, 12, 14, 12),
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+
+        var stack = new StackPanel();
+
+        // Top line: Status icon + Title + Category Pill + Metrics
+        var headerGrid = new Grid();
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var icon = new TextBlock
+        {
+            Text = passed ? "" : "",
+            FontFamily = (FontFamily)TryFindResource("Font.Icon"),
+            FontSize = 14,
+            Foreground = (Brush)TryFindResource(passed ? "Accent.Primary" : "State.Fault"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var titleStack = new StackPanel { Orientation = Orientation.Horizontal };
+        titleStack.Children.Add(new TextBlock
+        {
+            Text = title,
+            Style = (Style)TryFindResource("Type.BodyStyle"),
+            FontWeight = FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        var catBorder = new Border
+        {
+            Background = (Brush)TryFindResource("Surface.CardStrong"),
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(6, 1, 6, 1),
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        catBorder.Child = new TextBlock
+        {
+            Text = category,
+            Style = (Style)TryFindResource("Type.MicroLabelStyle"),
+            Foreground = (Brush)TryFindResource("Text.Muted"),
+        };
+        titleStack.Children.Add(catBorder);
+
+        var metricPill = new Border
+        {
+            Background = (Brush)TryFindResource("Surface.Deep"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(8, 2, 8, 2),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        metricPill.Child = new TextBlock
+        {
+            Text = metrics,
+            Style = (Style)TryFindResource("Type.MonoStyle"),
+            FontSize = 10,
+            Foreground = (Brush)TryFindResource("Accent.Text"),
+        };
+
+        Grid.SetColumn(icon, 0);
+        Grid.SetColumn(titleStack, 1);
+        Grid.SetColumn(metricPill, 2);
+        headerGrid.Children.Add(icon);
+        headerGrid.Children.Add(titleStack);
+        headerGrid.Children.Add(metricPill);
+        stack.Children.Add(headerGrid);
+
+        // Summary
+        stack.Children.Add(new TextBlock
+        {
+            Text = summary,
+            Style = (Style)TryFindResource("Type.CaptionStyle"),
+            Foreground = (Brush)TryFindResource("Text.Primary"),
+            Margin = new Thickness(28, 6, 0, 0),
+        });
+
+        // Detail / Theory
+        if (!string.IsNullOrWhiteSpace(detail))
+        {
+            stack.Children.Add(new TextBlock
+            {
+                Text = detail,
+                Style = (Style)TryFindResource("Type.CaptionStyle"),
+                Foreground = (Brush)TryFindResource("Text.Muted"),
+                Margin = new Thickness(28, 4, 0, 0),
+            });
+        }
+
+        // Remediation Advice if present
+        if (!string.IsNullOrWhiteSpace(advice))
+        {
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"Action Required: {advice}",
+                Style = (Style)TryFindResource("Type.CaptionStyle"),
+                Foreground = (Brush)TryFindResource("State.Fault"),
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(28, 4, 0, 0),
+            });
+        }
+
+        card.Child = stack;
+        return card;
+    }
+
+    private void OnExportAuditDossier(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastDossierMarkdown)) return;
+
+        try
+        {
+            var exportDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Capital-Iz",
+                "Ghozt",
+                "AuditDossiers");
+            Directory.CreateDirectory(exportDir);
+
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+            var filePath = Path.Combine(exportDir, $"{_lastDossierTitle}_{timestamp}.md");
+            File.WriteAllText(filePath, _lastDossierMarkdown);
+
+            Shell?.Log("AUDIT.DOSSIER.EXPORT", $"Exported audit dossier to {filePath}", Severity.Info, detail: filePath);
+            AuditSummaryText.Text = $"Exported: {Path.GetFileName(filePath)}";
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("AUDIT.DOSSIER.ERR", $"Failed exporting audit dossier: {ex.Message}", Severity.High);
+        }
+    }
+
+    private void OnSealAuditEvidence(object sender, RoutedEventArgs e)
+    {
+        var activeTarget = Shell?.Target ?? App.Store.Targets().FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(_lastDossierMarkdown) || activeTarget is null) return;
+        if (Shell is not null && Shell.Target is null)
+        {
+            Shell.Target = activeTarget;
+        }
+
+        try
+        {
+            var bytes = Encoding.UTF8.GetBytes(_lastDossierMarkdown);
+            var sha = Hashing.Sha256(bytes);
+            var evd = new Evidence
+            {
+                Id = App.Store.NextId(IdKind.Evidence),
+                TargetId = activeTarget.Id,
+                Kind = "text/markdown; audit=multi-domain",
+                Summary = $"Universal Multi-Domain Audit Dossier: {_lastDossierTitle}",
+                Sha256 = sha,
+                SizeBytes = bytes.Length,
+                Payload = _lastDossierMarkdown,
+                SourceAdapter = "MultiDomainAuditEngine",
+                CapturedAt = DateTimeOffset.Now,
+                Sealed = true,
+                SealedBy = "Ghozt.Operator",
+            };
+
+            App.Store.Save(evd);
+            Shell?.Log("AUDIT.EVIDENCE.SEAL", $"Sealed audit dossier into evidence ({evd.Id}, SHA-256: {sha[..8]}).", Severity.Info, related: evd.Id.ToString());
+            SealAuditEvidenceButton.IsEnabled = false;
+            SealAuditEvidenceButton.Content = "Sealed";
+            AuditSummaryText.Text = $"Sealed as Evidence {evd.Id}";
+        }
+        catch (Exception ex)
+        {
+            Shell?.Log("AUDIT.EVIDENCE.ERR", $"Failed sealing audit evidence: {ex.Message}", Severity.High);
         }
     }
 }

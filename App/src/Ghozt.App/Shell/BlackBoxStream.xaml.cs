@@ -1,5 +1,8 @@
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using Ghozt.Core;
 
 namespace Ghozt.App.Shell;
 
@@ -26,6 +29,84 @@ public partial class BlackBoxStream : UserControl
         if (e.PropertyName is nameof(ShellViewModel.StreamFilter) or nameof(ShellViewModel.Target))
         {
             UpdateEmptyMessage();
+        }
+    }
+
+    private LedgerEvent? SelectedEvent => Rows.SelectedItem as LedgerEvent;
+
+    private void OnRowsKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            CopySelectedLine();
+            e.Handled = true;
+        }
+    }
+
+    private void OnCopySelectedLine(object sender, RoutedEventArgs e) => CopySelectedLine();
+
+    private void CopySelectedLine()
+    {
+        if (SelectedEvent is { } ev)
+        {
+            SetClipboardText($"{ev.At:HH:mm:ss.fff}\t{ev.Id}\t{ev.Code}\t{ev.Severity}\t{ev.Message}\t{ev.Actor}", $"event {ev.Id}");
+        }
+    }
+
+    private void OnCopySelectedId(object sender, RoutedEventArgs e)
+    {
+        if (SelectedEvent is { } ev)
+        {
+            SetClipboardText(ev.Id.ToString(), $"event ID {ev.Id}");
+        }
+    }
+
+    private void OnCopySelectedCode(object sender, RoutedEventArgs e)
+    {
+        if (SelectedEvent is { } ev)
+        {
+            SetClipboardText(ev.Code, $"code {ev.Code}");
+        }
+    }
+
+    private void OnCopySelectedMessage(object sender, RoutedEventArgs e)
+    {
+        if (SelectedEvent is { } ev)
+        {
+            SetClipboardText(ev.Message, $"message for {ev.Id}");
+        }
+    }
+
+    private void OnCopySelectedDetail(object sender, RoutedEventArgs e)
+    {
+        if (SelectedEvent is { } ev)
+        {
+            var detail = string.IsNullOrWhiteSpace(ev.Detail) ? ev.Message : ev.Detail;
+            SetClipboardText(detail, $"details for {ev.Id}");
+        }
+    }
+
+    private void OnCopyAllVisible(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ShellViewModel shell)
+        {
+            shell.CopyVisibleEvents.Execute(null);
+        }
+    }
+
+    private void SetClipboardText(string text, string description)
+    {
+        try
+        {
+            Clipboard.SetText(text);
+            if (DataContext is ShellViewModel shell)
+            {
+                shell.Log("EVT.COPY", $"Copied {description} to clipboard.", Severity.Info);
+            }
+        }
+        catch
+        {
+            // Safe native desktop clipboard access
         }
     }
 

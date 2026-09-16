@@ -89,6 +89,159 @@ public partial class CommandPalette : UserControl
             "",
             () => _shell.ToggleRecorder.Execute(null)));
 
+        // Operational workflows & forensic shortcuts
+        entries.Add(new PaletteEntry(
+            "",
+            "Refresh active workspace",
+            "Re-query the evidence store, reload states, and re-evaluate active guards.",
+            "F5",
+            () => _shell.RequestRefresh()));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Focus workspace search",
+            "Focus the active workspace search input or filter box.",
+            "Ctrl+F",
+            () => _shell.RequestFocusSearch()));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Toggle black-box stream drawer",
+            "Expand or collapse the live event trace and forensic telemetry tray.",
+            "Ctrl+L",
+            () => _shell.ToggleTray.Execute(null)));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Copy visible event stream",
+            "Format and copy all visible black-box events to the clipboard.",
+            "",
+            () => _shell.CopyVisibleEvents.Execute(null)));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Evaluate clearance gates",
+            "Formally verify production release readiness and integrity gates across active target.",
+            "",
+            () =>
+            {
+                _shell.Workspace = WorkspaceKind.Clearance;
+                _shell.RequestRefresh();
+            }));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Run invariant algorithm suite",
+            "Execute ddmin, metatesting, dual-state differential, and causal harnesses.",
+            "",
+            () =>
+            {
+                _shell.Workspace = WorkspaceKind.Algorithms;
+                _shell.RequestRefresh();
+            }));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Start autonomous state sweep",
+            "Open autonomous state machine exploration and invariant probing.",
+            "",
+            () => _shell.Workspace = WorkspaceKind.Sweep));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Auto-arrange state lattice",
+            "Recalculate clean radial layout and reset node spacing on the active state map.",
+            "",
+            () => _shell.NavigateToStateMap()));
+
+        // Multi-Domain Autonomous Audit Runners
+        entries.Add(new PaletteEntry(
+            "",
+            "Run scientific mathematical audit",
+            "Execute first-principles formula audits, 4-layer DAG invariants, and floating-point epsilon damping.",
+            "",
+            () =>
+            {
+                _shell.Workspace = WorkspaceKind.Algorithms;
+                _shell.RequestRefresh();
+            }));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Run agentic AI & machine learning hardening audit",
+            "Audit zero lookahead data contracts, day-clustered t >= 2.0 significance, and UTCP tool schemas.",
+            "",
+            () =>
+            {
+                _shell.Workspace = WorkspaceKind.Algorithms;
+                _shell.RequestRefresh();
+            }));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Run mobile emulator runtime audit",
+            "Verify ADB emulator presence, touch gestures, Logcat row-execSQL and RenderFlex overflow sentries.",
+            "",
+            () =>
+            {
+                _shell.Workspace = WorkspaceKind.Algorithms;
+                _shell.RequestRefresh();
+            }));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Run desktop native runtime audit",
+            "Verify process telemetry bounds (< 250 MB), Windows UIA tree integrity, and SQLite WAL storage.",
+            "",
+            () =>
+            {
+                _shell.Workspace = WorkspaceKind.Algorithms;
+                _shell.RequestRefresh();
+            }));
+
+        // Fast theme switching
+        entries.Add(new PaletteEntry(
+            "",
+            "Switch theme to Gold Standard",
+            "High-contrast authoritative gold & deep obsidian finish (Patent clearance standard).",
+            "",
+            () => Theming.ThemeManager.Current.ApplyPaletteWithItsDefaults("gold_standard")));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Switch theme to Spectral Black",
+            "Zero-reflection deep OLED black with phosphor cyan highlights.",
+            "",
+            () => Theming.ThemeManager.Current.ApplyPaletteWithItsDefaults("spectral_black")));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Switch theme to Ghostwire",
+            "Clean phosphor wireframe telemetry finish.",
+            "",
+            () => Theming.ThemeManager.Current.ApplyPaletteWithItsDefaults("ghostwire")));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Switch theme to Blacksite",
+            "Restricted amber terminal finish for high-security isolation.",
+            "",
+            () => Theming.ThemeManager.Current.ApplyPaletteWithItsDefaults("blacksite")));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Switch theme to Operator Green",
+            "High-visibility phosphor CRT terminal finish.",
+            "",
+            () => Theming.ThemeManager.Current.ApplyPaletteWithItsDefaults("operator_green")));
+
+        entries.Add(new PaletteEntry(
+            "",
+            "Switch theme to Phantom Violet",
+            "Deep electromagnetic violet spectrum finish.",
+            "",
+            () => Theming.ThemeManager.Current.ApplyPaletteWithItsDefaults("phantom_violet")));
+
         if (!string.IsNullOrWhiteSpace(query))
         {
             entries = entries

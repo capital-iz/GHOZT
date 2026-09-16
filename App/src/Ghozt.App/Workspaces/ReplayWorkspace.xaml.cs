@@ -29,7 +29,7 @@ public sealed record ReplayStepModel
     public bool HasImage { get; init; }
 }
 
-public partial class ReplayWorkspace : UserControl
+public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
 {
     private readonly DispatcherTimer _playbackTimer;
     private readonly List<ReplayStepModel> _steps = [];
@@ -39,6 +39,12 @@ public partial class ReplayWorkspace : UserControl
     private Sweep? _currentSweep;
     private Sweep? _compareSweep;
     private int? _firstDivergenceIndex;
+
+    public void Refresh()
+    {
+        RefreshSweeps();
+        CheckRequestedNavigation();
+    }
 
     public ReplayWorkspace()
     {

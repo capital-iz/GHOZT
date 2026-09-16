@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Ghozt.App.Theming;
 using Ghozt.App.Workspaces;
 using Ghozt.Core;
@@ -43,12 +44,22 @@ public partial class MainWindow : Window
         DataContext = _shell;
 
         _shell.PropertyChanged += OnShellChanged;
+        _shell.RefreshRequested += OnRefreshRequested;
+        _shell.FocusSearchRequested += () => Dispatcher.Invoke(FocusWorkspaceSearch);
         ThemeManager.Current.ThemeChanged += (_, _) => ApplyFinish();
 
         SizeChanged += (_, _) => ApplyWidthState();
         Loaded += OnLoaded;
 
         BindShortcuts();
+    }
+
+    private void OnRefreshRequested()
+    {
+        if (Canvas.Content is ContentControl cc && cc.Content is Workspaces.IRefreshableWorkspace refreshable)
+        {
+            refreshable.Refresh();
+        }
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -199,6 +210,10 @@ public partial class MainWindow : Window
 
         Bind(Key.K, ModifierKeys.Control, () => _shell.CommandPaletteOpen = !_shell.CommandPaletteOpen);
         Bind(Key.P, ModifierKeys.Control, () => _shell.CommandPaletteOpen = !_shell.CommandPaletteOpen);
+        Bind(Key.F1, ModifierKeys.None, () => _shell.CommandPaletteOpen = !_shell.CommandPaletteOpen);
+        Bind(Key.F, ModifierKeys.Control, FocusWorkspaceSearch);
+        Bind(Key.F3, ModifierKeys.None, FocusWorkspaceSearch);
+        Bind(Key.F5, ModifierKeys.None, () => _shell.RequestRefresh());
         Bind(Key.OemComma, ModifierKeys.Control, () => _shell.Workspace = WorkspaceKind.Settings);
         Bind(Key.L, ModifierKeys.Control, () =>
         {
@@ -207,6 +222,18 @@ public partial class MainWindow : Window
                 _shell.Tray = TrayState.Peek;
             }
             StreamFilter.Focus();
+        });
+        Bind(Key.F4, ModifierKeys.None, () =>
+        {
+            if (_shell.Tray == TrayState.Collapsed)
+            {
+                _shell.Tray = TrayState.Peek;
+                StreamFilter.Focus();
+            }
+            else
+            {
+                _shell.Tray = TrayState.Collapsed;
+            }
         });
 
         var keys = new[] { Key.D1, Key.D2, Key.D3, Key.D4, Key.D5, Key.D6, Key.D7, Key.D8, Key.D9, Key.D0 };
@@ -237,12 +264,122 @@ public partial class MainWindow : Window
         regions[_region]?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
     }
 
+    private void FocusWorkspaceSearch()
+    {
+        DependencyObject root = Canvas;
+        if (Canvas.Content is ContentControl cc && cc.Content is DependencyObject dep)
+        {
+            root = dep;
+        }
+
+        var box = FindDescendant<TextBox>(root, tb =>
+            tb.IsVisible && (tb.Name.Contains("Search", StringComparison.OrdinalIgnoreCase)
+                             || tb.ToolTip?.ToString()?.Contains("Search", StringComparison.OrdinalIgnoreCase) == true
+                             || System.Windows.Automation.AutomationProperties.GetName(tb).Contains("Search", StringComparison.OrdinalIgnoreCase)));
+
+        if (box is null)
+        {
+            box = FindDescendant<TextBox>(Canvas, tb =>
+                tb.IsVisible && (tb.Name.Contains("Search", StringComparison.OrdinalIgnoreCase)
+                                 || tb.ToolTip?.ToString()?.Contains("Search", StringComparison.OrdinalIgnoreCase) == true
+                                 || System.Windows.Automation.AutomationProperties.GetName(tb).Contains("Search", StringComparison.OrdinalIgnoreCase)));
+        }
+
+        if (box is not null)
+        {
+            box.Focus();
+            Keyboard.Focus(box);
+            box.SelectAll();
+        }
+        else
+        {
+            _shell.CommandPaletteOpen = true;
+        }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject? parent, Func<T, bool>? predicate = null) where T : DependencyObject
+    {
+        if (parent is null) return null;
+
+        foreach (var child in LogicalTreeHelper.GetChildren(parent))
+        {
+            if (child is T typed && (predicate is null || predicate(typed)))
+            {
+                return typed;
+            }
+            if (child is DependencyObject depChild)
+            {
+                var found = FindDescendant(depChild, predicate);
+                if (found is not null) return found;
+            }
+        }
+
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T typed && (predicate is null || predicate(typed)))
+            {
+                return typed;
+            }
+            var found = FindDescendant(child, predicate);
+            if (found is not null) return found;
+        }
+
+        return null;
+    }
+
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        if (e.Key == Key.Escape && _shell.CommandPaletteOpen)
+        if (e.Key == Key.Escape)
         {
-            _shell.CommandPaletteOpen = false;
+            if (_shell.CommandPaletteOpen)
+            {
+                _shell.CommandPaletteOpen = false;
+                e.Handled = true;
+                return;
+            }
+
+            if (_shell.Tray != TrayState.Collapsed)
+            {
+                _shell.Tray = TrayState.Collapsed;
+                e.Handled = true;
+                return;
+            }
+        }
+        else if ((e.Key == Key.F1 && Keyboard.Modifiers == ModifierKeys.None) ||
+                 ((e.Key == Key.K || e.Key == Key.P) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control))
+        {
+            _shell.CommandPaletteOpen = !_shell.CommandPaletteOpen;
             e.Handled = true;
+            return;
+        }
+        else if ((e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) ||
+                 (e.Key == Key.F3 && Keyboard.Modifiers == ModifierKeys.None))
+        {
+            FocusWorkspaceSearch();
+            e.Handled = true;
+            return;
+        }
+        else if (e.Key == Key.F4 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            if (_shell.Tray == TrayState.Collapsed)
+            {
+                _shell.Tray = TrayState.Peek;
+                StreamFilter.Focus();
+            }
+            else
+            {
+                _shell.Tray = TrayState.Collapsed;
+            }
+            e.Handled = true;
+            return;
+        }
+        else if (e.Key == Key.F5 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            _shell.RequestRefresh();
+            e.Handled = true;
+            return;
         }
 
         base.OnPreviewKeyDown(e);

@@ -927,6 +927,86 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("Log(\"TGT.ACTIVE\", $\"Active target switched to", vmCs);
         Assert.Contains("Log(\"TGT.ACTIVE\", \"Active target cleared", vmCs);
     }
+
+    [Fact]
+    public void QoL_Innovations_AndForensicUsability_AreFullyIntegrated()
+    {
+        var appPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App"));
+        var shellPath = Path.Combine(appPath, "Shell");
+        var wsPath = Path.Combine(appPath, "Workspaces");
+
+        // 1. IRefreshableWorkspace contract exists
+        var ifacePath = Path.Combine(wsPath, "IRefreshableWorkspace.cs");
+        Assert.True(File.Exists(ifacePath), "IRefreshableWorkspace.cs must exist");
+        var ifaceCode = File.ReadAllText(ifacePath);
+        Assert.Contains("public interface IRefreshableWorkspace", ifaceCode);
+        Assert.Contains("void Refresh();", ifaceCode);
+
+        // 2. Core workspaces implement IRefreshableWorkspace
+        var refreshableWorkspaces = new[]
+        {
+            "TargetsWorkspace.xaml.cs",
+            "StateMapWorkspace.xaml.cs",
+            "FaultsWorkspace.xaml.cs",
+            "SweepWorkspace.xaml.cs",
+            "ReplayWorkspace.xaml.cs",
+            "EvidenceWorkspace.xaml.cs",
+            "RegressionsWorkspace.xaml.cs",
+            "ClearanceWorkspace.xaml.cs",
+            "ReportsWorkspace.xaml.cs",
+            "SettingsWorkspace.xaml.cs"
+        };
+
+        foreach (var ws in refreshableWorkspaces)
+        {
+            var code = File.ReadAllText(Path.Combine(wsPath, ws));
+            Assert.Contains("IRefreshableWorkspace", code);
+            Assert.Contains("public void Refresh()", code);
+        }
+
+        // 3. ShellViewModel provides RequestRefresh, RequestFocusSearch, CopyVisibleEvents
+        var vmCode = File.ReadAllText(Path.Combine(shellPath, "ShellViewModel.cs"));
+        Assert.Contains("public RelayCommand CopyVisibleEvents { get; }", vmCode);
+        Assert.Contains("public event Action? RefreshRequested;", vmCode);
+        Assert.Contains("public event Action? FocusSearchRequested;", vmCode);
+        Assert.Contains("public void RequestRefresh()", vmCode);
+        Assert.Contains("public void RequestFocusSearch()", vmCode);
+        Assert.Contains("EVT.COPY", vmCode);
+        Assert.Contains("SYS.REFRESH", vmCode);
+
+        // 4. MainWindow shortcuts: Ctrl+F, F5, Escape drawer collapse
+        var mainCode = File.ReadAllText(Path.Combine(shellPath, "MainWindow.xaml.cs"));
+        Assert.Contains("Key.F, ModifierKeys.Control, FocusWorkspaceSearch", mainCode);
+        Assert.Contains("Key.F5, ModifierKeys.None", mainCode);
+        Assert.Contains("RequestRefresh()", mainCode);
+        Assert.Contains("TrayState.Collapsed", mainCode);
+        Assert.Contains("FocusWorkspaceSearch()", mainCode);
+
+        // 5. BlackBoxStream ContextMenu and Keyboard copy
+        var streamMarkup = File.ReadAllText(Path.Combine(shellPath, "BlackBoxStream.xaml"));
+        Assert.Contains("ContextMenu", streamMarkup);
+        Assert.Contains("Copy Event Line", streamMarkup);
+        Assert.Contains("Copy All Visible Events", streamMarkup);
+        Assert.Contains("KeyDown=\"OnRowsKeyDown\"", streamMarkup);
+
+        var streamCode = File.ReadAllText(Path.Combine(shellPath, "BlackBoxStream.xaml.cs"));
+        Assert.Contains("CopySelectedLine()", streamCode);
+        Assert.Contains("OnCopySelectedId", streamCode);
+        Assert.Contains("OnCopyAllVisible", streamCode);
+
+        // 6. CommandPalette enriched entries
+        var paletteCode = File.ReadAllText(Path.Combine(shellPath, "CommandPalette.xaml.cs"));
+        Assert.Contains("Refresh active workspace", paletteCode);
+        Assert.Contains("Focus workspace search", paletteCode);
+        Assert.Contains("Toggle black-box stream drawer", paletteCode);
+        Assert.Contains("Copy visible event stream", paletteCode);
+        Assert.Contains("Evaluate clearance gates", paletteCode);
+        Assert.Contains("Run invariant algorithm suite", paletteCode);
+        Assert.Contains("Start autonomous state sweep", paletteCode);
+        Assert.Contains("Auto-arrange state lattice", paletteCode);
+        Assert.Contains("Switch theme to Gold Standard", paletteCode);
+        Assert.Contains("Switch theme to Spectral Black", paletteCode);
+    }
 }
 
 

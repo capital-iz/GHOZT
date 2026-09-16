@@ -27,7 +27,44 @@
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
                  VirtualizingPanel.ScrollUnit="Pixel"
+                 KeyDown="OnRowsKeyDown"
                  AutomationProperties.Name="Black-box event stream">
+
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy Event Line" Click="OnCopySelectedLine" InputGestureText="Ctrl+C">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Text.Primary}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Event ID" Click="OnCopySelectedId">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE943;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Text.Primary}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Event Code" Click="OnCopySelectedCode">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE9D9;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Text.Primary}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Event Message" Click="OnCopySelectedMessage">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8BD;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Text.Primary}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Detail / Payload" Click="OnCopySelectedDetail">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE70B;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Text.Primary}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Copy All Visible Events" Click="OnCopyAllVisible">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Accent.Text}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </ListBox.ContextMenu>
 
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">

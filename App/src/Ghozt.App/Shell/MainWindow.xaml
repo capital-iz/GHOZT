@@ -322,27 +322,34 @@
                                        Style="{StaticResource Type.MicroLabelStyle}"
                                        Text="BLACK-BOX STREAM" />
 
-                            <Grid Grid.Column="2" HorizontalAlignment="Left" Margin="16,0,0,0">
-                                <TextBox x:Name="StreamFilter" Width="240" Height="24" FontSize="11"
-                                     Text="{Binding StreamFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}"
-                                         ToolTip="Filter by event code prefix, e.g. HTTP or UI (Ctrl+L)"
-                                         AutomationProperties.Name="Filter the event stream by code" />
-                                <!-- A hint that yields to typed text, so an empty box still says what it filters. -->
-                                <TextBlock Text="Filter by code, e.g. SWP" Margin="10,0,0,0" FontSize="11"
-                                           IsHitTestVisible="False" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource Text.Muted}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Text, ElementName=StreamFilter}" Value="">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Grid>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                                <Grid>
+                                    <TextBox x:Name="StreamFilter" Width="240" Height="24" FontSize="11"
+                                         Text="{Binding StreamFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}"
+                                             ToolTip="Filter by event code prefix, e.g. HTTP or UI (Ctrl+L)"
+                                             AutomationProperties.Name="Filter the event stream by code" />
+                                    <!-- A hint that yields to typed text, so an empty box still says what it filters. -->
+                                    <TextBlock Text="Filter by code, e.g. SWP" Margin="10,0,0,0" FontSize="11"
+                                               IsHitTestVisible="False" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource Text.Muted}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Text, ElementName=StreamFilter}" Value="">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+
+                                <Button Style="{StaticResource Button.Icon}" Width="24" Height="24" Margin="8,0,0,0"
+                                        Content="&#xE8C8;" Command="{Binding CopyVisibleEvents}"
+                                        ToolTip="Copy all visible events to clipboard"
+                                        AutomationProperties.Name="Copy visible events to clipboard" />
+                            </StackPanel>
 
                             <TextBlock Grid.Column="3" VerticalAlignment="Center" Margin="0,0,10,0"
                                        Style="{StaticResource Type.IdentifierStyle}">

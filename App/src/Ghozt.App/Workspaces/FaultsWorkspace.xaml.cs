@@ -8,7 +8,7 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class FaultsWorkspace : UserControl
+public partial class FaultsWorkspace : UserControl, IRefreshableWorkspace
 {
     private CausalHypothesis? _currentHypothesis;
     private FixBrief? _currentFixBrief;
@@ -50,7 +50,7 @@ public partial class FaultsWorkspace : UserControl
         }
     }
 
-    private void Refresh()
+    public void Refresh()
     {
         var target = Shell?.Target;
         _allFindings = target is null ? [] : App.Store.Findings(target.Id);

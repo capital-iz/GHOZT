@@ -7,10 +7,28 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class ClearanceWorkspace : UserControl
+public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
 {
     private ClearanceDecision? _currentDecision;
     private bool _attached;
+
+    public void Refresh()
+    {
+        if (Shell?.Target is null)
+        {
+            _currentDecision = null;
+            ClearanceContainer.Children.Clear();
+            ClearanceContainer.Children.Add(EmptyState);
+            ClearanceSummaryText.Text = "No target selected";
+            if (SignButton is not null) SignButton.IsEnabled = false;
+            if (ExportCertButton is not null) ExportCertButton.IsEnabled = false;
+        }
+        else
+        {
+            _currentDecision = null;
+            OnEvaluate(this, new RoutedEventArgs());
+        }
+    }
 
     public ClearanceWorkspace()
     {

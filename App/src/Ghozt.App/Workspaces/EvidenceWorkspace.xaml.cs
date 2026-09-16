@@ -10,7 +10,7 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class EvidenceWorkspace : UserControl
+public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
 {
     public EvidenceWorkspace()
     {
@@ -94,7 +94,7 @@ public partial class EvidenceWorkspace : UserControl
         }
     }
 
-    private void Refresh()
+    public void Refresh()
     {
         if (!IsInitialized || Items is null)
         {

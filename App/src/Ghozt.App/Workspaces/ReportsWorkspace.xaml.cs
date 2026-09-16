@@ -8,10 +8,33 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class ReportsWorkspace : UserControl
+public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
 {
     private ForensicReport? _currentReport;
     private bool _attached;
+
+    public void Refresh()
+    {
+        if (Shell?.Target is null)
+        {
+            _currentReport = null;
+            ReportContainer.Children.Clear();
+            ReportContainer.Children.Add(EmptyState);
+            StatusText.Text = "No target selected";
+            if (ExportMdButton is not null) ExportMdButton.IsEnabled = false;
+            if (ExportHtmlButton is not null) ExportHtmlButton.IsEnabled = false;
+            if (ExportJsonButton is not null) ExportJsonButton.IsEnabled = false;
+            if (ExportSarifButton is not null) ExportSarifButton.IsEnabled = false;
+            if (ExportJUnitButton is not null) ExportJUnitButton.IsEnabled = false;
+            if (OpenViewerButton is not null) OpenViewerButton.IsEnabled = false;
+            if (PreviewInAppButton is not null) PreviewInAppButton.IsEnabled = false;
+        }
+        else
+        {
+            _currentReport = null;
+            OnGenerate(this, new RoutedEventArgs());
+        }
+    }
 
     public ReportsWorkspace()
     {

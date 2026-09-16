@@ -8,11 +8,19 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
-public partial class SweepWorkspace : UserControl
+public partial class SweepWorkspace : UserControl, IRefreshableWorkspace
 {
     private CancellationTokenSource? _cancellation;
     private bool _loading = true;
     private GhoztId? _lastSweepId;
+
+    public void Refresh()
+    {
+        UpdateBudgetLabels();
+        RefreshPlan();
+        RefreshHistory();
+        RefreshPreflight();
+    }
 
     public SweepWorkspace()
     {
