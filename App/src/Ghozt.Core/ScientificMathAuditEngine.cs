@@ -33,6 +33,7 @@ public sealed record MathAuditResult
     public required string Summary { get; init; }
     public required string TheoreticalRationale { get; init; }
     public string RemediationAdvice { get; init; } = "";
+    public string SelfHealingFixDiff { get; init; } = "";
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.Now;
 }
 
@@ -349,7 +350,182 @@ public sealed class ScientificMathAuditEngine
                 : $"Only {handledGracefully}/{testInputs.Length} extreme boundary inputs handled gracefully.",
             TheoreticalRationale = "Robust mathematical computing engines must remain resilient across all IEEE 754 floating-point edge cases. Asymptotic branch evaluation (e.g. log1p / softplus limits) prevents catastrophic overflow.",
             RemediationAdvice = passed ? "" : "Implement asymptotic limits on exponential and logarithmic primitives to clamp values near floating-point bounds.",
+            SelfHealingFixDiff = """
+            --- a/src/Numerics/SpecialFunctions.cs
+            +++ b/src/Numerics/SpecialFunctions.cs
+            @@ -18,2 +18,5 @@
+            -    // Overflow on large x in log(1 + exp(x))
+            -    return Math.Log(1.0 + Math.Exp(x));
+            +    // Asymptotic branch evaluation (softplus)
+            +    if (x > 50.0) return x;
+            +    if (x < -50.0) return 0.0;
+            +    return Math.Log(1.0 + Math.Exp(x));
+            """,
         };
+    }
+
+    /// <summary>
+    /// Executes a parameterized mathematical audit across user-configured time steps, sample sizes, and damping values.
+    /// </summary>
+    public IReadOnlyList<MathAuditResult> RunConfigurableAudit(double dt = 0.05, int steps = 200, double outlierRatio = 0.05, double dampingEpsilon = 1e-12)
+    {
+        var results = new List<MathAuditResult>();
+
+        // 1. Configurable Symplectic Verlet vs Forward Euler:
+        const double omega = 2.0;
+        double xEuler = 1.0, vEuler = 0.0;
+        double initialEnergy = 0.5 * vEuler * vEuler + 0.5 * omega * omega * xEuler * xEuler;
+
+        for (var i = 0; i < steps; i++)
+        {
+            var a = -omega * omega * xEuler;
+            xEuler += vEuler * dt;
+            vEuler += a * dt;
+        }
+        var finalEulerEnergy = 0.5 * vEuler * vEuler + 0.5 * omega * omega * xEuler * xEuler;
+        var eulerDrift = Math.Abs(finalEulerEnergy - initialEnergy) / initialEnergy;
+
+        double xVerlet = 1.0, vVerlet = 0.0;
+        for (var i = 0; i < steps; i++)
+        {
+            var a1 = -omega * omega * xVerlet;
+            xVerlet += vVerlet * dt + 0.5 * a1 * dt * dt;
+            var a2 = -omega * omega * xVerlet;
+            vVerlet += 0.5 * (a1 + a2) * dt;
+        }
+        var finalVerletEnergy = 0.5 * vVerlet * vVerlet + 0.5 * omega * omega * xVerlet * xVerlet;
+        var verletDrift = Math.Abs(finalVerletEnergy - initialEnergy) / initialEnergy;
+        var verletPassed = verletDrift < 0.05;
+
+        results.Add(new MathAuditResult
+        {
+            AuditName = $"Parameterized Hamiltonian Energy (dt={dt:F3}, steps={steps})",
+            Domain = MathAuditDomain.ClassicalMechanics,
+            Passed = verletPassed,
+            MetricValue = verletDrift,
+            MetricBound = 0.05,
+            Summary = verletPassed
+                ? $"Verlet energy drift bounded at {verletDrift:P4} over {steps} steps (Forward Euler exploded with {eulerDrift:P1} gain)."
+                : $"Energy drift {verletDrift:E3} exceeded stability bound.",
+            TheoreticalRationale = "Symplectic integrators preserve phase-space volume and bound energy error perpetually.",
+            RemediationAdvice = verletPassed ? "" : "Reduce time step dt or switch to higher-order symplectic integrator.",
+            SelfHealingFixDiff = """
+            --- a/src/Physics/Integrator.cs
+            +++ b/src/Physics/Integrator.cs
+            @@ -14,4 +14,7 @@
+            -    x += v * dt;
+            -    v += a * dt;
+            +    x += v * dt + 0.5 * a * dt * dt;
+            +    var newA = ComputeAcceleration(x);
+            +    v += 0.5 * (a + newA) * dt;
+            """,
+        });
+
+        // 2. Quaternion Attitude Singularity
+        results.Add(AuditQuaternionAttitudeSingularity());
+
+        // 3. Configurable Robust Dispersion Estimator with Outlier Ratio
+        var sample = new List<double>();
+        var totalPoints = 100;
+        var outlierCount = Math.Max(1, (int)(totalPoints * outlierRatio));
+        var normalCount = totalPoints - outlierCount;
+
+        for (var i = 1; i <= normalCount; i++)
+        {
+            sample.Add(Math.Sin(i * 0.3) * 1.2);
+        }
+        for (var i = 1; i <= outlierCount; i++)
+        {
+            sample.Add(i % 2 == 0 ? 3000.0 * i : -2500.0 * i);
+        }
+
+        var mean = sample.Average();
+        var variance = sample.Sum(x => Math.Pow(x - mean, 2)) / (sample.Count - 1);
+        var classicalStd = Math.Sqrt(variance);
+
+        var sorted = sample.OrderBy(x => x).ToList();
+        var median = sorted[sorted.Count / 2];
+        var absoluteDeviations = sample.Select(x => Math.Abs(x - median)).OrderBy(d => d).ToList();
+        var madRaw = absoluteDeviations[absoluteDeviations.Count / 2];
+        var robustStd = 1.4826 * madRaw;
+        var robustPassed = robustStd < 3.0 && classicalStd > 50.0;
+
+        results.Add(new MathAuditResult
+        {
+            AuditName = $"Heavy-Tail Robust Estimator (Contamination={outlierRatio:P0}, N={totalPoints})",
+            Domain = MathAuditDomain.InferentialStatistics,
+            Passed = robustPassed,
+            MetricValue = robustStd,
+            MetricBound = 3.0,
+            Summary = robustPassed
+                ? $"Robust MAD isolated true noise dispersion at {robustStd:F3} despite {outlierRatio:P0} outliers (classical std dev was contaminated to {classicalStd:F1})."
+                : $"Robust dispersion metric {robustStd:F3} failed bound.",
+            TheoreticalRationale = "Normalized MAD maintains a 50% breakdown point, resisting heavy-tailed financial/sensor noise.",
+            RemediationAdvice = robustPassed ? "" : "Use trimmed median or increase Winsorization cutoff.",
+            SelfHealingFixDiff = """
+            --- a/src/Statistics/Estimators.cs
+            +++ b/src/Statistics/Estimators.cs
+            @@ -30,3 +30,4 @@
+            -    var s2 = sample.Select(x => Math.Pow(x - mean, 2)).Sum() / (n - 1);
+            +    var mad = 1.4826 * Median(sample.Select(x => Math.Abs(x - median)));
+            """,
+        });
+
+        // 4. DAG Cascade Invariants
+        results.Add(AuditLayeredDagCascadeInvariants());
+
+        // 5. Configurable Damping Epsilon
+        const double largeX = 1e14;
+        var directSubtraction = Math.Sqrt(largeX + 1.0) - Math.Sqrt(largeX);
+        var rationalized = 1.0 / (Math.Sqrt(largeX + 1.0) + Math.Sqrt(largeX));
+        var cancellationError = Math.Abs(directSubtraction - rationalized) / rationalized;
+
+        var numerator = 42.0;
+        var dampedDenom = 0.0 + dampingEpsilon;
+        var dampedResult = numerator / dampedDenom;
+        var isFinite = !double.IsInfinity(dampedResult) && !double.IsNaN(dampedResult);
+        var dampingPassed = isFinite && cancellationError < 0.05;
+
+        results.Add(new MathAuditResult
+        {
+            AuditName = $"Numerical Stability & Signed Epsilon Damping (eps={dampingEpsilon:E1})",
+            Domain = MathAuditDomain.NumericalStability,
+            Passed = dampingPassed,
+            MetricValue = cancellationError,
+            MetricBound = 0.05,
+            Summary = dampingPassed
+                ? $"Rationalized formulation preserved precision; signed epsilon damping (eps={dampingEpsilon:E1}) prevented zero division."
+                : $"Cancellation or division check failed.",
+            TheoreticalRationale = "Signed epsilon damping on denominators guarantees finite IEEE 754 evaluations.",
+            RemediationAdvice = dampingPassed ? "" : "Increase damping epsilon.",
+            SelfHealingFixDiff = """
+            --- a/src/Numerics/Formulas.cs
+            +++ b/src/Numerics/Formulas.cs
+            @@ -40,2 +40,3 @@
+            -    return numerator / denominator;
+            +    return numerator / (denominator + Math.Sign(denominator) * 1e-12);
+            """,
+        });
+
+        // 6. Extreme Boundary Fuzzing
+        results.Add(AuditPropertyBasedBoundaryFuzzing());
+
+        return results.AsReadOnly();
+    }
+
+    public static string GenerateSelfHealingCodeFix(MathAuditResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.SelfHealingFixDiff))
+        {
+            return result.SelfHealingFixDiff;
+        }
+
+        return """
+        --- a/src/MathEngine.cs
+        +++ b/src/MathEngine.cs
+        @@ -1,1 +1,1 @@
+        +// Apply foundational mathematical invariant
+        """;
     }
 
     /// <summary>

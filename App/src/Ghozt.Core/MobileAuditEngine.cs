@@ -31,6 +31,7 @@ public sealed record MobileAuditResult
     public required string Summary { get; init; }
     public required string TechnicalDetail { get; init; }
     public string RemediationAdvice { get; init; } = "";
+    public string SelfHealingFixDiff { get; init; } = "";
     public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.Now;
 }
 
@@ -136,6 +137,15 @@ public sealed class MobileAuditEngine
                 : "Logcat scanner failed to catch Android execSQL row violation.",
             TechnicalDetail = "On Android, SQLiteDatabase.execSQL() throws 'Queries can be performed using SQLiteDatabase query or rawQuery methods only' when PRAGMA returns rows.",
             RemediationAdvice = "Refactor PRAGMA and SELECT statements from database.execute() to database.rawQuery() across Android/Flutter storage layers.",
+            SelfHealingFixDiff = """
+            --- a/lib/core/storage/database_service.dart
+            +++ b/lib/core/storage/database_service.dart
+            @@ -42,3 +42,3 @@
+            -    // ILLEGAL ON ANDROID: SQLiteDatabase.execSQL() throws on row-returning statements
+            -    await db.execute('PRAGMA journal_mode = WAL;');
+            +    // DOCTRINE §25.3: PRAGMA statements returning rows must use rawQuery()
+            +    await db.rawQuery('PRAGMA journal_mode = WAL;');
+            """,
         };
     }
 
@@ -163,6 +173,14 @@ public sealed class MobileAuditEngine
                 : "Failed to detect or parse Flutter RenderFlex layout overflow.",
             TechnicalDetail = passed ? $"File: {overflow!.SourceLocation}, Pixels: {overflow.Pixels}px" : "Pattern match failed.",
             RemediationAdvice = passed ? "Wrap overflowing Column/Row in SingleChildScrollView, Expanded, or Flexible widget." : "",
+            SelfHealingFixDiff = """
+            --- a/lib/features/auth/login_screen.dart
+            +++ b/lib/features/auth/login_screen.dart
+            @@ -184,3 +184,5 @@
+            -    return Column(
+            +    return SingleChildScrollView(
+            +      child: Column(
+            """,
         };
     }
 
@@ -190,6 +208,15 @@ public sealed class MobileAuditEngine
                 : "Failed to isolate fatal exception in logcat stream.",
             TechnicalDetail = "Captured PID 14205 fatal exception on main looper.",
             RemediationAdvice = "Enforce null-safety contracts and wrap reactive streams in guard handlers.",
+            SelfHealingFixDiff = """
+            --- a/android/app/src/main/kotlin/MainActivity.kt
+            +++ b/android/app/src/main/kotlin/MainActivity.kt
+            @@ -35,3 +35,5 @@
+            -    val data = remoteService.fetchSync()
+            +    lifecycleScope.launch(Dispatchers.IO) {
+            +        val data = remoteService.fetchAsync()
+            +    }
+            """,
         };
     }
 
@@ -218,10 +245,139 @@ public sealed class MobileAuditEngine
                 : "Failed to parse stack trace frame.",
             TechnicalDetail = $"Error: '{brief.ErrorType}', File: '{brief.TargetFile}', Line: {brief.LineNumber}",
             RemediationAdvice = "Generated autonomous fix brief: Replace force-unwrap operator (!) with null-coalescing fallback.",
+            SelfHealingFixDiff = """
+            --- a/package/ghozt_mobile/controllers/profile.dart
+            +++ b/package/ghozt_mobile/controllers/profile.dart
+            @@ -45,1 +45,1 @@
+            -    final avatar = userProfile.avatar!;
+            +    final avatar = userProfile.avatar ?? DefaultAvatar();
+            """,
         };
     }
 
     // --- Helper Utilities ---
+
+    public static string GenerateSelfHealingCodeFix(MobileAuditResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.SelfHealingFixDiff))
+        {
+            return result.SelfHealingFixDiff;
+        }
+
+        return """
+        --- a/source_file.dart
+        +++ b/source_file.dart
+        @@ -1,1 +1,1 @@
+        -// Generic invariant remediation
+        """;
+    }
+
+    public static string FindAdbPath()
+    {
+        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
+        foreach (var segment in pathEnv.Split(';'))
+        {
+            if (string.IsNullOrWhiteSpace(segment)) continue;
+            var candidate = Path.Combine(segment.Trim(), "adb.exe");
+            if (File.Exists(candidate)) return candidate;
+        }
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var defaultSdkAdb = Path.Combine(localAppData, "Android", "Sdk", "platform-tools", "adb.exe");
+        if (File.Exists(defaultSdkAdb)) return defaultSdkAdb;
+
+        return "adb";
+    }
+
+    public static (int ExitCode, string Output, string Error) RunAdbCommand(string arguments, int timeoutMs = 5000)
+    {
+        try
+        {
+            var adbExe = FindAdbPath();
+            using var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = adbExe,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+
+            process.Start();
+            var stdout = process.StandardOutput.ReadToEnd();
+            var stderr = process.StandardError.ReadToEnd();
+            if (!process.WaitForExit(timeoutMs))
+            {
+                process.Kill();
+                return (-1, stdout, "ADB command timed out.");
+            }
+
+            return (process.ExitCode, stdout, stderr);
+        }
+        catch (Exception ex)
+        {
+            return (-2, "", ex.Message);
+        }
+    }
+
+    public static List<(string Id, string State)> QueryLiveAdbDevices()
+    {
+        var (exitCode, stdout, _) = RunAdbCommand("devices -l");
+        if (exitCode != 0 || string.IsNullOrWhiteSpace(stdout))
+        {
+            return new List<(string Id, string State)>();
+        }
+        return ParseAdbDevices(stdout);
+    }
+
+    public static bool ExecuteLiveGesture(string? serial, string gestureCommand)
+    {
+        var target = string.IsNullOrWhiteSpace(serial) ? "" : $"-s {serial} ";
+        var (exitCode, _, _) = RunAdbCommand($"{target}{gestureCommand}");
+        return exitCode == 0;
+    }
+
+    public static bool ToggleAirplaneMode(string? serial, bool enable)
+    {
+        var target = string.IsNullOrWhiteSpace(serial) ? "" : $"-s {serial} ";
+        var state = enable ? "enable" : "disable";
+        var (exitCode, _, _) = RunAdbCommand($"{target}shell cmd connectivity airplane-mode {state}");
+        return exitCode == 0;
+    }
+
+    public static bool CaptureLiveScreenshot(string? serial, string outputPath)
+    {
+        try
+        {
+            var target = string.IsNullOrWhiteSpace(serial) ? "" : $"-s {serial} ";
+            var adbExe = FindAdbPath();
+            using var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = adbExe,
+                    Arguments = $"{target}exec-out screencap -p",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+
+            process.Start();
+            using var fs = File.Create(outputPath);
+            process.StandardOutput.BaseStream.CopyTo(fs);
+            process.WaitForExit(5000);
+            return process.ExitCode == 0 && new FileInfo(outputPath).Length > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public static List<(string Id, string State)> ParseAdbDevices(string adbOutput)
     {

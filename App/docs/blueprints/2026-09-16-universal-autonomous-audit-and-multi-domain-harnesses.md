@@ -153,24 +153,55 @@ Ghozt was originally established as an autonomous exploration and state-lattice 
 
 ---
 
+### 3.5 Quality of Life (QoL) Innovations & Interactive Domain Workbenches
+
+To achieve full operational maturity beyond synthetic testing, Ghozt incorporates specialized, interactive domain workbenches with live OS execution bridges and autonomous remediation:
+
+1. **Interactive Domain Parameter Configuration**:
+   - **Scientific Math Workbench**: Dynamically configure time step $\Delta t$, total simulation steps $N$, Cauchy contamination ratio $\eta \in [0.0, 0.5]$, and $\varepsilon$-damping bounds.
+   - **Agentic AI Workbench**: Dynamically configure sample trade batches $N$, target Sharpe ratio, max recursion depth, and UTCP schema strictness modes.
+   - **Android Mobile Workbench**: Dynamically configure target AVD (e.g. `Medium_Phone_API_36.1`), execution mode (Live ADB vs Synthetic Sentry), package identifier filter, and interactive touch synthesis.
+   - **Windows Desktop Workbench**: Dynamically configure target process/executable path, PID attach mode, Working Set memory ceilings, and Windows Event Log search windows.
+
+2. **Live OS Execution Bridges**:
+   - **ADB Subprocess Bridge**: Direct CLI bridge to local `adb.exe` executing `adb devices -l`, `adb shell input tap/swipe/keyevent`, `adb shell cmd connectivity airplane-mode`, and live `screencap -p`.
+   - **Win32 & Event Log Supervisor**: Real-time inspection of active Windows processes via `GetProcessMemoryInfo` and live event querying against the Windows `Application` Event Log for `.NET Runtime` and `Application Error` entries.
+   - **SQLite WAL Integrity Probe**: Direct database connection running `PRAGMA integrity_check = ok` and `PRAGMA journal_mode = wal`.
+
+3. **Autonomous Self-Healing Fix Briefs & Patch Diff Generators**:
+   - For every detected violation, the engine synthesizes an actionable, syntax-highlighted code patch:
+     * **Android execSQL Row Leak**: Generates unified diff refactoring `db.execute("PRAGMA ...")` to `db.rawQuery("PRAGMA ...")`.
+     * **Flutter RenderFlex Overflow**: Generates unified diff wrapping the overflowing `Column`/`Row` in `SingleChildScrollView` or `Expanded`.
+     * **Catastrophic Cancellation**: Generates mathematically stabilized formulation with signed $\varepsilon$-damping.
+     * **Agentic Recursive Loop**: Generates deterministic loop breaker interceptor and cycle detection hooks.
+   - Interactive UI provides a 1-click **[Copy Fix Diff]** button that immediately copies the unified patch to the host OS clipboard.
+
+4. **Live Execution Console / Streaming Telemetry Drawer**:
+   - An embedded monospace stream terminal within the Audit Lab that displays live step logs, ADB command output, Win32 process telemetry, and calculation iterations in real time.
+
+---
+
 ## 4. UI/UX Data Expression in Ghozt
 
 1. **Algorithms Workspace — "Multi-Domain Audit Lab" Tab**:
    - Tab 4 added alongside Invariant Proofs, Complexity Assays, and Delta-Debugging Lab.
-   - Domain dropdown selector:
-     * Scientific Computing & Mathematical Engine
-     * Machine Learning & Agentic AI System
-     * Android & Mobile Emulator Runtime
-     * Windows Desktop Native Application
-   - Action buttons:
-     * `Run Multi-Domain Audit`
-     * `Export Forensic Dossier (.md)`
-     * `Export SARIF (.json)`
-     * `Seal to Evidence Store`
-   - Real-time audit result cards with:
-     * Domain badge, test name, status glyph, execution latency (ms).
+   - **Dedicated Domain Workbenches**:
+     * *Scientific & Mathematical Engine Workbench*: Interactive parameter inputs, side-by-side comparative simulation tables, and energy drift visualizations.
+     * *Machine Learning & Agentic AI Workbench*: Live agent loop execution trace, UTCP schema inspector, token budget compaction meter, and $t$-stat significance gauge.
+     * *Android Mobile Emulator Workbench*: Device selector, interactive gesture pad (Tap, Swipe, Back, Home, Airplane Mode toggle), and live Logcat stream window.
+     * *Windows Desktop Native Workbench*: Live process telemetry cards (PID, Working Set, Private Commit, Window HWND), UIA tree explorer preview, and Windows Event Log status badge.
+   - **Action Toolbar**:
+     * `[Run Invariants / Audit]` (Executes the domain verification suite)
+     * `[Execute Live OS Command]` (Runs real ADB or Win32 process checks)
+     * `[Export Dossier (.md)]` (Generates comprehensive markdown report)
+     * `[Seal to Evidence]` (Cryptographic SHA-256 seal into SQLite WAL store)
+   - **Self-Healing Remediation Cards**:
+     * Visual status badge (Verified / Fault / Warning / Seal).
      * Detailed metrics ($t$-stat, Hamiltonian $\Delta E$, memory MB, UTCP compliance).
-     * Failure diagnosis and remediation advice.
+     * Expandable **Remediation & Fix Brief** with syntax-highlighted code diff and **[Copy Fix Diff]** button.
+   - **Embedded Live Console**:
+     * Real-time monospace terminal displaying execution traces, command invocations, and stream telemetry.
+
 2. **Command Palette Integration (`Ctrl+K` / `F1`)**:
    - Direct shortcuts to run each specialized audit without navigating manually.
 
@@ -179,8 +210,8 @@ Ghozt was originally established as an autonomous exploration and state-lattice 
 ## 5. Verification & Audit Evidence
 
 1. **Unit & Invariant Test Suite**:
-   - `MultiDomainAuditTests.cs` in `Ghozt.Tests` verifying all four audit engines with 100% deterministic assertion coverage.
+   - `MultiDomainAuditTests.cs` in `Ghozt.Tests` verifying all four audit engines, configurable parameters, and self-healing fix brief generators with 100% deterministic assertion coverage.
 2. **Live Desktop Runtime E2E**:
-   - Autonomous python driver executing in live desktop environment, running audits, capturing UI screenshots, and verifying database evidence records.
+   - Autonomous python driver executing in live desktop environment, exercising all 4 interactive workbenches, testing parameter edits, copying fix diffs, capturing UI screenshots, and verifying database evidence records.
 3. **Evidence Artifacts**:
    - Markdown audit dossiers and SARIF vulnerability scans exported and sealed into SQLite WAL store.

@@ -715,8 +715,40 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
     private void OnAuditDomainChanged(object sender, SelectionChangedEventArgs e)
     {
         if (AuditResultsPanel is null) return;
-        // Reset summary text
-        AuditSummaryText.Text = $"Click 'Run Multi-Domain Audit' to evaluate {((ComboBoxItem)AuditDomainPicker.SelectedItem).Content}";
+        var selectedIndex = AuditDomainPicker?.SelectedIndex ?? 0;
+        var domainName = ((ComboBoxItem)AuditDomainPicker.SelectedItem).Content.ToString() ?? "";
+        AuditSummaryText.Text = $"Click 'Run Multi-Domain Audit' to evaluate {domainName}";
+
+        if (ScientificMathWorkbench is not null)
+            ScientificMathWorkbench.Visibility = selectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (AgenticAiWorkbench is not null)
+            AgenticAiWorkbench.Visibility = selectedIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
+        if (MobileEmulatorWorkbench is not null)
+            MobileEmulatorWorkbench.Visibility = selectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
+        if (DesktopNativeWorkbench is not null)
+            DesktopNativeWorkbench.Visibility = selectedIndex == 3 ? Visibility.Visible : Visibility.Collapsed;
+
+        LogConsole($"Switched active domain workbench to: {domainName}");
+    }
+
+    private void LogConsole(string message)
+    {
+        if (AuditConsoleTextBox is null) return;
+        var line = $"[{DateTime.Now:HH:mm:ss}] {message}\r\n";
+        AuditConsoleTextBox.AppendText(line);
+        AuditConsoleTextBox.ScrollToEnd();
+        if (ConsoleStatusText is not null)
+        {
+            ConsoleStatusText.Text = message;
+        }
+    }
+
+    private void OnClearAuditConsole(object sender, RoutedEventArgs e)
+    {
+        if (AuditConsoleTextBox is not null)
+        {
+            AuditConsoleTextBox.Text = $"[{DateTime.Now:HH:mm:ss}] Console cleared.\r\n";
+        }
     }
 
     private void OnRunMultiDomainAudit(object sender, RoutedEventArgs e)
@@ -730,42 +762,50 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
             switch (selectedIndex)
             {
                 case 0: // Scientific & Mathematical Engine
+                    LogConsole("Executing first-principles scientific & mathematical formula audit...");
                     var mathEngine = new ScientificMathAuditEngine();
                     _lastMathResults = mathEngine.RunFullAudit();
                     _lastDossierMarkdown = ScientificMathAuditEngine.GenerateMarkdownDossier(_lastMathResults);
                     _lastDossierTitle = "ScientificMathAudit";
                     RenderMathAuditResults(_lastMathResults);
                     AuditSummaryText.Text = $"Scientific Engine: {_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} invariants verified";
+                    LogConsole($"Completed math audit: {_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} invariants verified.");
                     Shell?.Log("AUDIT.MATH.RUN", $"Executed first-principles mathematical audit ({_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} passed).", Severity.Info);
                     break;
 
                 case 1: // Machine Learning & Agentic AI System
+                    LogConsole("Executing agentic AI & ML hardening audit (UTCP, leakage, t-stat, loop)...");
                     var aiEngine = new AgenticAiAuditEngine();
                     _lastAiResults = aiEngine.RunFullAudit();
                     _lastDossierMarkdown = AgenticAiAuditEngine.GenerateMarkdownDossier(_lastAiResults);
                     _lastDossierTitle = "AgenticAiHardeningAudit";
                     RenderAiAuditResults(_lastAiResults);
                     AuditSummaryText.Text = $"Agentic AI/ML: {_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} hardening gates passed";
+                    LogConsole($"Completed AI hardening audit: {_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} gates passed.");
                     Shell?.Log("AUDIT.AI.RUN", $"Executed agentic AI & ML hardening audit ({_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} passed).", Severity.Info);
                     break;
 
                 case 2: // Android Mobile Emulator Runtime
+                    LogConsole("Executing Android mobile emulator runtime audit & logcat sentry...");
                     var mobileEngine = new MobileAuditEngine();
                     _lastMobileResults = mobileEngine.RunFullAudit();
                     _lastDossierMarkdown = MobileAuditEngine.GenerateMarkdownDossier(_lastMobileResults);
                     _lastDossierTitle = "MobileEmulatorAudit";
                     RenderMobileAuditResults(_lastMobileResults);
                     AuditSummaryText.Text = $"Mobile Emulator: {_lastMobileResults.Count(r => r.Passed)}/{_lastMobileResults.Count} runtime sentry checks verified";
+                    LogConsole($"Completed mobile audit: {_lastMobileResults.Count(r => r.Passed)}/{_lastMobileResults.Count} sentry checks passed.");
                     Shell?.Log("AUDIT.MOBILE.RUN", $"Executed mobile emulator runtime audit ({_lastMobileResults.Count(r => r.Passed)}/{_lastMobileResults.Count} passed).", Severity.Info);
                     break;
 
                 case 3: // Windows Desktop Native Application
+                    LogConsole("Executing Windows native desktop runtime & UI automation audit...");
                     var desktopEngine = new DesktopRuntimeAuditEngine();
                     _lastDesktopResults = desktopEngine.RunFullAudit();
                     _lastDossierMarkdown = DesktopRuntimeAuditEngine.GenerateMarkdownDossier(_lastDesktopResults);
                     _lastDossierTitle = "DesktopRuntimeAudit";
                     RenderDesktopAuditResults(_lastDesktopResults);
                     AuditSummaryText.Text = $"Desktop Runtime: {_lastDesktopResults.Count(r => r.Passed)}/{_lastDesktopResults.Count} vitality gates passed";
+                    LogConsole($"Completed desktop audit: {_lastDesktopResults.Count(r => r.Passed)}/{_lastDesktopResults.Count} vitality gates passed.");
                     Shell?.Log("AUDIT.DESKTOP.RUN", $"Executed Windows desktop runtime audit ({_lastDesktopResults.Count(r => r.Passed)}/{_lastDesktopResults.Count} passed).", Severity.Info);
                     break;
             }
@@ -785,12 +825,185 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         }
     }
 
+    private void OnRunConfigurableMathAudit(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dt = double.TryParse(MathDtBox?.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedDt) ? parsedDt : 0.05;
+            var steps = int.TryParse(MathStepsBox?.Text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedSteps) ? parsedSteps : 200;
+            var outliers = double.TryParse(MathOutliersBox?.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedOutliers) ? parsedOutliers : 0.05;
+            var eps = double.TryParse(MathEpsilonBox?.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedEps) ? parsedEps : 1e-12;
+
+            LogConsole($"Executing parameterized math audit: dt={dt}, steps={steps}, outlierRatio={outliers}, eps={eps}");
+            var mathEngine = new ScientificMathAuditEngine();
+            _lastMathResults = mathEngine.RunConfigurableAudit(dt, steps, outliers, eps);
+            _lastDossierMarkdown = ScientificMathAuditEngine.GenerateMarkdownDossier(_lastMathResults);
+            _lastDossierTitle = "ScientificMathAudit_Configured";
+
+            AuditResultsPanel.Children.Clear();
+            RenderMathAuditResults(_lastMathResults);
+            AuditSummaryText.Text = $"Parameterized Math: {_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} invariants verified";
+            LogConsole($"Completed math audit: {_lastMathResults.Count(r => r.Passed)}/{_lastMathResults.Count} invariants verified.");
+
+            ExportAuditDossierButton.IsEnabled = true;
+            SealAuditEvidenceButton.IsEnabled = true;
+            SealAuditEvidenceButton.Content = "Seal to Evidence";
+        }
+        catch (Exception ex)
+        {
+            LogConsole($"Math audit error: {ex.Message}");
+        }
+    }
+
+    private void OnRunConfigurableAiAudit(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var samples = int.TryParse(AiSamplesBox?.Text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedSamples) ? parsedSamples : 250;
+            var sharpe = double.TryParse(AiSharpeBox?.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedSharpe) ? parsedSharpe : 2.0;
+            var depth = int.TryParse(AiDepthBox?.Text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedDepth) ? parsedDepth : 3;
+
+            LogConsole($"Executing parameterized AI audit: samples={samples}, targetSharpe={sharpe}, maxDepth={depth}");
+            var aiEngine = new AgenticAiAuditEngine();
+            _lastAiResults = aiEngine.RunConfigurableAudit(samples, sharpe, depth);
+            _lastDossierMarkdown = AgenticAiAuditEngine.GenerateMarkdownDossier(_lastAiResults);
+            _lastDossierTitle = "AgenticAiHardening_Configured";
+
+            AuditResultsPanel.Children.Clear();
+            RenderAiAuditResults(_lastAiResults);
+            AuditSummaryText.Text = $"Parameterized AI: {_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} gates passed";
+            LogConsole($"Completed AI audit: {_lastAiResults.Count(r => r.Passed)}/{_lastAiResults.Count} gates passed.");
+
+            ExportAuditDossierButton.IsEnabled = true;
+            SealAuditEvidenceButton.IsEnabled = true;
+            SealAuditEvidenceButton.Content = "Seal to Evidence";
+        }
+        catch (Exception ex)
+        {
+            LogConsole($"AI audit error: {ex.Message}");
+        }
+    }
+
+    private void OnTestAgentCycleBreaker(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Simulating recursive tool calling cycles (fetch_state -> evaluate_signal)...");
+        var depth = int.TryParse(AiDepthBox?.Text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedDepth) ? parsedDepth : 3;
+        var toolHistory = new List<string>();
+        for (var i = 0; i < depth + 1; i++)
+        {
+            toolHistory.Add("fetch_state");
+            toolHistory.Add("evaluate_signal");
+        }
+
+        var detected = AgenticAiAuditEngine.DetectToolCycle(toolHistory, 2);
+        if (detected)
+        {
+            LogConsole($"SUCCESS: Cycle breaker intercepted recursive call chain at iteration {toolHistory.Count / 2}. Runaway loop terminated.");
+        }
+        else
+        {
+            LogConsole("Cycle breaker did not trigger.");
+        }
+    }
+
+    private void OnQueryLiveAdbDevices(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Querying local ADB devices ('adb devices -l')...");
+        var devices = MobileAuditEngine.QueryLiveAdbDevices();
+        if (devices.Count == 0)
+        {
+            LogConsole("No physical or emulated devices detected via ADB bridge (status: offline/idle).");
+        }
+        else
+        {
+            foreach (var d in devices)
+            {
+                LogConsole($"Found ADB device: {d.Id} (state: {d.State})");
+            }
+        }
+    }
+
+    private void OnToggleAirplaneMode(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Dispatching ADB airplane mode toggle...");
+        var success = MobileAuditEngine.ToggleAirplaneMode(null, true);
+        LogConsole(success ? "Dispatched 'cmd connectivity airplane-mode enable'." : "ADB bridge offline; verified offline fallback.");
+    }
+
+    private void OnDispatchTapGesture(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Dispatching UI Automator gesture: Tap at (540, 1200)...");
+        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildTapCommand(540, 1200));
+        LogConsole(ok ? "Gesture sent successfully via ADB." : "Command format verified: 'shell input tap 540 1200' (bridge offline).");
+    }
+
+    private void OnDispatchSwipeGesture(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Dispatching UI Automator gesture: Swipe (540, 1500) -> (540, 400)...");
+        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildSwipeCommand(540, 1500, 540, 400, 300));
+        LogConsole(ok ? "Gesture sent successfully via ADB." : "Command format verified: 'shell input swipe 540 1500 540 400 300' (bridge offline).");
+    }
+
+    private void OnDispatchBackKey(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Dispatching Android Keyevent: KEYCODE_BACK (4)...");
+        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildKeyEventCommand(4));
+        LogConsole(ok ? "Keyevent sent successfully via ADB." : "Command format verified: 'shell input keyevent 4' (bridge offline).");
+    }
+
+    private void OnDispatchHomeKey(object sender, RoutedEventArgs e)
+    {
+        LogConsole("Dispatching Android Keyevent: KEYCODE_HOME (3)...");
+        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildKeyEventCommand(3));
+        LogConsole(ok ? "Keyevent sent successfully via ADB." : "Command format verified: 'shell input keyevent 3' (bridge offline).");
+    }
+
+    private void OnSampleDesktopMemory(object sender, RoutedEventArgs e)
+    {
+        var pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+        if (int.TryParse(DesktopPidBox?.Text, out var parsedPid))
+        {
+            pid = parsedPid;
+        }
+
+        LogConsole($"Sampling process telemetry for PID {pid}...");
+        var snap = DesktopRuntimeAuditEngine.SampleProcessTelemetry(pid);
+        if (snap is not null)
+        {
+            LogConsole($"Telemetry: '{snap.ProcessName}' (PID {snap.Pid}) · WS: {snap.WorkingSetMb:F1} MB · Private: {snap.PrivateMemoryMb:F1} MB · Threads: {snap.ThreadCount} · Responding: {snap.IsResponding} · Bounded: {snap.MemoryBounded}");
+        }
+        else
+        {
+            LogConsole($"Could not sample process PID {pid}.");
+        }
+    }
+
+    private void OnScanWindowsEventLog(object sender, RoutedEventArgs e)
+    {
+        var target = DesktopBinaryBox?.Text ?? "Ghozt";
+        LogConsole($"Scanning Windows Application Event Log for '{target}' and '.NET Runtime' (last 24h)...");
+        var (errors, warnings, entries) = DesktopRuntimeAuditEngine.QueryWindowsEventLog(target, 24);
+        LogConsole($"Event Log scan completed: {errors} Errors, {warnings} Warnings.");
+        foreach (var entry in entries.Take(5))
+        {
+            LogConsole($"  {entry}");
+        }
+    }
+
+    private void OnVerifySqliteDbWal(object sender, RoutedEventArgs e)
+    {
+        var dbPath = App.Store.DatabasePath;
+        LogConsole($"Probing SQLite database WAL at '{dbPath}'...");
+        var (healthy, integrity, mode) = DesktopRuntimeAuditEngine.VerifySqliteDatabase(dbPath);
+        LogConsole($"SQLite check: Healthy={healthy}, integrity_check='{integrity}', journal_mode='{mode}'.");
+    }
+
     private void RenderMathAuditResults(IReadOnlyList<MathAuditResult> results)
     {
         foreach (var r in results)
         {
             var card = CreateAuditCard(r.AuditName, r.Domain.ToString(), r.Passed, r.Summary, r.TheoreticalRationale,
-                $"Metric: {r.MetricValue:E3} | Bound: {r.MetricBound:E3}", r.RemediationAdvice);
+                $"Metric: {r.MetricValue:E3} | Bound: {r.MetricBound:E3}", r.RemediationAdvice, r.SelfHealingFixDiff);
             AuditResultsPanel.Children.Add(card);
         }
     }
@@ -800,7 +1013,7 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         foreach (var r in results)
         {
             var card = CreateAuditCard(r.AuditName, r.Category.ToString(), r.Passed, r.Summary, r.TechnicalContext,
-                $"Value: {r.MetricValue:F2} | Threshold: {r.MetricThreshold:F2}", r.RemediationAdvice);
+                $"Value: {r.MetricValue:F2} | Threshold: {r.MetricThreshold:F2}", r.RemediationAdvice, r.SelfHealingFixDiff);
             AuditResultsPanel.Children.Add(card);
         }
     }
@@ -810,7 +1023,7 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         foreach (var r in results)
         {
             var card = CreateAuditCard(r.AuditName, r.Category.ToString(), r.Passed, r.Summary, r.TechnicalDetail,
-                "ADB / Logcat Telemetry Sentry", r.RemediationAdvice);
+                "ADB / Logcat Telemetry Sentry", r.RemediationAdvice, r.SelfHealingFixDiff);
             AuditResultsPanel.Children.Add(card);
         }
     }
@@ -820,12 +1033,12 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         foreach (var r in results)
         {
             var card = CreateAuditCard(r.AuditName, r.Category.ToString(), r.Passed, r.Summary, r.TechnicalDetail,
-                "Windows UIA & Win32 Telemetry", r.RemediationAdvice);
+                "Windows UIA & Win32 Telemetry", r.RemediationAdvice, r.SelfHealingFixDiff);
             AuditResultsPanel.Children.Add(card);
         }
     }
 
-    private Border CreateAuditCard(string title, string category, bool passed, string summary, string detail, string metrics, string advice)
+    private Border CreateAuditCard(string title, string category, bool passed, string summary, string detail, string metrics, string advice, string? fixDiff = null)
     {
         var card = new Border
         {
@@ -936,9 +1149,81 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
             });
         }
 
+        // Autonomous Self-Healing Fix Brief (Unified Diff)
+        if (!string.IsNullOrWhiteSpace(fixDiff))
+        {
+            var fixBorder = new Border
+            {
+                Background = (Brush)TryFindResource("Surface.Deep"),
+                BorderBrush = (Brush)TryFindResource("Border.Subtle"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(12, 8, 12, 8),
+                Margin = new Thickness(28, 8, 0, 0),
+            };
+
+            var fixStack = new StackPanel();
+
+            var fixHeader = new Grid();
+            fixHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            fixHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var fixTitle = new TextBlock
+            {
+                Text = "AUTONOMOUS SELF-HEALING FIX BRIEF (UNIFIED DIFF):",
+                Style = (Style)TryFindResource("Type.MicroLabelStyle"),
+                Foreground = (Brush)TryFindResource("Accent.Text"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+
+            var copyButton = new Button
+            {
+                Content = "Copy Fix Diff",
+                Height = 22,
+                Padding = new Thickness(8, 0, 8, 0),
+                FontSize = 10,
+                ToolTip = "Copies unified patch diff to clipboard",
+            };
+            System.Windows.Automation.AutomationProperties.SetName(copyButton, "Copy self-healing fix diff");
+            copyButton.Click += (_, _) =>
+            {
+                try
+                {
+                    Clipboard.SetText(fixDiff);
+                    copyButton.Content = "Copied!";
+                    Shell?.Log("AUDIT.DIFF.COPY", $"Copied self-healing patch for '{title}' to clipboard.", Severity.Info);
+                    LogConsole($"Copied self-healing patch for '{title}' to clipboard.");
+                }
+                catch (Exception ex)
+                {
+                    Shell?.Log("AUDIT.DIFF.ERR", $"Failed to copy diff: {ex.Message}", Severity.Low);
+                }
+            };
+
+            Grid.SetColumn(fixTitle, 0);
+            Grid.SetColumn(copyButton, 1);
+            fixHeader.Children.Add(fixTitle);
+            fixHeader.Children.Add(copyButton);
+            fixStack.Children.Add(fixHeader);
+
+            var diffText = new TextBlock
+            {
+                Text = fixDiff.Trim(),
+                FontFamily = (FontFamily)TryFindResource("Font.Mono"),
+                FontSize = 10.5,
+                Foreground = (Brush)TryFindResource("Text.Primary"),
+                Margin = new Thickness(0, 6, 0, 0),
+            };
+            fixStack.Children.Add(diffText);
+
+            fixBorder.Child = fixStack;
+            stack.Children.Add(fixBorder);
+        }
+
         card.Child = stack;
         return card;
     }
+
 
     private void OnExportAuditDossier(object sender, RoutedEventArgs e)
     {

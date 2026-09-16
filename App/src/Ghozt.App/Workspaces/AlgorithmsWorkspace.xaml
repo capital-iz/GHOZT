@@ -239,7 +239,9 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Command Header -->
@@ -284,8 +286,82 @@
                     </Grid>
                 </Border>
 
-                <!-- Audit Results List -->
-                <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                <!-- Dedicated Interactive Domain Workbench Panels (Row 1) -->
+                <Border Grid.Row="1" Padding="20,10" Background="{DynamicResource Surface.CardStrong}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <!-- Workbench 0: Scientific Math Parameters -->
+                        <Grid x:Name="ScientificMathWorkbench" Visibility="Visible">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="SIMULATION PARAMETERS:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <TextBlock Text="dt:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="MathDtBox" Text="0.05" Width="55" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Steps:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="MathStepsBox" Text="200" Width="55" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Outliers:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="MathOutliersBox" Text="0.05" Width="55" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Epsilon:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="MathEpsilonBox" Text="1e-12" Width="70" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <Button Content="Run Invariant Proofs" Click="OnRunConfigurableMathAudit" Height="24" Padding="10,0,10,0"
+                                        ToolTip="Executes mathematical simulation with custom parameters" AutomationProperties.Name="Run parameterized mathematical proofs" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Workbench 1: Machine Learning & Agentic AI Parameters -->
+                        <Grid x:Name="AgenticAiWorkbench" Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="AGENTIC AI PARAMETERS:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <TextBlock Text="Samples:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="AiSamplesBox" Text="250" Width="55" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Target Sharpe:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="AiSharpeBox" Text="2.0" Width="45" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Max Depth:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="AiDepthBox" Text="3" Width="40" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <Button Content="Run AI Hardening Suite" Click="OnRunConfigurableAiAudit" Height="24" Padding="10,0,10,0" Margin="0,0,6,0"
+                                        ToolTip="Executes AI validation with custom parameters" AutomationProperties.Name="Run parameterized AI hardening suite" />
+                                <Button Content="Test Cycle Breaker" Click="OnTestAgentCycleBreaker" Height="24" Padding="8,0,8,0"
+                                        ToolTip="Simulates a recursive tool calling cycle to test cycle governor" AutomationProperties.Name="Test agent cycle breaker" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Workbench 2: Android Mobile Emulator Parameters & Gestures -->
+                        <Grid x:Name="MobileEmulatorWorkbench" Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="MOBILE CONTROLS:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <TextBlock Text="AVD:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="MobileAvdBox" Text="Medium_Phone_API_36.1" Width="140" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <Button Content="Query ADB" Click="OnQueryLiveAdbDevices" Height="24" Padding="8,0,8,0" Margin="0,0,6,0"
+                                        ToolTip="Scans local ADB for active devices and emulators" AutomationProperties.Name="Query ADB devices" />
+                                <Button Content="Toggle Airplane" Click="OnToggleAirplaneMode" Height="24" Padding="8,0,8,0" Margin="0,0,10,0"
+                                        ToolTip="Toggles airplane mode on attached Android device" AutomationProperties.Name="Toggle airplane mode via ADB" />
+                                <TextBlock Text="GESTURES:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <Button Content="Tap" Click="OnDispatchTapGesture" Height="24" Padding="6,0,6,0" Margin="0,0,4,0" ToolTip="Dispatches tap at (540, 1200)" AutomationProperties.Name="Dispatch tap gesture" />
+                                <Button Content="Swipe" Click="OnDispatchSwipeGesture" Height="24" Padding="6,0,6,0" Margin="0,0,4,0" ToolTip="Dispatches swipe up" AutomationProperties.Name="Dispatch swipe gesture" />
+                                <Button Content="Back" Click="OnDispatchBackKey" Height="24" Padding="6,0,6,0" Margin="0,0,4,0" ToolTip="Dispatches hardware Back key" AutomationProperties.Name="Dispatch back key" />
+                                <Button Content="Home" Click="OnDispatchHomeKey" Height="24" Padding="6,0,6,0" ToolTip="Dispatches hardware Home key" AutomationProperties.Name="Dispatch home key" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Workbench 3: Windows Desktop Native Parameters -->
+                        <Grid x:Name="DesktopNativeWorkbench" Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="DESKTOP TARGET:" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <TextBlock Text="Binary:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="DesktopBinaryBox" Text="Ghozt.exe" Width="120" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <TextBlock Text="PID:" Style="{StaticResource Type.CaptionStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBox x:Name="DesktopPidBox" Text="Current" Width="60" Height="24" FontFamily="{StaticResource Font.Mono}" FontSize="11" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <Button Content="Sample Memory" Click="OnSampleDesktopMemory" Height="24" Padding="8,0,8,0" Margin="0,0,6,0"
+                                        ToolTip="Samples real Working Set and Private Bytes" AutomationProperties.Name="Sample process memory" />
+                                <Button Content="Scan Event Log" Click="OnScanWindowsEventLog" Height="24" Padding="8,0,8,0" Margin="0,0,6,0"
+                                        ToolTip="Inspects Windows Application Event Log for crashes and exceptions" AutomationProperties.Name="Scan Windows Event Log" />
+                                <Button Content="Verify DB WAL" Click="OnVerifySqliteDbWal" Height="24" Padding="8,0,8,0"
+                                        ToolTip="Executes PRAGMA integrity_check against SQLite evidence store" AutomationProperties.Name="Verify SQLite WAL integrity" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Audit Results List (Row 2) -->
+                <ScrollViewer Grid.Row="2" Padding="20,16" VerticalScrollBarVisibility="Auto">
                     <StackPanel x:Name="AuditResultsPanel">
                         <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
                                 BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24" HorizontalAlignment="Stretch">
@@ -297,6 +373,33 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
+
+                <!-- Embedded Live Execution Console (Row 3) -->
+                <Border Grid.Row="3" Background="{DynamicResource Surface.Deep}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0" Padding="16,8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="LIVE AUDIT &amp; TELEMETRY STREAM CONSOLE" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Accent.Text}" VerticalAlignment="Center" />
+                                <TextBlock x:Name="ConsoleStatusText" Text="Idle · Ready for audit execution" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Clear Console" Height="20" Padding="6,0,6,0" FontSize="10" Click="OnClearAuditConsole"
+                                    ToolTip="Clears console telemetry output" AutomationProperties.Name="Clear audit console" />
+                        </Grid>
+                        <TextBox Grid.Row="1" x:Name="AuditConsoleTextBox" Height="90" IsReadOnly="True" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                                 Background="{DynamicResource Surface.Base}" Foreground="{DynamicResource Text.Primary}"
+                                 BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" Padding="8,4"
+                                 Text="[00:00:00] Ghozt Universal Multi-Domain Audit Engine initialized. Ready for commands.&#x0a;" />
+                    </Grid>
+                </Border>
             </Grid>
         </TabItem>
     </TabControl>

@@ -112,4 +112,102 @@ public sealed class MultiDomainAuditTests
         var dossier = DesktopRuntimeAuditEngine.GenerateMarkdownDossier(results);
         Assert.Contains("# Windows Native Desktop Runtime & UI Automation Audit Dossier", dossier);
     }
+
+    [Fact]
+    public void ConfigurableMathAudit_RespectsParametersAndGeneratesFixDiffs()
+    {
+        var engine = new ScientificMathAuditEngine();
+        var results = engine.RunConfigurableAudit(dt: 0.005, steps: 500, outlierRatio: 0.15, dampingEpsilon: 1e-10);
+
+        Assert.Equal(6, results.Count);
+        Assert.All(results, r => Assert.True(r.Passed, $"Configurable math audit failed: {r.AuditName}"));
+
+        foreach (var r in results)
+        {
+            var diff = ScientificMathAuditEngine.GenerateSelfHealingCodeFix(r);
+            Assert.False(string.IsNullOrWhiteSpace(diff), $"Diff for {r.AuditName} must not be empty");
+            Assert.Contains("--- a/", diff);
+            Assert.Contains("+++ b/", diff);
+        }
+    }
+
+    [Fact]
+    public void ConfigurableAiAudit_DetectsCyclesAndGeneratesFixDiffs()
+    {
+        var engine = new AgenticAiAuditEngine();
+        var results = engine.RunConfigurableAudit(sampleTrades: 60, targetSharpe: 1.5, maxRecursionDepth: 5, tokenBudgetThreshold: 100_000);
+
+        Assert.Equal(6, results.Count);
+        Assert.All(results, r => Assert.True(r.Passed, $"Configurable AI audit failed: {r.AuditName}"));
+
+        // Test cycle detection
+        var cyclicalTools = new[] { "search", "view_file", "search", "view_file", "search", "view_file" };
+        var hasCycle = AgenticAiAuditEngine.DetectToolCycle(cyclicalTools, 3);
+        Assert.True(hasCycle, "DetectToolCycle must catch 3 repeats of length 2");
+
+        var nonCyclical = new[] { "search", "view_file", "edit_file", "run_tests", "commit" };
+        var noCycle = AgenticAiAuditEngine.DetectToolCycle(nonCyclical, 3);
+        Assert.False(noCycle, "DetectToolCycle must return false for non-repeating sequence");
+
+        foreach (var r in results)
+        {
+            var diff = AgenticAiAuditEngine.GenerateSelfHealingCodeFix(r);
+            Assert.False(string.IsNullOrWhiteSpace(diff), $"Diff for {r.AuditName} must not be empty");
+            Assert.Contains("--- a/", diff);
+            Assert.Contains("+++ b/", diff);
+        }
+    }
+
+    [Fact]
+    public void MobileAudit_CommandSynthesisAndAdbDiscovery()
+    {
+        var tap = MobileAuditEngine.BuildTapCommand(450, 800);
+        Assert.Equal("shell input tap 450 800", tap);
+
+        var swipe = MobileAuditEngine.BuildSwipeCommand(100, 200, 100, 800, 300);
+        Assert.Equal("shell input swipe 100 200 100 800 300", swipe);
+
+        var adbPath = MobileAuditEngine.FindAdbPath();
+        Assert.False(string.IsNullOrWhiteSpace(adbPath), "FindAdbPath must return an executable candidate or adb fallback");
+
+        var sampleDevicesOutput = "List of devices attached\r\nemulator-5554\tdevice\r\n192.168.1.50:5555\tunauthorized\r\n";
+        var devices = MobileAuditEngine.ParseAdbDevices(sampleDevicesOutput);
+        Assert.Equal(2, devices.Count);
+        Assert.Equal("emulator-5554", devices[0].Id);
+        Assert.Equal("device", devices[0].State);
+        Assert.Equal("192.168.1.50:5555", devices[1].Id);
+        Assert.Equal("unauthorized", devices[1].State);
+    }
+
+    [Fact]
+    public void DesktopAudit_TelemetrySamplingAndDbVerification()
+    {
+        var currentPid = Environment.ProcessId;
+        var snapshot = DesktopRuntimeAuditEngine.SampleProcessTelemetry(currentPid);
+        Assert.NotNull(snapshot);
+        Assert.Equal(currentPid, snapshot.Pid);
+        Assert.True(snapshot.WorkingSetMb > 0, "WorkingSetMb must be positive");
+        Assert.True(snapshot.ThreadCount > 0, "ThreadCount must be positive");
+
+        // Verify SQLite database verification logic on a temp db
+        var tempDb = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ghozt_audit_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            using (var store = new GhoztStore(tempDb))
+            {
+                var (healthy, integrity, mode) = DesktopRuntimeAuditEngine.VerifySqliteDatabase(tempDb);
+                Assert.True(healthy, "Fresh store must be healthy");
+                Assert.Equal("ok", integrity.ToLowerInvariant());
+                Assert.Equal("wal", mode.ToLowerInvariant());
+            }
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempDb)) System.IO.File.Delete(tempDb);
+            var wal = tempDb + "-wal";
+            if (System.IO.File.Exists(wal)) System.IO.File.Delete(wal);
+            var shm = tempDb + "-shm";
+            if (System.IO.File.Exists(shm)) System.IO.File.Delete(shm);
+        }
+    }
 }
