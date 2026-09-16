@@ -140,10 +140,38 @@
                             </Grid>
                         </Border>
 
-                        <!-- Screenshot Canvas -->
+                        <!-- Screenshot & Telemetry Canvas -->
                         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Image x:Name="ScreenshotImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="350">
+                                <Image x:Name="ScreenshotImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                                <!-- Non-Visual Telemetry Frame Viewer -->
+                                <Border x:Name="NonVisualPayloadCard" Background="{DynamicResource Surface.Deep}"
+                                        BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="6"
+                                        Padding="16" Margin="16" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" Margin="0,0,0,12" Padding="8,4" HorizontalAlignment="Left"
+                                                Background="{DynamicResource Surface.CardFaint}" BorderBrush="{DynamicResource Border.Subtle}"
+                                                BorderThickness="1" CornerRadius="4">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="TELEMETRY FRAME" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Accent.Text}" />
+                                                <TextBlock Text=" · " Style="{StaticResource Type.CaptionStyle}" />
+                                                <TextBlock x:Name="PayloadKindText" Text="Kind: Event" Style="{StaticResource Type.CaptionStyle}" />
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBox Grid.Row="1" x:Name="PayloadTextBox" IsReadOnly="True"
+                                                 Background="Transparent" BorderThickness="0"
+                                                 Foreground="{DynamicResource Text.Secondary}"
+                                                 FontFamily="{StaticResource Font.Mono}" FontSize="11"
+                                                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                                    </Grid>
+                                </Border>
+
                                 <TextBlock x:Name="NoScreenshotNotice" Text="No visual frame captured for this step."
                                            Style="{StaticResource Type.CaptionStyle}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="Collapsed" />

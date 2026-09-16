@@ -195,19 +195,23 @@
                         <StackPanel>
                             <TextBlock Text="SWEEP COMPLETE — NEXT ACTIONS" Style="{StaticResource Type.MicroLabelStyle}"
                                        Foreground="{DynamicResource Accent.Text}" />
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <Button Content="Explore State Lattice" Style="{StaticResource Button.Primary}"
-                                        Click="OnPostSweepExploreLattice" Margin="0,0,8,0"
+                            <WrapPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="Replay Execution" Style="{StaticResource Button.Primary}"
+                                        x:Name="BtnPostSweepReplay" Click="OnPostSweepReplay" Margin="0,0,8,6"
+                                        ToolTip="Open step-by-step visual &amp; telemetry replay for this sweep"
+                                        AutomationProperties.Name="Replay sweep execution" />
+                                <Button Content="Explore State Lattice"
+                                        Click="OnPostSweepExploreLattice" Margin="0,0,8,6"
                                         ToolTip="Examine discovered nodes and transitions in the interactive State Lattice"
                                         AutomationProperties.Name="Explore in State Lattice" />
                                 <Button Content="Triage Faults" Style="{StaticResource Button.Destructive}"
-                                        x:Name="BtnPostSweepFaults" Click="OnPostSweepFaults" Margin="0,0,8,0"
+                                        x:Name="BtnPostSweepFaults" Click="OnPostSweepFaults" Margin="0,0,8,6"
                                         ToolTip="Triage deviations recorded during this sweep"
                                         AutomationProperties.Name="Triage recorded faults" />
-                                <Button Content="Evaluate Clearance" Click="OnPostSweepClearance"
+                                <Button Content="Evaluate Clearance" Click="OnPostSweepClearance" Margin="0,0,8,6"
                                         ToolTip="Evaluate commercial release policy gates for this target"
                                         AutomationProperties.Name="Evaluate clearance gates" />
-                            </StackPanel>
+                            </WrapPanel>
                         </StackPanel>
                     </Border>
 

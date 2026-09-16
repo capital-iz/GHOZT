@@ -12,6 +12,7 @@ public partial class SweepWorkspace : UserControl
 {
     private CancellationTokenSource? _cancellation;
     private bool _loading = true;
+    private GhoztId? _lastSweepId;
 
     public SweepWorkspace()
     {
@@ -272,6 +273,7 @@ public partial class SweepWorkspace : UserControl
         };
 
         App.Store.Save(sweep);
+        _lastSweepId = sweep.Id;
 
         // The root node the checks hang from. Real structure: it stands for the target itself.
         App.Store.Save(new LatticeNode
@@ -406,6 +408,22 @@ public partial class SweepWorkspace : UserControl
     private void OnPostSweepExploreLattice(object sender, RoutedEventArgs e)
     {
         Shell.Workspace = WorkspaceKind.StateMap;
+    }
+
+    private void OnPostSweepReplay(object sender, RoutedEventArgs e)
+    {
+        if (_lastSweepId is { } sweepId)
+        {
+            Shell.NavigateToReplay(sweepId);
+        }
+        else if (History.ItemsSource is IEnumerable<Sweep> sweeps && sweeps.FirstOrDefault() is { } latest)
+        {
+            Shell.NavigateToReplay(latest.Id);
+        }
+        else
+        {
+            Shell.Workspace = WorkspaceKind.Replay;
+        }
     }
 
     private void OnPostSweepFaults(object sender, RoutedEventArgs e)

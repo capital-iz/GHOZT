@@ -103,6 +103,8 @@ public partial class RegressionsWorkspace : UserControl
             Shell?.Log("REG.EXPORT", $"Regression guard suite exported to {filePath}", Severity.Info,
                 detail: $"count={_currentGuards.Count}", related: target.Id.ToString());
 
+            ShowTemporaryButtonConfirmation(ExportSuiteButton, "Exported!", "Export Suite (.json)");
+
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = filePath,
@@ -113,6 +115,19 @@ public partial class RegressionsWorkspace : UserControl
         {
             Shell?.Log("REG.EXPORT.ERR", $"Failed to export regression suite: {ex.Message}", Severity.High);
         }
+    }
+
+    private static void ShowTemporaryButtonConfirmation(Button? button, string confirmationText, string originalText)
+    {
+        if (button is null) return;
+        button.Content = confirmationText;
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+        timer.Tick += (s, ev) =>
+        {
+            timer.Stop();
+            button.Content = originalText;
+        };
+        timer.Start();
     }
 
     private async void OnRunSuite(object sender, RoutedEventArgs e)
@@ -313,6 +328,7 @@ public partial class RegressionsWorkspace : UserControl
 
         var assessment = engine.AssessImpact(target, sampleFiles);
         GuardSummaryText.Text = $"Impact: {assessment.ImpactedGuards.Count} guard(s) affected · Risk: {assessment.RiskLevel}";
+        ShowTemporaryButtonConfirmation(ChangeImpactButton, "Analyzed!", "Change Impact");
         Shell.Log("CHANGE_IMPACT.ASSESSED", assessment.Summary,
             assessment.RiskLevel >= ChangeRiskLevel.High ? Severity.High : Severity.Info,
             detail: $"Recommended checks: {string.Join(", ", assessment.RecommendedSweepChecks)}");

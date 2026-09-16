@@ -842,5 +842,37 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("Loaded += OnReportsLoaded;", rptCs);
         Assert.Contains("ShowTemporaryButtonConfirmation", rptCs);
     }
+
+    [Fact]
+    public void WorkspacesExperientialPhase6ReplayFallbackAndRegressionsPolishExist()
+    {
+        var basePath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces"));
+
+        // 1. Replay Workspace Dual-Modality Canvas & Telemetry Fallback
+        var replayXaml = File.ReadAllText(Path.Combine(basePath, "ReplayWorkspace.xaml"));
+        var replayCs = File.ReadAllText(Path.Combine(basePath, "ReplayWorkspace.xaml.cs"));
+        Assert.Contains("x:Name=\"NonVisualPayloadCard\"", replayXaml);
+        Assert.Contains("x:Name=\"PayloadTextBox\"", replayXaml);
+        Assert.Contains("NonVisualPayload", replayCs);
+        Assert.Contains("HasImage", replayCs);
+        Assert.Contains("allEvidence.OrderBy(e => e.CapturedAt)", replayCs);
+        Assert.Contains("events.Count > 0", replayCs);
+
+        // 2. Regressions Workspace Responsive WrapPanel & Confirmation Feedback
+        var regXaml = File.ReadAllText(Path.Combine(basePath, "RegressionsWorkspace.xaml"));
+        var regCs = File.ReadAllText(Path.Combine(basePath, "RegressionsWorkspace.xaml.cs"));
+        Assert.Contains("<WrapPanel Orientation=\"Horizontal\" VerticalAlignment=\"Center\">", regXaml);
+        Assert.Contains("ShowTemporaryButtonConfirmation(ExportSuiteButton", regCs);
+        Assert.Contains("ShowTemporaryButtonConfirmation(ChangeImpactButton", regCs);
+
+        // 3. Sweep Workspace Post-Sweep Replay Navigation
+        var sweepXaml = File.ReadAllText(Path.Combine(basePath, "SweepWorkspace.xaml"));
+        var sweepCs = File.ReadAllText(Path.Combine(basePath, "SweepWorkspace.xaml.cs"));
+        Assert.Contains("x:Name=\"BtnPostSweepReplay\"", sweepXaml);
+        Assert.Contains("OnPostSweepReplay", sweepCs);
+        Assert.Contains("_lastSweepId = sweep.Id;", sweepCs);
+    }
 }
+
 

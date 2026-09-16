@@ -25,6 +25,8 @@ public sealed record ReplayStepModel
     public bool Success { get; init; } = true;
     public string Error { get; init; } = "";
     public int DurationMs { get; init; }
+    public string NonVisualPayload { get; init; } = "";
+    public bool HasImage { get; init; }
 }
 
 public partial class ReplayWorkspace : UserControl
@@ -217,8 +219,15 @@ public partial class ReplayWorkspace : UserControl
         var screenshotsA = allEvA.Where(ev => ev.Kind == "ui:screenshot/png").OrderBy(e => e.CapturedAt).ToList();
         var screenshotsB = allEvB.Where(ev => ev.Kind == "ui:screenshot/png").OrderBy(e => e.CapturedAt).ToList();
 
-        var stepsA = screenshotsA.Count;
-        var stepsB = screenshotsB.Count;
+        var itemsA = screenshotsA.Count > 0 
+            ? screenshotsA.Select(s => s.Summary).ToList() 
+            : allEvA.OrderBy(e => e.CapturedAt).Select(e => e.Summary).ToList();
+        var itemsB = screenshotsB.Count > 0 
+            ? screenshotsB.Select(s => s.Summary).ToList() 
+            : allEvB.OrderBy(e => e.CapturedAt).Select(e => e.Summary).ToList();
+
+        var stepsA = itemsA.Count;
+        var stepsB = itemsB.Count;
         var stepDelta = stepsA - stepsB;
 
         var findingsA = App.Store.Findings(runA.TargetId).Where(f => f.SweepId == runA.Id).ToList();
@@ -262,7 +271,7 @@ public partial class ReplayWorkspace : UserControl
         var minSteps = Math.Min(stepsA, stepsB);
         for (var i = 0; i < minSteps; i++)
         {
-            if (!string.Equals(screenshotsA[i].Summary, screenshotsB[i].Summary, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(itemsA[i], itemsB[i], StringComparison.OrdinalIgnoreCase))
             {
                 _firstDivergenceIndex = i;
                 break;
@@ -277,8 +286,8 @@ public partial class ReplayWorkspace : UserControl
         if (_firstDivergenceIndex.HasValue && DivergencePointText != null)
         {
             var idx = _firstDivergenceIndex.Value;
-            var descA = idx < stepsA ? screenshotsA[idx].Summary : "(end of run)";
-            var descB = idx < stepsB ? screenshotsB[idx].Summary : "(end of run)";
+            var descA = idx < stepsA ? itemsA[idx] : "(end of run)";
+            var descB = idx < stepsB ? itemsB[idx] : "(end of run)";
             DivergencePointText.Text = $"First divergence observed at Step {idx + 1}:\nRun A: {descA}\nRun B: {descB}";
             if (JumpDivergenceBtn != null)
             {
@@ -332,59 +341,116 @@ public partial class ReplayWorkspace : UserControl
             .ToList();
 
         // Build timeline steps
-        for (var i = 0; i < screenshots.Count; i++)
+        if (screenshots.Count > 0)
         {
-            var shot = screenshots[i];
-            
-            // Find closest tree snapshot by timestamp
-            Evidence? matchedTree = null;
-            var shotMs = shot.CapturedAt.ToUnixTimeMilliseconds();
-            var closestDiff = long.MaxValue;
-            foreach (var kvp in treeSnapshots)
+            for (var i = 0; i < screenshots.Count; i++)
             {
-                var diff = Math.Abs(kvp.Key - shotMs);
-                if (diff < closestDiff && diff < 2000)
+                var shot = screenshots[i];
+                
+                // Find closest tree snapshot by timestamp
+                Evidence? matchedTree = null;
+                var shotMs = shot.CapturedAt.ToUnixTimeMilliseconds();
+                var closestDiff = long.MaxValue;
+                foreach (var kvp in treeSnapshots)
                 {
-                    closestDiff = diff;
-                    matchedTree = kvp.Value;
+                    var diff = Math.Abs(kvp.Key - shotMs);
+                    if (diff < closestDiff && diff < 2000)
+                    {
+                        closestDiff = diff;
+                        matchedTree = kvp.Value;
+                    }
                 }
-            }
 
-            UiElementSnapshot? parsedTree = null;
-            if (matchedTree is not null && !string.IsNullOrWhiteSpace(matchedTree.Payload))
-            {
-                try
+                UiElementSnapshot? parsedTree = null;
+                if (matchedTree is not null && !string.IsNullOrWhiteSpace(matchedTree.Payload))
                 {
-                    parsedTree = JsonSerializer.Deserialize<UiElementSnapshot>(matchedTree.Payload);
+                    try
+                    {
+                        parsedTree = JsonSerializer.Deserialize<UiElementSnapshot>(matchedTree.Payload);
+                    }
+                    catch (Exception)
+                    {
+                        // Tree JSON deserialize fallback
+                    }
                 }
-                catch (Exception)
+
+                // Find matching event
+                var stepEvent = events.FirstOrDefault(ev => ev.RelatedId == shot.Id.ToString())
+                                ?? (i < events.Count ? events[i] : null);
+
+                var desc = shot.Summary;
+                if (desc.StartsWith("Step ", StringComparison.OrdinalIgnoreCase) && desc.Contains(':'))
                 {
-                    // Tree JSON deserialize fallback
+                    desc = desc[(desc.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim();
                 }
+
+                _steps.Add(new ReplayStepModel
+                {
+                    StepIndex = i,
+                    ActionDescription = desc,
+                    Timestamp = shot.CapturedAt,
+                    ScreenshotEvidence = shot,
+                    TreeEvidence = matchedTree,
+                    UiTree = parsedTree,
+                    StateId = $"state:{i:D3}",
+                    Kind = shot.Kind,
+                    Success = stepEvent?.Severity != Severity.Critical && stepEvent?.Severity != Severity.High,
+                    Error = stepEvent?.Detail ?? "",
+                    HasImage = true,
+                });
             }
-
-            // Find matching event
-            var stepEvent = events.FirstOrDefault(ev => ev.RelatedId == shot.Id.ToString())
-                            ?? (i < events.Count ? events[i] : null);
-
-            var desc = shot.Summary;
-            if (desc.StartsWith("Step ", StringComparison.OrdinalIgnoreCase) && desc.Contains(':'))
+        }
+        else if (allEvidence.Count > 0)
+        {
+            var orderedEvidence = allEvidence.OrderBy(e => e.CapturedAt).ToList();
+            for (var i = 0; i < orderedEvidence.Count; i++)
             {
-                desc = desc[(desc.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim();
+                var evItem = orderedEvidence[i];
+                var desc = evItem.Summary;
+                if (desc.StartsWith("Step ", StringComparison.OrdinalIgnoreCase) && desc.Contains(':'))
+                {
+                    desc = desc[(desc.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim();
+                }
+
+                _steps.Add(new ReplayStepModel
+                {
+                    StepIndex = i,
+                    ActionDescription = desc,
+                    Timestamp = evItem.CapturedAt,
+                    ScreenshotEvidence = evItem,
+                    TreeEvidence = null,
+                    UiTree = null,
+                    StateId = $"state:{i:D3}",
+                    TargetName = sweep.TargetId.ToString(),
+                    Kind = evItem.Kind,
+                    Success = true,
+                    NonVisualPayload = !string.IsNullOrWhiteSpace(evItem.Payload) ? evItem.Payload : evItem.Summary,
+                    HasImage = false,
+                });
             }
-
-            _steps.Add(new ReplayStepModel
+        }
+        else if (events.Count > 0)
+        {
+            for (var i = 0; i < events.Count; i++)
             {
-                StepIndex = i,
-                ActionDescription = desc,
-                Timestamp = shot.CapturedAt,
-                ScreenshotEvidence = shot,
-                TreeEvidence = matchedTree,
-                UiTree = parsedTree,
-                StateId = $"state:{i:D3}",
-                Success = stepEvent?.Severity != Severity.Critical && stepEvent?.Severity != Severity.High,
-                Error = stepEvent?.Detail ?? "",
-            });
+                var ev = events[i];
+                _steps.Add(new ReplayStepModel
+                {
+                    StepIndex = i,
+                    ActionDescription = $"{ev.Code}: {ev.Message}",
+                    Timestamp = ev.At,
+                    ScreenshotEvidence = null,
+                    TreeEvidence = null,
+                    UiTree = null,
+                    StateId = ev.TargetId?.ToString() ?? $"state:{i:D3}",
+                    TargetName = sweep.TargetId.ToString(),
+                    Kind = ev.Code,
+                    Success = ev.Severity != Severity.Critical && ev.Severity != Severity.High,
+                    Error = ev.Detail ?? "",
+                    NonVisualPayload = !string.IsNullOrWhiteSpace(ev.Detail) ? $"{ev.Message}\n\n{ev.Detail}" : ev.Message,
+                    HasImage = false,
+                });
+            }
         }
 
         if (_steps.Count == 0)
@@ -415,7 +481,7 @@ public partial class ReplayWorkspace : UserControl
 
         var step = _steps[index];
 
-        // 1. Screenshot Display
+        // 1. Screenshot / Non-Visual Telemetry Display
         StepActionHeader.Text = $"Step {index}: {step.ActionDescription}";
         StepTimestampText.Text = step.Timestamp.ToString("HH:mm:ss.fff", System.Globalization.CultureInfo.InvariantCulture);
         SealShaText.Text = step.ScreenshotEvidence?.Sha256.Length >= 16 
@@ -424,7 +490,7 @@ public partial class ReplayWorkspace : UserControl
         StateIdText.Text = step.StateId;
         TransitionText.Text = step.ActionDescription;
 
-        if (step.ScreenshotEvidence is not null && !string.IsNullOrWhiteSpace(step.ScreenshotEvidence.Payload))
+        if (step.HasImage && step.ScreenshotEvidence is not null && !string.IsNullOrWhiteSpace(step.ScreenshotEvidence.Payload))
         {
             try
             {
@@ -439,18 +505,41 @@ public partial class ReplayWorkspace : UserControl
 
                 ScreenshotImage.Source = bmp;
                 ScreenshotImage.Visibility = Visibility.Visible;
+                NonVisualPayloadCard.Visibility = Visibility.Collapsed;
                 NoScreenshotNotice.Visibility = Visibility.Collapsed;
             }
             catch (Exception)
             {
                 ScreenshotImage.Visibility = Visibility.Collapsed;
-                NoScreenshotNotice.Visibility = Visibility.Visible;
+                if (!string.IsNullOrWhiteSpace(step.NonVisualPayload))
+                {
+                    NonVisualPayloadCard.Visibility = Visibility.Visible;
+                    PayloadKindText.Text = $"Kind: {step.Kind}";
+                    PayloadTextBox.Text = step.NonVisualPayload;
+                    NoScreenshotNotice.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    NonVisualPayloadCard.Visibility = Visibility.Collapsed;
+                    NoScreenshotNotice.Visibility = Visibility.Visible;
+                }
             }
         }
         else
         {
             ScreenshotImage.Visibility = Visibility.Collapsed;
-            NoScreenshotNotice.Visibility = Visibility.Visible;
+            if (!string.IsNullOrWhiteSpace(step.NonVisualPayload))
+            {
+                NonVisualPayloadCard.Visibility = Visibility.Visible;
+                PayloadKindText.Text = $"Kind: {step.Kind}";
+                PayloadTextBox.Text = step.NonVisualPayload;
+                NoScreenshotNotice.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                NonVisualPayloadCard.Visibility = Visibility.Collapsed;
+                NoScreenshotNotice.Visibility = Visibility.Visible;
+            }
         }
 
         // 2. Action & Execution Details

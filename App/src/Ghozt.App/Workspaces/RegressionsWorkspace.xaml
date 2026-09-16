@@ -12,34 +12,34 @@
         <Border Padding="20,12" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource Button.Primary}" Content="Generate Guards"
-                            Click="OnGenerateGuards" x:Name="GenerateButton"
+                            Click="OnGenerateGuards" x:Name="GenerateButton" Margin="0,0,8,6"
                             ToolTip="Derives automated regression guards from all confirmed deviations and findings"
                             AutomationProperties.Name="Generate regression guards from findings" />
-                    <Button Margin="8,0,0,0" Content="Run Regression Suite"
+                    <Button Margin="0,0,8,6" Content="Run Regression Suite"
                             Click="OnRunSuite" x:Name="RunSuiteButton"
                             ToolTip="Executes all active regression guards against the target to verify no defects recurred"
                             AutomationProperties.Name="Execute regression guard suite" />
-                    <Button Margin="8,0,0,0" Content="Run Mutation Assays"
+                    <Button Margin="0,0,8,6" Content="Run Mutation Assays"
                             Click="OnRunMutationAssays" x:Name="MutationAssaysButton"
                             ToolTip="Injects artificial faults into target invariants to verify that regression guards detect breakages"
                             AutomationProperties.Name="Execute guard mutation assays and false-confidence detection" />
-                    <Button Margin="8,0,0,0" Content="Export Suite (.json)"
+                    <Button Margin="0,0,8,6" Content="Export Suite (.json)"
                             Click="OnExportSuite" x:Name="ExportSuiteButton"
                             ToolTip="Exports regression guards as machine-readable JSON to %LOCALAPPDATA%\Capital-Iz\Ghozt\Guards"
                             AutomationProperties.Name="Export regression guard suite as JSON" />
-                    <Button Margin="8,0,0,0" Content="Change Impact"
+                    <Button Margin="0,0,8,6" Content="Change Impact"
                             Click="OnAnalyzeChangeImpact" x:Name="ChangeImpactButton"
                             ToolTip="Analyzes source change impact on State Lattice nodes and regression guards (Patent §31)"
                             AutomationProperties.Name="Analyze change impact" />
-                </StackPanel>
+                </WrapPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,6">
                     <Border x:Name="MutationScoreBadge" Margin="0,0,12,0" Padding="8,3" CornerRadius="4"
                             Background="{DynamicResource State.VerifiedSoft}" BorderBrush="{DynamicResource State.Verified}" BorderThickness="1"
                             Visibility="Collapsed">
