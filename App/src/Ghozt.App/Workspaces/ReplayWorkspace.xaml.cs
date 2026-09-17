@@ -31,7 +31,10 @@ public sealed record ReplayStepModel
 
 public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
 {
-    private readonly DispatcherTimer _playbackTimer;
+    private readonly DispatcherTimer _playbackTimer = new()
+    {
+        Interval = TimeSpan.FromMilliseconds(1200),
+    };
     private readonly List<ReplayStepModel> _steps = [];
     private int _currentStepIndex;
     private bool _isPlaying;
@@ -48,13 +51,8 @@ public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
 
     public ReplayWorkspace()
     {
-        InitializeComponent();
-
-        _playbackTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(1200),
-        };
         _playbackTimer.Tick += OnPlaybackTick;
+        InitializeComponent();
 
         DataContextChanged += (_, _) => Attach();
         Loaded += (_, _) => Attach();
@@ -676,6 +674,7 @@ public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
 
     private void OnSpeedChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_playbackTimer is null) return;
         if (SpeedPicker?.SelectedItem is ComboBoxItem item &&
             double.TryParse(item.Content?.ToString()?.Replace("x", "", StringComparison.OrdinalIgnoreCase),
                 System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var speed))
