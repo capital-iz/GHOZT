@@ -57,11 +57,12 @@ public sealed class SweepEngine
         "Deep forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Quality Validation", "Regression Guarding", "Capacity", "Consistency", "Provenance"],
         "Autonomous E2E" => ["Reachability", "Identity", "Autonomous Exploration", "Quality Validation", "Regression Guarding", "Integrity"],
         "Performance Soak" => ["Reachability", "Identity", "Soak and Resilience Analysis", "Capacity", "Integrity"],
+        "Multi-Domain Forensic" => ["Reachability", "Identity", "Structure", "Integrity", "Mobile Runtime & ADB Sentry", "Desktop Native Runtime & Telemetry", "Mathematical & Invariant Proofs", "Agentic AI & ML Hardening", "Quality Validation", "Regression Guarding"],
         _ => ["Reachability", "Identity"],
     };
 
     public static IReadOnlyList<string> Modes =>
-        ["Smoke", "Changed area", "Full sweep", "Deep forensic", "Autonomous E2E", "Performance Soak"];
+        ["Smoke", "Changed area", "Full sweep", "Deep forensic", "Autonomous E2E", "Performance Soak", "Multi-Domain Forensic"];
 
 
     /// <summary>
@@ -1095,6 +1096,162 @@ public sealed class SweepEngine
                     $"Soak and resilience examination passed: steady-state resource stability verified across {samples.Count} samples.",
                     detailSb.ToString(),
                     Severity.Info, samples.Count);
+            }
+
+            case "Mobile Runtime & ADB Sentry":
+            {
+                var engine = new MobileAuditEngine();
+                var results = engine.RunFullAudit();
+                var passedCount = results.Count(r => r.Passed);
+                var failedCount = results.Count(r => !r.Passed);
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine(CultureInfo.InvariantCulture, $"Mobile Runtime & ADB Sentry evaluated {results.Count} mobile invariants ({passedCount} passed, {failedCount} failed):");
+                foreach (var r in results)
+                {
+                    detailSb.AppendLine(CultureInfo.InvariantCulture, $"- [{r.Category}] {r.AuditName}: {(r.Passed ? "PASS" : "DEVIATION")} -> {r.Summary}");
+                    if (!r.Passed)
+                    {
+                        RecordFinding(new CheckResult(false, false, r.Summary, $"{r.TechnicalDetail}\n\nRemediation:\n{r.RemediationAdvice}", Severity.High, 1, "Invariant satisfied", r.Summary), sweep, target);
+                    }
+                }
+
+                var payload = detailSb.ToString();
+                _store.Save(new Evidence
+                {
+                    Id = _store.NextId(IdKind.Evidence),
+                    TargetId = target.Id,
+                    SweepId = sweep.Id,
+                    Kind = "audit:mobile",
+                    Summary = $"Mobile Runtime Audit: {passedCount}/{results.Count} passed",
+                    Sha256 = Hashing.Sha256(payload),
+                    SizeBytes = System.Text.Encoding.UTF8.GetByteCount(payload),
+                    Payload = payload,
+                    SourceAdapter = "MobileAuditEngine",
+                    CapturedAt = DateTimeOffset.Now,
+                    Sealed = true,
+                    SealedBy = Environment.UserName,
+                });
+
+                return failedCount == 0
+                    ? new CheckResult(true, false, $"Mobile runtime and ADB sentry passed: {results.Count} checks verified.", payload, Severity.Info, results.Count)
+                    : new CheckResult(false, false, $"Mobile runtime audit found {failedCount} deviation(s).", payload, Severity.High, results.Count, "All mobile invariants verified", $"{failedCount} mobile deviations");
+            }
+
+            case "Desktop Native Runtime & Telemetry":
+            {
+                var engine = new DesktopRuntimeAuditEngine();
+                var results = engine.RunFullAudit(target.BaseAddress, _store.DatabasePath);
+                var passedCount = results.Count(r => r.Passed);
+                var failedCount = results.Count(r => !r.Passed);
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine(CultureInfo.InvariantCulture, $"Desktop Native Runtime & Telemetry evaluated {results.Count} desktop checks ({passedCount} passed, {failedCount} failed):");
+                foreach (var r in results)
+                {
+                    detailSb.AppendLine(CultureInfo.InvariantCulture, $"- [{r.Category}] {r.AuditName}: {(r.Passed ? "PASS" : "DEVIATION")} -> {r.Summary}");
+                    if (!r.Passed)
+                    {
+                        RecordFinding(new CheckResult(false, false, r.Summary, $"{r.TechnicalDetail}\n\nRemediation:\n{r.RemediationAdvice}", Severity.High, 1, "Desktop invariant satisfied", r.Summary), sweep, target);
+                    }
+                }
+
+                var payload = detailSb.ToString();
+                _store.Save(new Evidence
+                {
+                    Id = _store.NextId(IdKind.Evidence),
+                    TargetId = target.Id,
+                    SweepId = sweep.Id,
+                    Kind = "audit:desktop",
+                    Summary = $"Desktop Native Runtime Audit: {passedCount}/{results.Count} passed",
+                    Sha256 = Hashing.Sha256(payload),
+                    SizeBytes = System.Text.Encoding.UTF8.GetByteCount(payload),
+                    Payload = payload,
+                    SourceAdapter = "DesktopRuntimeAuditEngine",
+                    CapturedAt = DateTimeOffset.Now,
+                    Sealed = true,
+                    SealedBy = Environment.UserName,
+                });
+
+                return failedCount == 0
+                    ? new CheckResult(true, false, $"Desktop native runtime audit passed: {results.Count} checks verified.", payload, Severity.Info, results.Count)
+                    : new CheckResult(false, false, $"Desktop native runtime audit found {failedCount} deviation(s).", payload, Severity.High, results.Count, "All desktop invariants verified", $"{failedCount} desktop deviations");
+            }
+
+            case "Mathematical & Invariant Proofs":
+            {
+                var engine = new ScientificMathAuditEngine();
+                var results = engine.RunFullAudit();
+                var passedCount = results.Count(r => r.Passed);
+                var failedCount = results.Count(r => !r.Passed);
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine(CultureInfo.InvariantCulture, $"Mathematical & Invariant Proofs evaluated {results.Count} mathematical checks ({passedCount} passed, {failedCount} failed):");
+                foreach (var r in results)
+                {
+                    detailSb.AppendLine(CultureInfo.InvariantCulture, $"- [{r.Domain}] {r.AuditName}: {(r.Passed ? "PASS" : "DEVIATION")} (Val: {r.MetricValue:E2}, Bound: {r.MetricBound:E2}) -> {r.Summary}");
+                    if (!r.Passed)
+                    {
+                        RecordFinding(new CheckResult(false, false, r.Summary, $"{r.TheoreticalRationale}\n\nRemediation:\n{r.RemediationAdvice}", Severity.High, 1, $"Metric <= {r.MetricBound:E2}", $"{r.MetricValue:E2}"), sweep, target);
+                    }
+                }
+
+                var payload = detailSb.ToString();
+                _store.Save(new Evidence
+                {
+                    Id = _store.NextId(IdKind.Evidence),
+                    TargetId = target.Id,
+                    SweepId = sweep.Id,
+                    Kind = "audit:math",
+                    Summary = $"Scientific Math Audit: {passedCount}/{results.Count} passed",
+                    Sha256 = Hashing.Sha256(payload),
+                    SizeBytes = System.Text.Encoding.UTF8.GetByteCount(payload),
+                    Payload = payload,
+                    SourceAdapter = "ScientificMathAuditEngine",
+                    CapturedAt = DateTimeOffset.Now,
+                    Sealed = true,
+                    SealedBy = Environment.UserName,
+                });
+
+                return failedCount == 0
+                    ? new CheckResult(true, false, $"Mathematical and invariant proofs passed: {results.Count} checks verified.", payload, Severity.Info, results.Count)
+                    : new CheckResult(false, false, $"Mathematical audit found {failedCount} deviation(s).", payload, Severity.High, results.Count, "All mathematical invariants verified", $"{failedCount} mathematical deviations");
+            }
+
+            case "Agentic AI & ML Hardening":
+            {
+                var engine = new AgenticAiAuditEngine();
+                var results = engine.RunFullAudit();
+                var passedCount = results.Count(r => r.Passed);
+                var failedCount = results.Count(r => !r.Passed);
+                var detailSb = new System.Text.StringBuilder();
+                detailSb.AppendLine(CultureInfo.InvariantCulture, $"Agentic AI & ML Hardening evaluated {results.Count} AI checks ({passedCount} passed, {failedCount} failed):");
+                foreach (var r in results)
+                {
+                    detailSb.AppendLine(CultureInfo.InvariantCulture, $"- [{r.Category}] {r.AuditName}: {(r.Passed ? "PASS" : "DEVIATION")} -> {r.Summary}");
+                    if (!r.Passed)
+                    {
+                        RecordFinding(new CheckResult(false, false, r.Summary, $"{r.TechnicalContext}\n\nRemediation:\n{r.RemediationAdvice}", Severity.High, 1, "AI hardening invariant satisfied", r.Summary), sweep, target);
+                    }
+                }
+
+                var payload = detailSb.ToString();
+                _store.Save(new Evidence
+                {
+                    Id = _store.NextId(IdKind.Evidence),
+                    TargetId = target.Id,
+                    SweepId = sweep.Id,
+                    Kind = "audit:ai",
+                    Summary = $"Agentic AI & ML Hardening: {passedCount}/{results.Count} passed",
+                    Sha256 = Hashing.Sha256(payload),
+                    SizeBytes = System.Text.Encoding.UTF8.GetByteCount(payload),
+                    Payload = payload,
+                    SourceAdapter = "AgenticAiAuditEngine",
+                    CapturedAt = DateTimeOffset.Now,
+                    Sealed = true,
+                    SealedBy = Environment.UserName,
+                });
+
+                return failedCount == 0
+                    ? new CheckResult(true, false, $"Agentic AI & ML hardening passed: {results.Count} checks verified.", payload, Severity.Info, results.Count)
+                    : new CheckResult(false, false, $"Agentic AI audit found {failedCount} deviation(s).", payload, Severity.High, results.Count, "All AI hardening invariants verified", $"{failedCount} AI deviations");
             }
 
             default:

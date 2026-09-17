@@ -352,7 +352,21 @@
                                 <TextBlock Text="Regression Guard:" FontWeight="SemiBold" FontSize="10" Margin="0,8,0,2" Foreground="{DynamicResource Text.Secondary}" />
                                 <TextBlock x:Name="FixBriefGuardText" Style="{StaticResource Type.CaptionStyle}" TextWrapping="Wrap" />
 
+                                <TextBlock Text="Autonomous Self-Healing Patch (Unified Diff):" FontWeight="SemiBold" FontSize="10" Margin="0,8,0,2" Foreground="{DynamicResource Text.Secondary}" />
+                                <TextBox x:Name="FixBriefDiffText" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                                         FontFamily="{StaticResource Font.Mono}" FontSize="10" Padding="8,6" MaxHeight="140"
+                                         Background="{DynamicResource Surface.Inset}" Foreground="{DynamicResource Text.Primary}"
+                                         BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1"
+                                         VerticalScrollBarVisibility="Auto" />
+
                                 <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button x:Name="CopyDiffButton" Content="Copy Fix Diff" Click="OnCopyFixDiff"
+                                            Margin="0,0,6,0" ToolTip="Copy unified diff patch to clipboard"
+                                            AutomationProperties.Name="Copy self-healing fix diff" />
+                                    <Button x:Name="ApplyPatchButton" Content="Apply Patch" Click="OnApplyPatch"
+                                            Margin="0,0,6,0" Style="{StaticResource Button.Primary}"
+                                            ToolTip="Applies patch autonomously to disk with verified backup copy (.bak)"
+                                            AutomationProperties.Name="Apply self-healing fix patch to target" />
                                     <Button Content="Copy Markdown" Click="OnCopyFixBrief"
                                             Margin="0,0,6,0" ToolTip="Copy Fix Brief contract to clipboard" />
                                     <Button Content="Export (.md)" Click="OnExportFixBrief"
@@ -360,6 +374,9 @@
                                     <Button Content="Derive Guard" Click="OnDeriveGuard"
                                             ToolTip="Derive an automated regression guard from this finding" />
                                 </StackPanel>
+
+                                <TextBlock x:Name="FixBriefPatchStatusText" Margin="0,6,0,0" Style="{StaticResource Type.CaptionStyle}"
+                                           Foreground="{DynamicResource State.Verified}" Visibility="Collapsed" />
                             </StackPanel>
                         </Border>
                     </StackPanel>

@@ -112,6 +112,57 @@ public partial class TargetDialog : Window
         }
     }
 
+    private void OnPresetMobile(object sender, RoutedEventArgs e)
+    {
+        NameBox.Text = "Android App / AVD";
+        KindBox.Text = "Mobile application";
+        EnvironmentBox.SelectedItem = TargetEnvironment.Local;
+        AccessBox.SelectedItem = AccessClass.Interact;
+        AddressBox.Text = "emulator-5554 / com.example.app";
+        BuildBox.Text = "v1.0.0-debug";
+        AuthorityBox.Text = "Local emulator ADB inspection authorized. SQLite rawQuery invariant & Logcat audit enabled.";
+    }
+
+    private void OnPresetDesktop(object sender, RoutedEventArgs e)
+    {
+        NameBox.Text = "Windows Desktop Client";
+        KindBox.Text = "Desktop application";
+        EnvironmentBox.SelectedItem = TargetEnvironment.Local;
+        AccessBox.SelectedItem = AccessClass.Interact;
+        try
+        {
+            AddressBox.Text = Process.GetCurrentProcess().MainModule?.FileName ?? "C:\\Program Files\\App\\app.exe";
+        }
+        catch
+        {
+            AddressBox.Text = "C:\\Program Files\\App\\app.exe";
+        }
+        BuildBox.Text = "v1.0.0";
+        AuthorityBox.Text = "Local desktop application inspection. UI Automation tree traversal and process telemetry authorized.";
+    }
+
+    private void OnPresetMath(object sender, RoutedEventArgs e)
+    {
+        NameBox.Text = "Scientific Physics & Math Engine";
+        KindBox.Text = "Scientific Math Engine";
+        EnvironmentBox.SelectedItem = TargetEnvironment.Local;
+        AccessBox.SelectedItem = AccessClass.ObserveOnly;
+        AddressBox.Text = "math://symplectic-integrator/v1";
+        BuildBox.Text = "v1.0.0-verified";
+        AuthorityBox.Text = "Symplectic energy conservation, DAG non-circularity, and IEEE-754 numerical stability verification authorized.";
+    }
+
+    private void OnPresetAi(object sender, RoutedEventArgs e)
+    {
+        NameBox.Text = "Agentic AI / UTCP System";
+        KindBox.Text = "Machine learning model / AI Agent";
+        EnvironmentBox.SelectedItem = TargetEnvironment.Local;
+        AccessBox.SelectedItem = AccessClass.Interact;
+        AddressBox.Text = "utcp://orchestrator-gateway/v1";
+        BuildBox.Text = "v1.0.0-harness";
+        AuthorityBox.Text = "UTCP schema validation, agent loop cycle breaker, and tool calling safety boundary checks authorized.";
+    }
+
     private void OnAttachProcess(object sender, RoutedEventArgs e)
     {
         var picker = new ProcessPickerDialog { Owner = this };

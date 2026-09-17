@@ -310,4 +310,129 @@ public sealed class MultiDomainAuditTests
         Assert.Contains("AUTONOMOUS AGENT REASONING DAG", trace);
         Assert.Contains("DAG SOVEREIGNTY SEAL", trace);
     }
+
+    [Fact]
+    public async Task SweepEngine_RunsMultiDomainForensicSweep_ExecutesAllChecks()
+    {
+        var tempDb = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ghozt_sweep_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            using var store = new GhoztStore(tempDb);
+            var target = new Target
+            {
+                Id = store.NextId(IdKind.Target),
+                Name = "Forensic Multi-Domain Target",
+                Kind = "Desktop application",
+                Environment = TargetEnvironment.Local,
+                Access = AccessClass.Interact,
+                Owner = "Tester",
+                BaseAddress = Environment.ProcessPath ?? "test.exe",
+                RegisteredAt = DateTimeOffset.Now,
+                Reachable = true
+            };
+            store.Save(target);
+
+            var sweep = new Sweep
+            {
+                Id = store.NextId(IdKind.Sweep),
+                TargetId = target.Id,
+                Name = "Universal Multi-Domain Forensic Sweep",
+                Mode = "Multi-Domain Forensic",
+                MaxStates = 100,
+                MaxSeconds = 60,
+                MaxDepth = 5,
+                AllowDestructive = false
+            };
+            store.Save(sweep);
+
+            var progressUpdates = new System.Collections.Generic.List<SweepProgress>();
+            var progress = new Progress<SweepProgress>(p => progressUpdates.Add(p));
+            var sweepEngine = new SweepEngine(store);
+
+            await sweepEngine.RunAsync(sweep, target, progress, System.Threading.CancellationToken.None);
+
+            var updatedSweep = store.Sweeps(target.Id).First(s => s.Id == sweep.Id);
+            Assert.Equal(RunState.Completed, updatedSweep.State);
+            Assert.True(updatedSweep.StatesVisited > 0, "StatesVisited must be > 0");
+
+            var evidence = store.EvidenceItems(target.Id);
+            Assert.Contains(evidence, e => e.Kind == "audit:mobile");
+            Assert.Contains(evidence, e => e.Kind == "audit:desktop");
+            Assert.Contains(evidence, e => e.Kind == "audit:math");
+            Assert.Contains(evidence, e => e.Kind == "audit:ai");
+
+            // Verify ReportGenerator compiles Section 4 Multi-Domain breakdown
+            var reportGen = new ReportGenerator(store);
+            var report = reportGen.Generate(target, "MultiDomainTester");
+            Assert.Contains("## 4. Multi-Domain Forensic Examination Breakdown", report.MarkdownContent);
+            Assert.Contains("Universal Multi-Domain Forensic Sweep", report.MarkdownContent);
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempDb)) System.IO.File.Delete(tempDb);
+            var wal = tempDb + "-wal";
+            if (System.IO.File.Exists(wal)) System.IO.File.Delete(wal);
+            var shm = tempDb + "-shm";
+            if (System.IO.File.Exists(shm)) System.IO.File.Delete(shm);
+        }
+    }
+
+    [Fact]
+    public void FixBriefEngine_SynthesizesActionableUnifiedDiffs()
+    {
+        var tempDb = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ghozt_fixbrief_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            using var store = new GhoztStore(tempDb);
+            var target = new Target
+            {
+                Id = store.NextId(IdKind.Target),
+                Name = "Self-Healing Test Target",
+                Kind = "Mobile application",
+                Environment = TargetEnvironment.Local,
+                Access = AccessClass.Interact,
+                Owner = "Tester",
+                RegisteredAt = DateTimeOffset.Now
+            };
+            store.Save(target);
+
+            var finding = new Finding
+            {
+                Id = store.NextId(IdKind.Deviation),
+                TargetId = target.Id,
+                Title = "SQLite execSQL row violation: rawQuery required for journal_mode pragma",
+                Severity = Severity.High,
+                Actual = "SQLiteDatabase.execSQL called with PRAGMA journal_mode = WAL",
+                Expected = "PRAGMA journal_mode queries executed via rawQuery",
+                ReproAttempts = 5,
+                ReproSuccesses = 5,
+                FirstSeenAt = DateTimeOffset.Now,
+                LastSeenAt = DateTimeOffset.Now,
+                Maturity = FindingMaturity.Reproduced
+            };
+            store.Save(finding);
+
+            var briefEngine = new FixBriefEngine(store);
+            var brief = briefEngine.Generate(finding, target);
+
+            Assert.NotNull(brief);
+            Assert.False(string.IsNullOrWhiteSpace(brief.UnifiedDiff), "UnifiedDiff must not be empty");
+            Assert.Contains("--- a/", brief.UnifiedDiff);
+            Assert.Contains("+++ b/", brief.UnifiedDiff);
+            Assert.Contains("rawQuery", brief.UnifiedDiff);
+
+            var md = brief.ToMarkdown();
+            Assert.Contains("## 8. Autonomous Self-Healing Patch (Unified Diff)", md);
+            Assert.Contains("```diff", md);
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempDb)) System.IO.File.Delete(tempDb);
+            var wal = tempDb + "-wal";
+            if (System.IO.File.Exists(wal)) System.IO.File.Delete(wal);
+            var shm = tempDb + "-shm";
+            if (System.IO.File.Exists(shm)) System.IO.File.Delete(shm);
+        }
+    }
 }
+

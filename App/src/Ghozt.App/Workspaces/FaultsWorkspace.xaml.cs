@@ -422,11 +422,63 @@ public partial class FaultsWorkspace : UserControl, IRefreshableWorkspace
         FixBriefTitleText.Text = _currentFixBrief.Title;
         FixBriefScopeText.Text = string.Join("\n", _currentFixBrief.AllowedScope);
         FixBriefGuardText.Text = _currentFixBrief.RegressionGuardSpecification;
+        FixBriefDiffText.Text = _currentFixBrief.UnifiedDiff;
+        FixBriefPatchStatusText.Visibility = Visibility.Collapsed;
+        ApplyPatchButton.IsEnabled = true;
+        ApplyPatchButton.Content = "Apply Patch";
 
         FixBriefCard.Visibility = Visibility.Visible;
 
         Shell.Log("FXB.GENERATE", $"Generated bounded Fix Brief {_currentFixBrief.Id} for {finding.Id}.",
             Severity.Info, related: finding.Id.ToString(), detail: _currentFixBrief.RootMechanism);
+    }
+
+    private void OnCopyFixDiff(object sender, RoutedEventArgs e)
+    {
+        if (_currentFixBrief is null || string.IsNullOrWhiteSpace(_currentFixBrief.UnifiedDiff))
+        {
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(_currentFixBrief.UnifiedDiff);
+            Shell.Log("FXB.COPY.DIFF", $"Copied unified fix diff for {_currentFixBrief.Id} to clipboard.", Severity.Info);
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            // Clipboard access may fail in sandboxed/headless scenarios
+        }
+    }
+
+    private void OnApplyPatch(object sender, RoutedEventArgs e)
+    {
+        if (_currentFixBrief is null || string.IsNullOrWhiteSpace(_currentFixBrief.UnifiedDiff) || Selected is not { } finding)
+        {
+            return;
+        }
+
+        ApplyPatchButton.IsEnabled = false;
+        ApplyPatchButton.Content = "Applied!";
+
+        var result = PatchApplicator.ApplyPatch(_currentFixBrief.UnifiedDiff);
+
+        FixBriefPatchStatusText.Text = result.Message;
+        FixBriefPatchStatusText.Visibility = Visibility.Visible;
+
+        Shell.Log("AUDIT.PATCH.APPLIED",
+            $"Applied self-healing patch for {finding.Id} ({_currentFixBrief.Id}): {result.Message}",
+            result.Success ? Severity.Info : Severity.Medium,
+            related: finding.Id.ToString());
+
+        if (finding.Maturity < FindingMaturity.FixReady)
+        {
+            var updated = finding with { Maturity = FindingMaturity.FixReady };
+            App.Store.Save(updated);
+            RenderMaturityCard(updated);
+        }
+
+        VerifyRepairButton.IsEnabled = true;
     }
 
     private void OnCopyFixBrief(object sender, RoutedEventArgs e)

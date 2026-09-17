@@ -34,6 +34,22 @@
 
             <ScrollViewer Grid.Row="1" Padding="24,18">
                 <StackPanel>
+                    <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="QUICK PRESETS" />
+                    <WrapPanel Margin="0,4,0,14">
+                        <Button Content="Android Mobile (AVD)" Click="OnPresetMobile" Height="24" Padding="8,2" Margin="0,0,6,6"
+                                ToolTip="Auto-fill Android emulator/mobile target profile"
+                                AutomationProperties.Name="Preset Android Mobile" />
+                        <Button Content="Windows Desktop" Click="OnPresetDesktop" Height="24" Padding="8,2" Margin="0,0,6,6"
+                                ToolTip="Auto-fill Windows desktop WPF/Win32 target profile"
+                                AutomationProperties.Name="Preset Windows Desktop" />
+                        <Button Content="Scientific Math Engine" Click="OnPresetMath" Height="24" Padding="8,2" Margin="0,0,6,6"
+                                ToolTip="Auto-fill high-performance physics/math engine target profile"
+                                AutomationProperties.Name="Preset Scientific Math" />
+                        <Button Content="Agentic AI / UTCP System" Click="OnPresetAi" Height="24" Padding="8,2" Margin="0,0,6,6"
+                                ToolTip="Auto-fill Agentic AI, LLM harness, and UTCP tool orchestrator target profile"
+                                AutomationProperties.Name="Preset Agentic AI" />
+                    </WrapPanel>
+
                     <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="NAME" />
                     <TextBox x:Name="NameBox" AutomationProperties.Name="Target name" />
 
@@ -53,6 +69,8 @@
                                 <ComboBoxItem Content="Algorithm" />
                                 <ComboBoxItem Content="Database" />
                                 <ComboBoxItem Content="Mobile application" />
+                                <ComboBoxItem Content="Scientific Math Engine" />
+                                <ComboBoxItem Content="Machine learning model / AI Agent" />
                             </ComboBox>
                         </StackPanel>
                         <StackPanel Grid.Column="2">

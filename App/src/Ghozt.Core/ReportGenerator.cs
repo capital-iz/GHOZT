@@ -104,6 +104,23 @@ public sealed class ReportGenerator
             }
         }
         md.AppendLine();
+
+        // Multi-domain forensic checks breakdown
+        var multiDomainSweeps = sweeps.Where(s => s.Mode == "Multi-Domain Forensic").ToList();
+        if (multiDomainSweeps.Count > 0)
+        {
+            md.AppendLine("## 4. Multi-Domain Forensic Examination Breakdown");
+            md.AppendLine();
+            md.AppendLine("| Sweep ID | Domain Target / Focus | States Visited | Deviations | Completed |");
+            md.AppendLine("|---|---|---|---|---|");
+            foreach (var s in multiDomainSweeps)
+            {
+                var finished = s.FinishedAt?.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) ?? "In-Progress";
+                md.AppendLine(CultureInfo.InvariantCulture, $"| `{s.Id}` | {s.Name} | {s.StatesVisited} | {s.DeviationsFound} | {finished} |");
+            }
+            md.AppendLine();
+        }
+
         md.AppendLine("---");
         md.AppendLine($"*Cryptographically Sealed Evidence Digest: `{decision.EvidenceDigest}`*");
 
