@@ -1479,6 +1479,169 @@ public sealed class RealExecutionTests : IDisposable
             if (File.Exists(tempDb)) File.Delete(tempDb);
         }
     }
+
+    [Fact]
+    public void ReportsWorkspace_TwoColumnLayout_And_OperationsPanel_Contracts_Exist()
+    {
+        string? reportsXamlPath = null;
+
+        var candidates = new[]
+        {
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces")),
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces")),
+            Path.GetFullPath(@"App\src\Ghozt.App\Workspaces"),
+            Path.GetFullPath(@"src\Ghozt.App\Workspaces"),
+        };
+
+        foreach (var dir in candidates)
+        {
+            if (Directory.Exists(dir))
+            {
+                var rpt = Path.Combine(dir, "ReportsWorkspace.xaml");
+                if (File.Exists(rpt))
+                {
+                    reportsXamlPath = rpt;
+                    break;
+                }
+            }
+        }
+
+        Assert.True(reportsXamlPath != null && File.Exists(reportsXamlPath), "ReportsWorkspace.xaml should be resolved.");
+        var xaml = File.ReadAllText(reportsXamlPath);
+
+        // 1. Verify two-column layout
+        Assert.Contains("x:Name=\"ReportOperationsPanel\"", xaml);
+        Assert.Contains("Width=\"480\"", xaml);
+
+        // 2. Verify Cryptographic Seal Card
+        Assert.Contains("x:Name=\"ReportSealingCard\"", xaml);
+        Assert.Contains("x:Name=\"ReportSealBadge\"", xaml);
+        Assert.Contains("x:Name=\"ReportTargetInfoText\"", xaml);
+        Assert.Contains("x:Name=\"ReportIdInfoText\"", xaml);
+        Assert.Contains("x:Name=\"ReportDigestText\"", xaml);
+
+        // 3. Verify Estate Portfolio Rollup Card
+        Assert.Contains("x:Name=\"EstateRollupCard\"", xaml);
+        Assert.Contains("x:Name=\"EstateEriBadge\"", xaml);
+        Assert.Contains("x:Name=\"EstateTotalTargetsText\"", xaml);
+        Assert.Contains("x:Name=\"EstateClearedTargetsText\"", xaml);
+        Assert.Contains("x:Name=\"EstateCriticalFindingsText\"", xaml);
+        Assert.Contains("x:Name=\"BtnGenerateEstateRollup\"", xaml);
+
+        // 4. Verify Multi-Format Export Hub Card
+        Assert.Contains("x:Name=\"ExportHubCard\"", xaml);
+        Assert.Contains("x:Name=\"BtnExportHubMarkdown\"", xaml);
+        Assert.Contains("x:Name=\"BtnExportHubHtml\"", xaml);
+        Assert.Contains("x:Name=\"BtnExportHubJson\"", xaml);
+        Assert.Contains("x:Name=\"BtnExportHubSarif\"", xaml);
+        Assert.Contains("x:Name=\"BtnExportHubJUnit\"", xaml);
+        Assert.Contains("x:Name=\"LastExportedPathText\"", xaml);
+        Assert.Contains("x:Name=\"BtnCopyExportedPath\"", xaml);
+
+        // 5. Verify Document Viewer Launchpad
+        Assert.Contains("x:Name=\"ViewerLaunchpadCard\"", xaml);
+        Assert.Contains("x:Name=\"BtnLaunchInAppPreview\"", xaml);
+        Assert.Contains("x:Name=\"BtnLaunchSystemViewer\"", xaml);
+        Assert.Contains("x:Name=\"BtnCopyDossierMarkdown\"", xaml);
+    }
+
+    [Fact]
+    public void ReportsWorkspace_DossierGenerationAndEstateRollup_ExecutionLogic_VerifiesAccurately()
+    {
+        var tempDb = Path.Combine(Path.GetTempPath(), $"ghozt_rpt_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            using (var store = new GhoztStore(tempDb))
+            {
+                // Target 1: Cleared target
+                var target1Id = store.NextId(IdKind.Target);
+                var target1 = new Target
+                {
+                    Id = target1Id,
+                    Name = "Autonomous Trading Dispatcher",
+                    Kind = "Executable",
+                    Environment = TargetEnvironment.Production,
+                    Access = AccessClass.Interact,
+                    BuildLabel = "v1.0.23-prod",
+                    BaseAddress = "C:\\Windows\\System32\\cmd.exe",
+                };
+                store.Save(target1);
+
+                // Target 2: Dev target with open finding
+                var target2Id = store.NextId(IdKind.Target);
+                var target2 = new Target
+                {
+                    Id = target2Id,
+                    Name = "Experimental Order Gateway",
+                    Kind = "Service",
+                    Environment = TargetEnvironment.Local,
+                    Access = AccessClass.StateChanging,
+                    BuildLabel = "v1.0.23-dev",
+                    BaseAddress = "http://127.0.0.1:8080",
+                };
+                store.Save(target2);
+
+                // Add evidence for target 1
+                var payload = "EVIDENCE_FOR_REPORT_GENERATOR_VERIFICATION_TEST";
+                store.Save(new Evidence
+                {
+                    Id = store.NextId(IdKind.Evidence),
+                    TargetId = target1Id,
+                    Kind = "telemetry:test",
+                    Summary = "Report verification telemetry evidence",
+                    Sha256 = Hashing.Sha256(payload),
+                    Payload = payload,
+                    SizeBytes = payload.Length,
+                    SourceAdapter = "UnitTestAdapter",
+                    CapturedAt = DateTimeOffset.Now,
+                });
+
+                // Add finding for target 2
+                store.Save(new Finding
+                {
+                    Id = store.NextId(IdKind.Fault),
+                    TargetId = target2Id,
+                    Title = "Gateway keepalive timeout drift",
+                    Severity = Severity.Critical,
+                    Expected = "Keepalive ping interval <= 500ms",
+                    Actual = "Keepalive timeout observed at 1450ms",
+                    Fingerprint = "FP_RPT_TEST_001",
+                    Maturity = FindingMaturity.FixReady,
+                    FirstSeenAt = DateTimeOffset.Now.AddDays(-1),
+                    LastSeenAt = DateTimeOffset.Now,
+                    ReproAttempts = 2,
+                });
+
+                // 1. Report Generator Execution
+                var reportGen = new ReportGenerator(store);
+                var report = reportGen.Generate(target1, "lead-auditor");
+
+                Assert.NotNull(report);
+                Assert.StartsWith("RPT-", report.ReportId, StringComparison.Ordinal);
+                Assert.Equal("Autonomous Trading Dispatcher", report.TargetName);
+                Assert.NotEmpty(report.Sha256Seal);
+                Assert.NotEmpty(report.MarkdownContent);
+                Assert.NotEmpty(report.HtmlContent);
+                Assert.NotEmpty(report.JsonContent);
+                Assert.NotEmpty(report.SarifContent);
+                Assert.NotEmpty(report.JUnitXmlContent);
+
+                // 2. Portfolio Rollup Execution
+                var rollupEngine = new PortfolioRollupEngine(store);
+                var rollup = rollupEngine.GenerateRollup();
+
+                Assert.NotNull(rollup);
+                Assert.Equal(2, rollup.TotalTargets);
+                Assert.NotEmpty(rollup.EstateReadinessIndex);
+                Assert.Single(rollup.Targets, t => t.CriticalFindingCount > 0);
+            }
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            if (File.Exists(tempDb)) File.Delete(tempDb);
+        }
+    }
 }
 
 

@@ -69,6 +69,7 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
                 ExportJUnitButton.IsEnabled = false;
                 OpenViewerButton.IsEnabled = false;
                 PreviewInAppButton.IsEnabled = false;
+                UpdateOperationsPanel(null);
             }
             else
             {
@@ -87,6 +88,10 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         {
             OnGenerate(this, new RoutedEventArgs());
         }
+        else
+        {
+            UpdateOperationsPanel(_currentReport);
+        }
     }
 
     private void OnGenerate(object sender, RoutedEventArgs e)
@@ -95,6 +100,7 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         if (target is null)
         {
             StatusText.Text = "No target selected";
+            UpdateOperationsPanel(null);
             return;
         }
 
@@ -102,6 +108,7 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         _currentReport = generator.Generate(target, "operator");
 
         RenderReport(_currentReport);
+        UpdateOperationsPanel(_currentReport);
 
         ExportMdButton.IsEnabled = true;
         ExportHtmlButton.IsEnabled = true;
@@ -242,6 +249,19 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         timer.Start();
     }
 
+    private void SyncExportedPath()
+    {
+        if (!string.IsNullOrWhiteSpace(_lastExportedPath))
+        {
+            LastExportedPathText.Text = _lastExportedPath;
+            BtnCopyExportedPath.IsEnabled = true;
+            BtnLaunchSystemViewer.IsEnabled = true;
+            OpenViewerButton.IsEnabled = true;
+            BtnLaunchInAppPreview.IsEnabled = true;
+            PreviewInAppButton.IsEnabled = true;
+        }
+    }
+
     private void OnExportMarkdown(object sender, RoutedEventArgs e)
     {
         if (_currentReport is null) return;
@@ -251,7 +271,8 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         Shell?.Log("RPT.EXPORT.MD", $"Exported markdown dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         ShowTemporaryButtonConfirmation(ExportMdButton, "Exported!", "Export Markdown");
-        OpenViewerButton.IsEnabled = true;
+        ShowTemporaryButtonConfirmation(BtnExportHubMarkdown, "Exported!", "Markdown (.md)");
+        SyncExportedPath();
     }
 
     private void OnExportHtml(object sender, RoutedEventArgs e)
@@ -263,7 +284,8 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         Shell?.Log("RPT.EXPORT.HTML", $"Exported HTML dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         ShowTemporaryButtonConfirmation(ExportHtmlButton, "Exported!", "Export HTML");
-        OpenViewerButton.IsEnabled = true;
+        ShowTemporaryButtonConfirmation(BtnExportHubHtml, "Exported!", "HTML (.html)");
+        SyncExportedPath();
     }
 
     private void OnExportJson(object sender, RoutedEventArgs e)
@@ -275,7 +297,8 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         Shell?.Log("RPT.EXPORT.JSON", $"Exported JSON dataset {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         ShowTemporaryButtonConfirmation(ExportJsonButton, "Exported!", "Export JSON");
-        OpenViewerButton.IsEnabled = true;
+        ShowTemporaryButtonConfirmation(BtnExportHubJson, "Exported!", "JSON (.json)");
+        SyncExportedPath();
     }
 
     private void OnExportSarif(object sender, RoutedEventArgs e)
@@ -287,8 +310,8 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         Shell?.Log("RPT.EXPORT.SARIF", $"Exported OASIS SARIF v2.1.0 dossier {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         ShowTemporaryButtonConfirmation(ExportSarifButton, "Exported!", "Export SARIF");
-        OpenViewerButton.IsEnabled = true;
-        PreviewInAppButton.IsEnabled = true;
+        ShowTemporaryButtonConfirmation(BtnExportHubSarif, "Exported!", "SARIF (.sarif)");
+        SyncExportedPath();
     }
 
     private void OnExportJUnit(object sender, RoutedEventArgs e)
@@ -300,8 +323,8 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         Shell?.Log("RPT.EXPORT.JUNIT", $"Exported JUnit XML report {_currentReport.ReportId} to disk.", Severity.Info,
             detail: _lastExportedPath, related: _currentReport.TargetId.ToString());
         ShowTemporaryButtonConfirmation(ExportJUnitButton, "Exported!", "Export JUnit");
-        OpenViewerButton.IsEnabled = true;
-        PreviewInAppButton.IsEnabled = true;
+        ShowTemporaryButtonConfirmation(BtnExportHubJUnit, "Exported!", "JUnit XML (.xml)");
+        SyncExportedPath();
     }
 
     private void OnOpenViewer(object sender, RoutedEventArgs e)
@@ -353,6 +376,30 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         catch { }
     }
 
+    private void OnCopyExportedPath(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastExportedPath)) return;
+        try
+        {
+            Clipboard.SetText(_lastExportedPath);
+            ShowTemporaryButtonConfirmation(BtnCopyExportedPath, "Copied!", "Copy Path");
+            StatusText.Text = "Copied exported file path to clipboard.";
+        }
+        catch { }
+    }
+
+    private void OnCopyDossierMarkdown(object sender, RoutedEventArgs e)
+    {
+        if (_currentReport is null) return;
+        try
+        {
+            Clipboard.SetText(_currentReport.MarkdownContent);
+            ShowTemporaryButtonConfirmation(BtnCopyDossierMarkdown, "Copied!", "Copy Report Markdown");
+            StatusText.Text = "Copied dossier markdown content to clipboard.";
+        }
+        catch { }
+    }
+
     private void OnClosePreview(object sender, RoutedEventArgs e)
     {
         DocumentPreviewDrawer.Visibility = Visibility.Collapsed;
@@ -364,10 +411,86 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         var rollup = rollupEngine.GenerateRollup();
 
         RenderPortfolioRollup(rollup);
+        UpdateOperationsPanelForRollup(rollup);
 
         Shell?.Log("RPT.PORTFOLIO.ROLLUP",
             $"Generated estate portfolio rollup for {rollup.TotalTargets} targets across estate. Readiness Index: {rollup.EstateReadinessIndex}",
             rollup.EstateReadinessIndex == "QUALIFIED" ? Severity.Info : Severity.High);
+    }
+
+    private void UpdateOperationsPanelForRollup(PortfolioRollupReport rollup)
+    {
+        EstateEriBadgeText.Text = $"ERI: {rollup.EstateReadinessIndex}";
+        EstateTotalTargetsText.Text = $"{rollup.TotalTargets} Targets";
+        EstateClearedTargetsText.Text = $"{rollup.ClearedTargets} / {rollup.DeniedOrBlockedTargets}";
+        EstateCriticalFindingsText.Text = $"{rollup.TotalCriticalFindings} Faults";
+    }
+
+    private void UpdateOperationsPanel(ForensicReport? report = null)
+    {
+        var hasReport = report != null;
+        if (hasReport)
+        {
+            ReportTargetInfoText.Text = $"{report!.TargetName} ({report.BuildLabel})";
+            ReportIdInfoText.Text = $"Report: {report.ReportId} · Verdict: {report.ClearanceVerdict}";
+            ReportDigestText.Text = $"SHA-256: {report.Sha256Seal}";
+            ReportSealBadgeText.Text = "SEALED & AUDITED";
+            ReportSealBadge.Background = (Brush)TryFindResource("State.VerifiedSoft");
+            ReportSealBadge.BorderBrush = (Brush)TryFindResource("State.Verified");
+            ReportSealBadgeText.Foreground = (Brush)TryFindResource("State.Verified");
+        }
+        else
+        {
+            var target = Shell?.Target;
+            ReportTargetInfoText.Text = target != null ? $"{target.Name} ({target.BuildLabel})" : "No target selected";
+            ReportIdInfoText.Text = "Report: Pending generation";
+            ReportDigestText.Text = "SHA-256: Unsealed";
+            ReportSealBadgeText.Text = "PENDING";
+            ReportSealBadge.Background = (Brush)TryFindResource("Surface.CardFaint");
+            ReportSealBadge.BorderBrush = (Brush)TryFindResource("Border.Subtle");
+            ReportSealBadgeText.Foreground = (Brush)TryFindResource("Text.Muted");
+        }
+
+        // Synchronize export hub button states
+        BtnExportHubMarkdown.IsEnabled = hasReport;
+        BtnExportHubHtml.IsEnabled = hasReport;
+        BtnExportHubJson.IsEnabled = hasReport;
+        BtnExportHubSarif.IsEnabled = hasReport;
+        BtnExportHubJUnit.IsEnabled = hasReport;
+        BtnLaunchInAppPreview.IsEnabled = hasReport || (!string.IsNullOrWhiteSpace(_lastExportedPath) && File.Exists(_lastExportedPath));
+        BtnLaunchSystemViewer.IsEnabled = !string.IsNullOrWhiteSpace(_lastExportedPath) && File.Exists(_lastExportedPath);
+        BtnCopyDossierMarkdown.IsEnabled = hasReport;
+        BtnCopyExportedPath.IsEnabled = !string.IsNullOrWhiteSpace(_lastExportedPath);
+
+        // Update Estate Portfolio metrics from store
+        try
+        {
+            var targets = App.Store.Targets();
+            EstateTotalTargetsText.Text = $"{targets.Count} Targets";
+            var clearanceEngine = new ClearanceEngine(App.Store);
+            var cleared = 0;
+            var blocked = 0;
+            var critical = 0;
+            foreach (var t in targets)
+            {
+                var dec = clearanceEngine.EvaluateTarget(t);
+                if (dec.Outcome == ClearanceOutcome.Cleared) cleared++;
+                else blocked++;
+                var findings = App.Store.Findings(t.Id);
+                critical += findings.Count(f => f.Severity == Severity.Critical && f.Maturity != FindingMaturity.Verified);
+            }
+            EstateClearedTargetsText.Text = $"{cleared} / {blocked}";
+            EstateCriticalFindingsText.Text = $"{critical} Faults";
+            var eriPercent = targets.Count > 0 ? (int)Math.Round((double)cleared / targets.Count * 100.0) : 100;
+            EstateEriBadgeText.Text = $"ERI: {eriPercent}%";
+        }
+        catch
+        {
+            EstateTotalTargetsText.Text = "0 Targets";
+            EstateClearedTargetsText.Text = "0 / 0";
+            EstateCriticalFindingsText.Text = "0 Faults";
+            EstateEriBadgeText.Text = "ERI: --";
+        }
     }
 
     private void RenderPortfolioRollup(PortfolioRollupReport rollup)

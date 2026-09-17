@@ -49,49 +49,234 @@
             </WrapPanel>
         </Border>
 
-        <!-- Report Content -->
+        <!-- Report Content & Operations Terminal -->
         <Grid Grid.Row="1">
-            <ScrollViewer Padding="24,20" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="ReportContainer" MaxWidth="900" HorizontalAlignment="Left">
-                    <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
-                            BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="28">
-                        <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="Forensic Examination Dossier Builder" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
-                            <TextBlock Margin="0,8,0,0" Text="Compiles complete target evidence, clearance gates, state lattice metrics, and deviation traces into verifiable reports."
-                                       Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="480" />
+            </Grid.ColumnDefinitions>
 
-            <!-- Embedded Document Preview Drawer -->
-            <Border x:Name="DocumentPreviewDrawer" Visibility="Collapsed" Background="{DynamicResource Surface.Panel}"
-                    BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0" Padding="24,16">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="DOCUMENT PREVIEW" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <TextBlock x:Name="PreviewDocTitle" Style="{StaticResource Type.MonoStyle}" FontSize="12" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="Copy All" Click="OnCopyPreviewText" Margin="0,0,8,0" Padding="8,2" ToolTip="Copy document content to clipboard" />
-                            <Button Content="Close Preview" Click="OnClosePreview" Padding="8,2" ToolTip="Close document preview drawer" />
-                        </StackPanel>
+            <!-- Column 0: Primary Dossier & Portfolio Rollup Viewport -->
+            <Grid Grid.Column="0">
+                <ScrollViewer Padding="24,20" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ReportContainer" HorizontalAlignment="Stretch">
+                        <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="28">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Forensic Examination Dossier Builder" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Margin="0,8,0,0" Text="Compiles complete target evidence, clearance gates, state lattice metrics, and deviation traces into verifiable reports."
+                                           Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Embedded Document Preview Drawer (Overlays Column 0 when toggled) -->
+                <Border x:Name="DocumentPreviewDrawer" Visibility="Collapsed" Background="{DynamicResource Surface.Panel}"
+                        BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,1,0,0" Padding="24,16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="DOCUMENT PREVIEW" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <TextBlock x:Name="PreviewDocTitle" Style="{StaticResource Type.MonoStyle}" FontSize="12" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="Copy All" Click="OnCopyPreviewText" Margin="0,0,8,0" Padding="8,2" ToolTip="Copy document content to clipboard" />
+                                <Button Content="Close Preview" Click="OnClosePreview" Padding="8,2" ToolTip="Close document preview drawer" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBox Grid.Row="1" x:Name="PreviewDocContent" IsReadOnly="True" TextWrapping="Wrap"
+                                 AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                 Background="{DynamicResource Surface.Inset}" Foreground="{DynamicResource Text.Primary}"
+                                 FontFamily="{StaticResource Font.Mono}" FontSize="11" Padding="14"
+                                 BorderBrush="{DynamicResource Border.Card}" BorderThickness="1" />
                     </Grid>
-                    <TextBox Grid.Row="1" x:Name="PreviewDocContent" IsReadOnly="True" TextWrapping="Wrap"
-                             AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                             Background="{DynamicResource Surface.Inset}" Foreground="{DynamicResource Text.Primary}"
-                             FontFamily="{StaticResource Font.Mono}" FontSize="11" Padding="14"
-                             BorderBrush="{DynamicResource Border.Card}" BorderThickness="1" />
-                </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Column 1: Executive Report Operations & Portfolio Analytics Panel -->
+            <Border Grid.Column="1" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1,0,0,0" Background="{DynamicResource Surface.CardFaint}">
+                <ScrollViewer Padding="20,18" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ReportOperationsPanel">
+                        <!-- Panel Title & Micro-label -->
+                        <TextBlock Text="REPORT OPERATIONS &amp; DISPATCH TERMINAL" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,0,0,8" />
+
+                        <!-- Report Authentication & Merkle Sealing Card -->
+                        <Border x:Name="ReportSealingCard" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Report Cryptographic Seal" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" />
+                                        <TextBlock Text="Evidence tree lineage (Patent §33)" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="ReportSealBadge" Background="{DynamicResource State.VerifiedSoft}" BorderBrush="{DynamicResource State.Verified}"
+                                            BorderThickness="1" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                                        <TextBlock x:Name="ReportSealBadgeText" Text="SEALED &amp; AUDITED" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource State.Verified}" />
+                                    </Border>
+                                </Grid>
+
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="TARGET IDENTITY &amp; REPORT ID" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="ReportTargetInfoText" Text="No target selected" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Text.Primary}" Margin="0,2,0,0" />
+                                        <TextBlock x:Name="ReportIdInfoText" Text="Report: Pending generation" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="SIGNATORY AUTHORITY" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="ReportSignatoryText" Text="release-approver@capital-iz.com" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="SHA-256 MERKLE DIGEST" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="ReportDigestText" Text="SHA-256: Unsealed" Style="{StaticResource Type.MonoStyle}" FontSize="10" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Estate Portfolio Governance Card (Patent §41) -->
+                        <Border x:Name="EstateRollupCard" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Estate Portfolio Governance" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" />
+                                        <TextBlock Text="Multi-target readiness (Patent §41)" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="EstateEriBadge" Background="{DynamicResource Authority.Soft}" BorderBrush="{DynamicResource Authority.Clearance}"
+                                            BorderThickness="1" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                                        <TextBlock x:Name="EstateEriBadgeText" Text="ERI: --" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Authority.Clearance}" />
+                                    </Border>
+                                </Grid>
+
+                                <Grid Margin="0,4,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Total Monitored Targets" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="EstateTotalTargetsText" Text="0 Targets" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource Text.Primary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Cleared / Blocked" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="EstateClearedTargetsText" Text="0 / 0" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,4,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Estate Critical Risks" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="EstateCriticalFindingsText" Text="0 Faults" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource State.Fault}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Governance Model" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock Text="Patent §41 P511" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Button Content="Generate Estate Rollup" Click="OnPortfolioRollup"
+                                        x:Name="BtnGenerateEstateRollup" HorizontalAlignment="Stretch"
+                                        ToolTip="Compiles cross-product quality evaluation across the full Capital-Iz estate"
+                                        AutomationProperties.Name="Generate portfolio quality rollup" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Multi-Format Export Hub Card -->
+                        <Border x:Name="ExportHubCard" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Multi-Format Export Hub" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" />
+                                <TextBlock Text="Verifiable technical and machine-readable compilation" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,10" />
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="Markdown (.md)" Click="OnExportMarkdown"
+                                            x:Name="BtnExportHubMarkdown" IsEnabled="False" Margin="0,0,4,6"
+                                            ToolTip="Exports technical report formatted in Markdown" />
+                                    <Button Grid.Column="1" Content="HTML (.html)" Click="OnExportHtml"
+                                            x:Name="BtnExportHubHtml" IsEnabled="False" Margin="4,0,0,6"
+                                            ToolTip="Exports styled standalone HTML report with SVG charts" />
+                                </Grid>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="JSON (.json)" Click="OnExportJson"
+                                            x:Name="BtnExportHubJson" IsEnabled="False" Margin="0,0,4,6"
+                                            ToolTip="Exports machine-readable evidence dataset" />
+                                    <Button Grid.Column="1" Content="SARIF (.sarif)" Click="OnExportSarif"
+                                            x:Name="BtnExportHubSarif" IsEnabled="False" Margin="4,0,0,6"
+                                            ToolTip="Exports OASIS SARIF v2.1.0 report for CI/CD security scanning" />
+                                </Grid>
+
+                                <Button Content="JUnit XML (.xml)" Click="OnExportJUnit"
+                                        x:Name="BtnExportHubJUnit" IsEnabled="False" Margin="0,0,0,10" HorizontalAlignment="Stretch"
+                                        ToolTip="Exports JUnit XML testsuite report for automated CI test runners" />
+
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="10,6">
+                                    <StackPanel>
+                                        <TextBlock Text="LAST EXPORTED ARTEFACT" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="LastExportedPathText" Text="None" Style="{StaticResource Type.MonoStyle}" FontSize="10" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,2,0,4" />
+                                        <Button Content="Copy Path" Click="OnCopyExportedPath" x:Name="BtnCopyExportedPath" IsEnabled="False" Padding="6,2" HorizontalAlignment="Left" FontSize="10" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Document Viewer Launchpad Card -->
+                        <Border x:Name="ViewerLaunchpadCard" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Document Viewer &amp; Quick Reader" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" Margin="0,0,0,10" />
+
+                                <Button Style="{StaticResource Button.Primary}" Content="Preview Document In-App" Click="OnPreviewInApp"
+                                        x:Name="BtnLaunchInAppPreview" IsEnabled="False" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                        ToolTip="Reads the exported dossier directly inside an embedded in-app viewer"
+                                        AutomationProperties.Name="Preview report in-app" />
+
+                                <Button Content="Open in System Default Viewer" Click="OnOpenViewer"
+                                        x:Name="BtnLaunchSystemViewer" IsEnabled="False" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                        ToolTip="Opens the exported dossier in the system's default viewer" />
+
+                                <Button Content="Copy Report Markdown" Click="OnCopyDossierMarkdown"
+                                        x:Name="BtnCopyDossierMarkdown" IsEnabled="False" HorizontalAlignment="Stretch"
+                                        ToolTip="Copies the complete technical dossier markdown to clipboard" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>
