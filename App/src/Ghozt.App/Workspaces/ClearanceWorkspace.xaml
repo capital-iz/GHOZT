@@ -42,18 +42,174 @@
             </WrapPanel>
         </Border>
 
-        <!-- Gates Content -->
-        <ScrollViewer Grid.Row="1" Padding="24,20" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="ClearanceContainer" MaxWidth="900" HorizontalAlignment="Left">
-                <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
-                        BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="28">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Release Policy Clearance &amp; Certification Gate" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
-                        <TextBlock Margin="0,8,0,0" Text="Evaluate targets against mandatory and operational release policy gates. Certified builds receive cryptographic authority seals."
-                                   Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+        <!-- Workspace Content (Two-Column Layout) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="480" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Column 0: Gates & Dossier ScrollViewer -->
+            <ScrollViewer Grid.Column="0" Padding="24,20" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ClearanceContainer">
+                    <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                            BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="28">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Release Policy Clearance &amp; Certification Gate" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                            <TextBlock Margin="0,8,0,0" Text="Evaluate targets against mandatory and operational release policy gates. Certified builds receive cryptographic authority seals."
+                                       Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Column 1: Cryptographic Authority Clearance Panel -->
+            <Border Grid.Column="1" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1,0,0,0" Background="{DynamicResource Surface.CardFaint}">
+                <ScrollViewer Padding="20,20" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ClearanceAuthorityPanel">
+                        <!-- Panel Title & Micro-label -->
+                        <TextBlock Text="AUTHORITY CLEARANCE CONSOLE" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,0,0,8" />
+                        
+                        <!-- Master Cryptographic Authority Seal Card -->
+                        <Border x:Name="AuthSealCard" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Authority.Clearance}"
+                                BorderThickness="2" CornerRadius="{StaticResource Radius.Card}" Padding="18" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Capital-Iz Release Seal" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource Authority.Clearance}" />
+                                        <TextBlock x:Name="AuthSealTargetText" Text="Target: None" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="AuthSealStatusBadge" Background="{DynamicResource Authority.Soft}" BorderBrush="{DynamicResource Authority.Clearance}"
+                                            BorderThickness="1" CornerRadius="4" Padding="10,4" VerticalAlignment="Center">
+                                        <TextBlock x:Name="AuthSealStatusText" Text="UNEVALUATED" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Authority.Clearance}" />
+                                    </Border>
+                                </Grid>
+
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,10">
+                                    <StackPanel>
+                                        <TextBlock Text="SIGNATORY AUTHORITY" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthSignatoryText" Text="release-approver@capital-iz.com" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Text.Primary}" Margin="0,2,0,0" />
+                                        <TextBlock x:Name="AuthEvaluatedAtText" Text="Evaluated: Pending" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8">
+                                    <StackPanel>
+                                        <TextBlock Text="MERKLE EVIDENCE DIGEST" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthDigestText" Text="SHA-256: Unsealed" Style="{StaticResource Type.MonoStyle}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Evidence Plane Tamper Assay Card -->
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Evidence Plane Tamper Assay" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" />
+                                        <TextBlock Text="Cryptographic payload verification (Patent §33)" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="AuthTamperBadge" Background="{DynamicResource State.VerifiedSoft}" BorderBrush="{DynamicResource State.Verified}"
+                                            BorderThickness="1" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                                        <TextBlock x:Name="AuthTamperBadgeText" Text="INTACT" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource State.Verified}" />
+                                    </Border>
+                                </Grid>
+
+                                <Grid Margin="0,4,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Total Evidence Items" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthEvidenceCountText" Text="0 Items" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource Text.Primary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Tamper Verification" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthTamperDetailsText" Text="0 Corrupt / 100% Intact" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource State.Verified}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Button Content="Verify Evidence Integrity" Click="OnVerifyCertificate"
+                                        x:Name="BtnAuthVerify" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+                                        ToolTip="Audits all target evidence item SHA-256 payloads against tampering"
+                                        AutomationProperties.Name="Verify evidence plane integrity" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Risk Envelope & Gate Metrics Card -->
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="Target Risk Envelope &amp; Gate Metrics" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" Margin="0,0,0,10" />
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Gate Pass Ratio" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthGateRatioText" Text="-- / --" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource Text.Primary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Mandatory Gates" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthMandatoryStatusText" Text="Pending" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,4,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Access Class" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthAccessClassText" Text="ObserveOnly" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Open Deviations" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="AuthOpenFaultsText" Text="0 Defects" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Authority Action Launchpad -->
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Authority Clearance Actions" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" Margin="0,0,0,10" />
+
+                                <Button Style="{StaticResource Button.Primary}" Content="Sign &amp; Seal Decision" Click="OnSignDecision"
+                                        x:Name="BtnAuthSign" IsEnabled="False" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                        ToolTip="Issues signed release decision cryptographically sealed into evidence plane"
+                                        AutomationProperties.Name="Sign and seal release decision" />
+
+                                <Button Content="Export Release Certificate" Click="OnExportCertificate"
+                                        x:Name="BtnAuthExport" IsEnabled="False" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                        ToolTip="Exports cryptographically sealed release certificate to disk"
+                                        AutomationProperties.Name="Export release certificate" />
+
+                                <Button Content="Run 12-Domain Self-Test Suite" Click="OnRunSelfTest"
+                                        x:Name="BtnAuthSelfTest" HorizontalAlignment="Stretch"
+                                        ToolTip="Executes autonomous 12-domain self-test suite and issues Self-Hosting Quality Certificate"
+                                        AutomationProperties.Name="Execute 12-domain self-test suite" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                </ScrollViewer>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

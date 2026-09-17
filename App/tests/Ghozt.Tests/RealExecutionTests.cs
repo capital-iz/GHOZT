@@ -1320,6 +1320,166 @@ public sealed class RealExecutionTests : IDisposable
             if (File.Exists(tempDb)) File.Delete(tempDb);
         }
     }
+
+    [Fact]
+    public void ClearanceAuthorityPanel_And_RegressionGuardInspector_MarkupContracts_Exist()
+    {
+        string? clearanceXamlPath = null;
+        string? regressionsXamlPath = null;
+
+        var candidates = new[]
+        {
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces")),
+            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "src", "Ghozt.App", "Workspaces")),
+            Path.GetFullPath(@"App\src\Ghozt.App\Workspaces"),
+            Path.GetFullPath(@"src\Ghozt.App\Workspaces"),
+        };
+
+        foreach (var dir in candidates)
+        {
+            if (Directory.Exists(dir))
+            {
+                var clr = Path.Combine(dir, "ClearanceWorkspace.xaml");
+                var reg = Path.Combine(dir, "RegressionsWorkspace.xaml");
+                if (File.Exists(clr) && File.Exists(reg))
+                {
+                    clearanceXamlPath = clr;
+                    regressionsXamlPath = reg;
+                    break;
+                }
+            }
+        }
+
+        // 1. Verify ClearanceWorkspace.xaml two-column layout and ClearanceAuthorityPanel contract
+        Assert.True(clearanceXamlPath != null && File.Exists(clearanceXamlPath), $"ClearanceWorkspace.xaml should be resolved.");
+        var clearanceXaml = File.ReadAllText(clearanceXamlPath);
+
+        Assert.Contains("x:Name=\"ClearanceAuthorityPanel\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthSealCard\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthSealStatusBadge\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthSealStatusText\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthSignatoryText\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthDigestText\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthTamperBadge\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthTamperDetailsText\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthGateRatioText\"", clearanceXaml);
+        Assert.Contains("x:Name=\"AuthMandatoryStatusText\"", clearanceXaml);
+        Assert.Contains("x:Name=\"BtnAuthSign\"", clearanceXaml);
+        Assert.Contains("x:Name=\"BtnAuthExport\"", clearanceXaml);
+        Assert.Contains("x:Name=\"BtnAuthVerify\"", clearanceXaml);
+
+        // 2. Verify RegressionsWorkspace.xaml two-column layout and GuardOperationsPanel contract
+        Assert.True(regressionsXamlPath != null && File.Exists(regressionsXamlPath), $"RegressionsWorkspace.xaml should be resolved.");
+        var regressionsXaml = File.ReadAllText(regressionsXamlPath);
+
+        Assert.Contains("x:Name=\"GuardOperationsPanel\"", regressionsXaml);
+        Assert.Contains("x:Name=\"GuardDossierCard\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorGuardIdText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorGuardTitleText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorExpectedText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorObservedText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorMutationScoreBadge\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorMutationScoreText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorMutantsKilledText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"InspectorMutantsSurvivedText\"", regressionsXaml);
+        Assert.Contains("x:Name=\"BtnExecuteSingleGuard\"", regressionsXaml);
+        Assert.Contains("x:Name=\"BtnTerminalMutationAssay\"", regressionsXaml);
+        Assert.Contains("x:Name=\"BtnTerminalChangeImpact\"", regressionsXaml);
+    }
+
+    [Fact]
+    public async Task ClearanceAuthorityAndRegressionTerminal_ExecutionLogic_VerifiesAccurately()
+    {
+        var tempDb = Path.Combine(Path.GetTempPath(), $"ghozt_clr_reg_{Guid.NewGuid():N}.db");
+        try
+        {
+            using (var store = new GhoztStore(tempDb))
+            {
+                var targetId = store.NextId(IdKind.Target);
+                var target = new Target
+                {
+                    Id = targetId,
+                    Name = "Terminal Verification Target",
+                    Kind = "Executable",
+                    Environment = TargetEnvironment.Local,
+                    Access = AccessClass.Interact,
+                    BuildLabel = "v1.0.22-test",
+                    BaseAddress = "C:\\Windows\\notepad.exe",
+                };
+                store.Save(target);
+
+                // 1. Evidence plane tamper check
+                var validPayload = "sample_test_evidence_payload";
+                var evidence = new Evidence
+                {
+                    Id = store.NextId(IdKind.Evidence),
+                    TargetId = targetId,
+                    Kind = "telemetry:test",
+                    Summary = "Test Evidence Item",
+                    Sha256 = Hashing.Sha256(validPayload),
+                    Payload = validPayload,
+                    SizeBytes = validPayload.Length,
+                    SourceAdapter = "UnitTest",
+                    CapturedAt = DateTimeOffset.Now,
+                };
+                store.Save(evidence);
+
+                var evidenceItems = store.EvidenceItems(targetId);
+                var tampered = evidenceItems.Count(item =>
+                    !string.IsNullOrWhiteSpace(item.Payload) &&
+                    !string.IsNullOrWhiteSpace(item.Sha256) &&
+                    item.Sha256 != Hashing.Sha256(item.Payload));
+                Assert.Equal(0, tampered);
+
+                // 2. Clearance Evaluation
+                var clearanceEngine = new ClearanceEngine(store);
+                var decision = clearanceEngine.EvaluateTarget(target, "test-operator");
+                Assert.NotNull(decision);
+                Assert.Equal(12, decision.Gates.Count);
+
+                // 3. Regression Guards Generation
+                var finding = new Finding
+                {
+                    Id = store.NextId(IdKind.Fault),
+                    TargetId = targetId,
+                    Title = "Buffer overflow invariant check",
+                    Severity = Severity.High,
+                    Expected = "Buffer capacity must not be exceeded",
+                    Actual = "Buffer overflow observed at offset 0x40",
+                    Fingerprint = "FP_TEST_001",
+                    Maturity = FindingMaturity.FixReady,
+                    FirstSeenAt = DateTimeOffset.Now.AddDays(-1),
+                    LastSeenAt = DateTimeOffset.Now,
+                    ReproAttempts = 3,
+                };
+                store.Save(finding);
+
+                var regEngine = new RegressionEngine(store);
+                var guards = regEngine.GenerateGuards(targetId);
+                Assert.Single(guards);
+                var guard = guards[0];
+                Assert.Equal(GuardStatus.Passing, guard.Status);
+                Assert.Contains("Buffer capacity", guard.ExpectedBehavior);
+
+                // 4. Single Guard Evaluation
+                var (passes, note) = regEngine.EvaluateGuard(guard, target);
+                Assert.True(passes);
+                Assert.Contains("verified", note, StringComparison.OrdinalIgnoreCase);
+
+                // 5. Mutation Assay Verification
+                var efficacyReport = await regEngine.VerifyGuardEfficacyAsync(target);
+                Assert.NotNull(efficacyReport);
+                Assert.True(efficacyReport.TotalMutants > 0);
+                Assert.True(efficacyReport.MutationScore >= 0.0 && efficacyReport.MutationScore <= 1.0);
+            }
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            if (File.Exists(tempDb)) File.Delete(tempDb);
+        }
+    }
 }
+
 
 

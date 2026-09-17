@@ -51,18 +51,183 @@
             </Grid>
         </Border>
 
-        <!-- Guards List -->
-        <ScrollViewer Grid.Row="1" Padding="20,16" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="GuardsPanel">
-                <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
-                        BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="Regression Guards &amp; Defect Mitigations" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
-                        <TextBlock Margin="0,8,0,0" Text="Automated guards derived from confirmed deviations to verify that bugs remain fixed across new builds and releases."
-                                   Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+        <!-- Workspace Content (Two-Column Layout) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="480" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Column 0: Guards List -->
+            <ScrollViewer Grid.Column="0" Padding="20,16" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="GuardsPanel">
+                    <Border x:Name="EmptyState" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                            BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="24">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="Regression Guards &amp; Defect Mitigations" Style="{StaticResource Type.HeadingStyle}" HorizontalAlignment="Center" />
+                            <TextBlock Margin="0,8,0,0" Text="Automated guards derived from confirmed deviations to verify that bugs remain fixed across new builds and releases."
+                                       Style="{StaticResource Type.CaptionStyle}" TextAlignment="Center" MaxWidth="500" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Column 1: Guard Operations & Mutation Terminal -->
+            <Border Grid.Column="1" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1,0,0,0" Background="{DynamicResource Surface.CardFaint}">
+                <ScrollViewer Padding="20,16" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="GuardOperationsPanel">
+                        <!-- Panel Title & Micro-label -->
+                        <TextBlock Text="GUARD INSPECTION &amp; MUTATION TERMINAL" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,0,0,8" />
+
+                        <!-- Selected Guard Dossier Card -->
+                        <Border x:Name="GuardDossierCard" Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}"
+                                BorderThickness="1" CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock x:Name="InspectorGuardIdText" Text="NO GUARD SELECTED" Style="{StaticResource Type.MonoStyle}" FontSize="12" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorGuardTitleText" Text="Select a guard card on the left to inspect" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource Text.Primary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="InspectorStatusBadge" Background="{DynamicResource Surface.CardFaint}" BorderBrush="{DynamicResource Border.Subtle}"
+                                            BorderThickness="1" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                                        <TextBlock x:Name="InspectorStatusText" Text="IDLE" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Text.Muted}" />
+                                    </Border>
+                                </Grid>
+
+                                <!-- Invariant Contract -->
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="EXPECTED INVARIANT BEHAVIOR" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorExpectedText" Text="Expected behavior will appear here when a guard is selected." Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Source Finding & Observed Failure -->
+                                <Border Background="{DynamicResource Surface.Inset}" BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <TextBlock Text="SOURCE DEFECT &amp; OBSERVED FAILURE" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorObservedText" Text="Source defect observation details will appear here." Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Guard Metadata -->
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Severity / Class" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorSeverityText" Text="Medium" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Text.Primary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Last Evaluated" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorLastEvaluatedText" Text="Never" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Mutation Assay & False-Confidence Matrix Card -->
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Mutation Efficacy Matrix" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" />
+                                        <TextBlock Text="False-confidence detection (Patent §31)" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="InspectorMutationScoreBadge" Background="{DynamicResource State.VerifiedSoft}" BorderBrush="{DynamicResource State.Verified}"
+                                            BorderThickness="1" CornerRadius="4" Padding="8,3" VerticalAlignment="Center">
+                                        <TextBlock x:Name="InspectorMutationScoreText" Text="μ = 100%" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource State.Verified}" />
+                                    </Border>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Mutants Killed" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorMutantsKilledText" Text="-- Killed" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource State.Verified}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Mutants Survived" Style="{StaticResource Type.MicroLabelStyle}" Foreground="{DynamicResource Text.Muted}" />
+                                        <TextBlock x:Name="InspectorMutantsSurvivedText" Text="0 Survived" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock x:Name="InspectorEfficacyVerdictText" Text="Run mutation assays to verify guard sensitivity against seeded artificial faults." Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" TextWrapping="Wrap" Margin="0,2,0,10" />
+
+                                <Button Content="Execute Mutation Assays" Click="OnRunMutationAssays"
+                                        x:Name="BtnTerminalMutationAssay" HorizontalAlignment="Stretch"
+                                        ToolTip="Evaluates guard efficacy by seeding artificial faults into target invariants"
+                                        AutomationProperties.Name="Run mutation assays" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Change Impact & Lattice Trace Card -->
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Change Impact Trace" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" />
+                                        <TextBlock Text="Lattice node correlation (Patent §31)" Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Muted}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" x:Name="InspectorRiskBadge" Background="{DynamicResource Surface.CardFaint}" BorderBrush="{DynamicResource Border.Subtle}"
+                                            BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                        <TextBlock x:Name="InspectorRiskBadgeText" Text="LOW RISK" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource Text.Muted}" />
+                                    </Border>
+                                </Grid>
+
+                                <TextBlock x:Name="InspectorImpactDetailsText" Text="No active change impact assessment. Click 'Change Impact' to analyze modified source files against this guard." Style="{StaticResource Type.CaptionStyle}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                                <Button Content="Analyze Change Impact" Click="OnAnalyzeChangeImpact"
+                                        x:Name="BtnTerminalChangeImpact" HorizontalAlignment="Stretch"
+                                        ToolTip="Scans modified target source files to determine affected State Lattice nodes"
+                                        AutomationProperties.Name="Analyze change impact" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Guard Action Launchpad Card -->
+                        <Border Background="{DynamicResource Surface.Card}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius.Card}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="Guard Operational Actions" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource Text.Primary}" Margin="0,0,0,10" />
+
+                                <Button Style="{StaticResource Button.Primary}" Content="Execute Selected Guard" Click="OnExecuteSelectedGuard"
+                                        x:Name="BtnExecuteSingleGuard" IsEnabled="False" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                        ToolTip="Executes only the currently selected regression guard against the target"
+                                        AutomationProperties.Name="Execute selected guard" />
+
+                                <Button Content="Run Full Regression Suite" Click="OnRunSuite"
+                                        x:Name="BtnTerminalRunSuite" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                        ToolTip="Executes all regression guards across target"
+                                        AutomationProperties.Name="Execute full suite" />
+
+                                <Button Content="Export Suite (.json)" Click="OnExportSuite"
+                                        x:Name="BtnTerminalExportSuite" HorizontalAlignment="Stretch"
+                                        ToolTip="Exports all regression guards as machine-readable JSON"
+                                        AutomationProperties.Name="Export regression suite" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                </ScrollViewer>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

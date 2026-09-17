@@ -22,6 +22,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
             ClearanceSummaryText.Text = "No target selected";
             if (SignButton is not null) SignButton.IsEnabled = false;
             if (ExportCertButton is not null) ExportCertButton.IsEnabled = false;
+            UpdateAuthorityPanel(null);
         }
         else
         {
@@ -58,6 +59,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
                 ClearanceSummaryText.Text = "No target selected";
                 SignButton.IsEnabled = false;
                 ExportCertButton.IsEnabled = false;
+                UpdateAuthorityPanel(null);
             }
             else
             {
@@ -84,6 +86,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
         if (target is null)
         {
             ClearanceSummaryText.Text = "No target selected";
+            UpdateAuthorityPanel(null);
             return;
         }
 
@@ -93,6 +96,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
         RenderDecision(_currentDecision);
         SignButton.IsEnabled = true;
         ExportCertButton.IsEnabled = true;
+        UpdateAuthorityPanel(_currentDecision);
     }
 
     private void RenderDecision(ClearanceDecision decision)
@@ -355,6 +359,13 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
         SignButton.IsEnabled = false;
         SignButton.Content = "Signed & Sealed";
         ExportCertButton.IsEnabled = true;
+        if (BtnAuthSign is not null)
+        {
+            BtnAuthSign.IsEnabled = false;
+            BtnAuthSign.Content = "Signed & Sealed";
+        }
+        if (BtnAuthExport is not null) BtnAuthExport.IsEnabled = true;
+        UpdateAuthorityPanel(_currentDecision);
     }
 
     private void OnExportCertificate(object sender, RoutedEventArgs e)
@@ -433,6 +444,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
                 ClearanceSummaryText.Text = $"TAMPER DETECTED: {tamperedCount} evidence item(s) have invalid SHA-256 payload checksums!";
                 Shell?.Log("CLR.CERT.TAMPER", $"Certificate audit failed: {tamperedCount} evidence items failed cryptographic verification.", Severity.Critical,
                     related: target.Id.ToString());
+                UpdateAuthorityPanel(decisionToVerify);
                 return;
             }
 
@@ -441,6 +453,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
                 related: target.Id.ToString(), detail: $"Digest: {decisionToVerify.EvidenceDigest}");
 
             RenderDecision(decisionToVerify);
+            UpdateAuthorityPanel(decisionToVerify);
         }
         catch (System.Exception ex)
         {
@@ -874,6 +887,125 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
             areaBorder.Child = areaStack;
             ClearanceContainer.Children.Add(areaBorder);
         }
+    }
+
+    private void UpdateAuthorityPanel(ClearanceDecision? decision = null)
+    {
+        if (AuthSealTargetText is null) return;
+
+        var target = Shell?.Target;
+        if (target is null)
+        {
+            AuthSealTargetText.Text = "Target: None";
+            AuthSealStatusText.Text = "UNEVALUATED";
+            AuthSealStatusBadge.Background = (Brush)TryFindResource("Authority.Soft");
+            AuthSealStatusBadge.BorderBrush = (Brush)TryFindResource("Authority.Clearance");
+            AuthSealStatusText.Foreground = (Brush)TryFindResource("Authority.Clearance");
+            AuthSealCard.BorderBrush = (Brush)TryFindResource("Authority.Clearance");
+            AuthSignatoryText.Text = "release-approver@capital-iz.com";
+            AuthEvaluatedAtText.Text = "Evaluated: None";
+            AuthDigestText.Text = "SHA-256: Unsealed";
+            AuthTamperBadgeText.Text = "INTACT";
+            AuthTamperBadge.Background = (Brush)TryFindResource("State.VerifiedSoft");
+            AuthTamperBadge.BorderBrush = (Brush)TryFindResource("State.Verified");
+            AuthTamperBadgeText.Foreground = (Brush)TryFindResource("State.Verified");
+            AuthEvidenceCountText.Text = "0 Items";
+            AuthTamperDetailsText.Text = "0 Corrupt / 100% Intact";
+            AuthTamperDetailsText.Foreground = (Brush)TryFindResource("State.Verified");
+            AuthGateRatioText.Text = "-- / --";
+            AuthMandatoryStatusText.Text = "Pending";
+            AuthMandatoryStatusText.Foreground = (Brush)TryFindResource("Text.Secondary");
+            AuthAccessClassText.Text = "None";
+            AuthOpenFaultsText.Text = "0 Defects";
+            AuthOpenFaultsText.Foreground = (Brush)TryFindResource("State.Verified");
+            if (BtnAuthSign is not null) BtnAuthSign.IsEnabled = false;
+            if (BtnAuthExport is not null) BtnAuthExport.IsEnabled = false;
+            return;
+        }
+
+        AuthSealTargetText.Text = $"Target: {target.Name} ({target.Id})" + (string.IsNullOrWhiteSpace(target.BuildLabel) ? "" : $" · {target.BuildLabel}");
+
+        if (decision is not null)
+        {
+            var isCleared = decision.Outcome == ClearanceOutcome.Cleared;
+            AuthSealStatusText.Text = decision.Outcome.ToString().ToUpperInvariant();
+            AuthSealStatusBadge.Background = (Brush)(isCleared ? TryFindResource("Authority.Soft") : TryFindResource("State.FaultSoft"));
+            AuthSealStatusBadge.BorderBrush = (Brush)(isCleared ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault"));
+            AuthSealStatusText.Foreground = (Brush)(isCleared ? TryFindResource("Authority.Clearance") : TryFindResource("State.Fault"));
+            AuthSealCard.BorderBrush = (Brush)(isCleared ? TryFindResource("Authority.Clearance") : TryFindResource("Border.Card"));
+
+            AuthSignatoryText.Text = string.IsNullOrWhiteSpace(decision.DecidedBy) ? "release-approver@capital-iz.com" : decision.DecidedBy;
+            AuthEvaluatedAtText.Text = $"Evaluated: {decision.DecidedAt:yyyy-MM-dd HH:mm:ss}";
+            AuthDigestText.Text = string.IsNullOrWhiteSpace(decision.EvidenceDigest) ? "Digest: None" : $"SHA-256: {decision.EvidenceDigest}";
+
+            var passed = decision.Gates.Count(g => g.Passed);
+            var total = decision.Gates.Count;
+            AuthGateRatioText.Text = $"{passed}/{total} Gates";
+
+            var mandatoryPassed = decision.Gates.Where(g => g.Mandatory).All(g => g.Passed);
+            AuthMandatoryStatusText.Text = mandatoryPassed ? "PASSED" : "FAILED";
+            AuthMandatoryStatusText.Foreground = (Brush)(mandatoryPassed ? TryFindResource("State.Verified") : TryFindResource("State.Fault"));
+
+            if (BtnAuthSign is not null)
+            {
+                BtnAuthSign.IsEnabled = true;
+                BtnAuthSign.Content = "Sign & Seal Decision";
+            }
+            if (BtnAuthExport is not null) BtnAuthExport.IsEnabled = true;
+        }
+        else
+        {
+            AuthSealStatusText.Text = "UNEVALUATED";
+            AuthSealStatusBadge.Background = (Brush)TryFindResource("Authority.Soft");
+            AuthSealStatusBadge.BorderBrush = (Brush)TryFindResource("Authority.Clearance");
+            AuthSealStatusText.Foreground = (Brush)TryFindResource("Authority.Clearance");
+            AuthSealCard.BorderBrush = (Brush)TryFindResource("Authority.Clearance");
+            AuthSignatoryText.Text = "release-approver@capital-iz.com";
+            AuthEvaluatedAtText.Text = "Evaluated: Pending";
+            AuthDigestText.Text = "SHA-256: Unsealed";
+            AuthGateRatioText.Text = "-- / --";
+            AuthMandatoryStatusText.Text = "Pending";
+            AuthMandatoryStatusText.Foreground = (Brush)TryFindResource("Text.Secondary");
+            if (BtnAuthSign is not null) BtnAuthSign.IsEnabled = false;
+            if (BtnAuthExport is not null) BtnAuthExport.IsEnabled = false;
+        }
+
+        // Evidence Plane Tamper Assay
+        var evidenceItems = App.Store.EvidenceItems(target.Id);
+        AuthEvidenceCountText.Text = $"{evidenceItems.Count} Items";
+
+        var tamperedCount = evidenceItems.Count(item =>
+            !string.IsNullOrWhiteSpace(item.Payload) &&
+            !string.IsNullOrWhiteSpace(item.Sha256) &&
+            item.Sha256 != Hashing.Sha256(item.Payload));
+
+        if (tamperedCount > 0)
+        {
+            AuthTamperBadgeText.Text = "TAMPERED";
+            AuthTamperBadge.Background = (Brush)TryFindResource("State.FaultSoft");
+            AuthTamperBadge.BorderBrush = (Brush)TryFindResource("State.Fault");
+            AuthTamperBadgeText.Foreground = (Brush)TryFindResource("State.Fault");
+            AuthTamperDetailsText.Text = $"{tamperedCount} Corrupted Item(s)";
+            AuthTamperDetailsText.Foreground = (Brush)TryFindResource("State.Fault");
+        }
+        else
+        {
+            AuthTamperBadgeText.Text = "INTACT";
+            AuthTamperBadge.Background = (Brush)TryFindResource("State.VerifiedSoft");
+            AuthTamperBadge.BorderBrush = (Brush)TryFindResource("State.Verified");
+            AuthTamperBadgeText.Foreground = (Brush)TryFindResource("State.Verified");
+            AuthTamperDetailsText.Text = "0 Corrupt / 100% Intact";
+            AuthTamperDetailsText.Foreground = (Brush)TryFindResource("State.Verified");
+        }
+
+        // Target Risk Envelope
+        var grant = App.Store.ActiveGrantFor(target.Id);
+        AuthAccessClassText.Text = grant != null ? $"{target.Access} ({grant.MaxLevel})" : target.Access.ToString();
+
+        var findings = App.Store.Findings(target.Id);
+        var openDefects = findings.Count(f => f.Maturity is not (FindingMaturity.Verified or FindingMaturity.FixReady));
+        AuthOpenFaultsText.Text = $"{openDefects} Unmitigated";
+        AuthOpenFaultsText.Foreground = (Brush)(openDefects == 0 ? TryFindResource("State.Verified") : TryFindResource("State.Fault"));
     }
 }
 
