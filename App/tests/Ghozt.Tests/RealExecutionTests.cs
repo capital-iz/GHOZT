@@ -1007,6 +1007,47 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("Switch theme to Gold Standard", paletteCode);
         Assert.Contains("Switch theme to Spectral Black", paletteCode);
     }
+
+    [Fact]
+    public void ForensicQoL_Innovations_MarkupAndContracts_AreFullyIntegrated()
+    {
+        var appPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App"));
+        var wsPath = Path.Combine(appPath, "Workspaces");
+
+        // 1. State Map Failure Path Highlighting & Breadcrumbs
+        var stateMapXaml = File.ReadAllText(Path.Combine(wsPath, "StateMapWorkspace.xaml"));
+        Assert.Contains("ForensicPathBar", stateMapXaml);
+        Assert.Contains("PathHopCountText", stateMapXaml);
+        Assert.Contains("PathBreadcrumbs", stateMapXaml);
+        Assert.Contains("OnClearPathTrace", stateMapXaml);
+        Assert.Contains("BtnTracePath", stateMapXaml);
+
+        var stateMapCs = File.ReadAllText(Path.Combine(wsPath, "StateMapWorkspace.xaml.cs"));
+        Assert.Contains("OnTraceFailurePath", stateMapCs);
+        Assert.Contains("OnClearPathTrace", stateMapCs);
+        Assert.Contains("FindShortestPath", stateMapCs);
+
+        // 2. Replay Playback Speed & Deviation Jumping
+        var replayXaml = File.ReadAllText(Path.Combine(wsPath, "ReplayWorkspace.xaml"));
+        Assert.Contains("SpeedPicker", replayXaml);
+        Assert.Contains("JumpDeviationBtn", replayXaml);
+        Assert.Contains("DeviationBadge", replayXaml);
+
+        var replayCs = File.ReadAllText(Path.Combine(wsPath, "ReplayWorkspace.xaml.cs"));
+        Assert.Contains("OnSpeedChanged", replayCs);
+        Assert.Contains("OnJumpToDeviation", replayCs);
+        Assert.Contains("_playbackTimer", replayCs);
+
+        // 3. Evidence Vault Tamper Assay & Cryptographic Verification
+        var evidenceXaml = File.ReadAllText(Path.Combine(wsPath, "EvidenceWorkspace.xaml"));
+        Assert.Contains("StatusFilter", evidenceXaml);
+        Assert.Contains("PreviewTamperBadge", evidenceXaml);
+        Assert.Contains("TAMPER DETECTED", evidenceXaml);
+
+        var evidenceCs = File.ReadAllText(Path.Combine(wsPath, "EvidenceWorkspace.xaml.cs"));
+        Assert.Contains("OnStatusFilterChanged", evidenceCs);
+        Assert.Contains("Tampered Only", evidenceCs);
+    }
 }
 
 

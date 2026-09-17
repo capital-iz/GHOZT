@@ -390,3 +390,4 @@ public sealed class PatentEngineTests : IDisposable
         Assert.Contains(tamperedArtefact.Id, tamperedIds);
     }
 }
+

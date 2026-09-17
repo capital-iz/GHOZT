@@ -116,6 +116,11 @@ public sealed class RailButton : Control
 
     private ShellViewModel? FindShell()
     {
+        if (Application.Current?.MainWindow?.DataContext is ShellViewModel appShell)
+        {
+            return appShell;
+        }
+
         var element = (FrameworkElement?)this;
         while (element is not null)
         {
@@ -153,16 +158,30 @@ public sealed class RailButton : Control
 
         public void Invoke()
         {
-            if (Owner is RailButton btn)
+            try
             {
-                if (btn.Dispatcher.CheckAccess())
+                if (Owner is RailButton btn)
                 {
-                    btn.Activate();
+                    if (btn.Dispatcher.CheckAccess())
+                    {
+                        btn.Activate();
+                    }
+                    else
+                    {
+                        btn.Dispatcher.Invoke(btn.Activate);
+                    }
                 }
-                else
+            }
+            catch (Exception ex)
+            {
+                try
                 {
-                    btn.Dispatcher.Invoke(btn.Activate);
+                    System.IO.File.WriteAllText(
+                        System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ghozt-invoke-ex.txt"),
+                        $"{ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}\nInner: {ex.InnerException}");
                 }
+                catch { }
+                throw;
             }
         }
     }
