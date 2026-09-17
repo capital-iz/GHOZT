@@ -907,10 +907,10 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         }
     }
 
-    private void OnQueryLiveAdbDevices(object sender, RoutedEventArgs e)
+    private async void OnQueryLiveAdbDevices(object sender, RoutedEventArgs e)
     {
         LogConsole("Querying local ADB devices ('adb devices -l')...");
-        var devices = MobileAuditEngine.QueryLiveAdbDevices();
+        var devices = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.QueryLiveAdbDevices());
         if (devices.Count == 0)
         {
             LogConsole("No physical or emulated devices detected via ADB bridge (status: offline/idle).");
@@ -921,41 +921,50 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
             {
                 LogConsole($"Found ADB device: {d.Id} (state: {d.State})");
             }
+            if (MobileAvdBox != null && !string.IsNullOrEmpty(devices[0].Id))
+            {
+                MobileAvdBox.Text = devices[0].Id;
+            }
         }
     }
 
-    private void OnToggleAirplaneMode(object sender, RoutedEventArgs e)
+    private async void OnToggleAirplaneMode(object sender, RoutedEventArgs e)
     {
+        var targetDevice = MobileAvdBox?.Text;
         LogConsole("Dispatching ADB airplane mode toggle...");
-        var success = MobileAuditEngine.ToggleAirplaneMode(null, true);
+        var success = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.ToggleAirplaneMode(targetDevice, true));
         LogConsole(success ? "Dispatched 'cmd connectivity airplane-mode enable'." : "ADB bridge offline; verified offline fallback.");
     }
 
-    private void OnDispatchTapGesture(object sender, RoutedEventArgs e)
+    private async void OnDispatchTapGesture(object sender, RoutedEventArgs e)
     {
+        var targetDevice = MobileAvdBox?.Text;
         LogConsole("Dispatching UI Automator gesture: Tap at (540, 1200)...");
-        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildTapCommand(540, 1200));
+        var ok = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.ExecuteLiveGesture(targetDevice, MobileAuditEngine.BuildTapCommand(540, 1200)));
         LogConsole(ok ? "Gesture sent successfully via ADB." : "Command format verified: 'shell input tap 540 1200' (bridge offline).");
     }
 
-    private void OnDispatchSwipeGesture(object sender, RoutedEventArgs e)
+    private async void OnDispatchSwipeGesture(object sender, RoutedEventArgs e)
     {
+        var targetDevice = MobileAvdBox?.Text;
         LogConsole("Dispatching UI Automator gesture: Swipe (540, 1500) -> (540, 400)...");
-        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildSwipeCommand(540, 1500, 540, 400, 300));
+        var ok = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.ExecuteLiveGesture(targetDevice, MobileAuditEngine.BuildSwipeCommand(540, 1500, 540, 400, 300)));
         LogConsole(ok ? "Gesture sent successfully via ADB." : "Command format verified: 'shell input swipe 540 1500 540 400 300' (bridge offline).");
     }
 
-    private void OnDispatchBackKey(object sender, RoutedEventArgs e)
+    private async void OnDispatchBackKey(object sender, RoutedEventArgs e)
     {
+        var targetDevice = MobileAvdBox?.Text;
         LogConsole("Dispatching Android Keyevent: KEYCODE_BACK (4)...");
-        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildKeyEventCommand(4));
+        var ok = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.ExecuteLiveGesture(targetDevice, MobileAuditEngine.BuildKeyEventCommand(4)));
         LogConsole(ok ? "Keyevent sent successfully via ADB." : "Command format verified: 'shell input keyevent 4' (bridge offline).");
     }
 
-    private void OnDispatchHomeKey(object sender, RoutedEventArgs e)
+    private async void OnDispatchHomeKey(object sender, RoutedEventArgs e)
     {
+        var targetDevice = MobileAvdBox?.Text;
         LogConsole("Dispatching Android Keyevent: KEYCODE_HOME (3)...");
-        var ok = MobileAuditEngine.ExecuteLiveGesture(null, MobileAuditEngine.BuildKeyEventCommand(3));
+        var ok = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.ExecuteLiveGesture(targetDevice, MobileAuditEngine.BuildKeyEventCommand(3)));
         LogConsole(ok ? "Keyevent sent successfully via ADB." : "Command format verified: 'shell input keyevent 3' (bridge offline).");
     }
 
@@ -1030,13 +1039,13 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         AuditSummaryText.Text = $"Agentic DAG: 5 layers verified, Central Risk Kernel sovereign, 0 loops.";
     }
 
-    private void OnFetchLogcatStream(object sender, RoutedEventArgs e)
+    private async void OnFetchLogcatStream(object sender, RoutedEventArgs e)
     {
         var targetDevice = MobileAvdBox?.Text ?? "emulator-5554";
         var filter = MobileFilterBox?.Text ?? "*";
         LogConsole($"Fetching live Logcat stream from '{targetDevice}' (Filter: '{filter}')...");
 
-        var streamResult = MobileAuditEngine.FetchLiveLogcat(targetDevice, filter, 80);
+        var streamResult = await System.Threading.Tasks.Task.Run(() => MobileAuditEngine.FetchLiveLogcat(targetDevice, filter, 80));
         foreach (var line in streamResult.Lines.Take(12))
         {
             LogConsole($"  {line}");

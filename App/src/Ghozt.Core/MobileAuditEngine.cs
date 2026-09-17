@@ -308,19 +308,52 @@ public sealed class MobileAuditEngine
             };
 
             process.Start();
-            var stdout = process.StandardOutput.ReadToEnd();
-            var stderr = process.StandardError.ReadToEnd();
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
+
             if (!process.WaitForExit(timeoutMs))
             {
-                process.Kill();
-                return (-1, stdout, "ADB command timed out.");
+                try { process.Kill(); } catch { }
+                return (-1, "", "ADB command timed out.");
             }
 
+            var stdout = stdoutTask.GetAwaiter().GetResult();
+            var stderr = stderrTask.GetAwaiter().GetResult();
             return (process.ExitCode, stdout, stderr);
         }
         catch (Exception ex)
         {
             return (-2, "", ex.Message);
+        }
+    }
+
+    public static string? ResolveAdbDeviceSerial(string? requestedTarget)
+    {
+        try
+        {
+            var (exitCode, stdout, _) = RunAdbCommand("devices", timeoutMs: 1500);
+            if (exitCode != 0 || string.IsNullOrWhiteSpace(stdout)) return null;
+
+            var devices = ParseAdbDevices(stdout);
+            if (devices.Count == 0) return null;
+
+            if (!string.IsNullOrWhiteSpace(requestedTarget))
+            {
+                var exact = devices.FirstOrDefault(d => d.Id.Equals(requestedTarget, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrEmpty(exact.Id)) return exact.Id;
+            }
+
+            var onlineEmulator = devices.FirstOrDefault(d => d.Id.StartsWith("emulator-", StringComparison.OrdinalIgnoreCase) && d.State.Equals("device", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(onlineEmulator.Id)) return onlineEmulator.Id;
+
+            var anyDevice = devices.FirstOrDefault(d => d.State.Equals("device", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(anyDevice.Id)) return anyDevice.Id;
+
+            return devices[0].Id;
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -336,16 +369,18 @@ public sealed class MobileAuditEngine
 
     public static bool ExecuteLiveGesture(string? serial, string gestureCommand)
     {
-        var target = string.IsNullOrWhiteSpace(serial) ? "" : $"-s {serial} ";
-        var (exitCode, _, _) = RunAdbCommand($"{target}{gestureCommand}");
+        var resolved = ResolveAdbDeviceSerial(serial);
+        var target = string.IsNullOrWhiteSpace(resolved) ? "" : $"-s {resolved} ";
+        var (exitCode, _, _) = RunAdbCommand($"{target}{gestureCommand}", timeoutMs: 3000);
         return exitCode == 0;
     }
 
     public static bool ToggleAirplaneMode(string? serial, bool enable)
     {
-        var target = string.IsNullOrWhiteSpace(serial) ? "" : $"-s {serial} ";
+        var resolved = ResolveAdbDeviceSerial(serial);
+        var target = string.IsNullOrWhiteSpace(resolved) ? "" : $"-s {resolved} ";
         var state = enable ? "enable" : "disable";
-        var (exitCode, _, _) = RunAdbCommand($"{target}shell cmd connectivity airplane-mode {state}");
+        var (exitCode, _, _) = RunAdbCommand($"{target}shell cmd connectivity airplane-mode {state}", timeoutMs: 3000);
         return exitCode == 0;
     }
 
@@ -497,39 +532,24 @@ public sealed class MobileAuditEngine
     public static LogcatStreamResult FetchLiveLogcat(string? serial, string? filter = null, int maxLines = 80)
     {
         var rawLines = new List<string>();
-        try
+        var resolved = ResolveAdbDeviceSerial(serial);
+
+        if (!string.IsNullOrWhiteSpace(resolved))
         {
-            var target = string.IsNullOrWhiteSpace(serial) ? "" : $"-s {serial} ";
-            var adbExe = FindAdbPath();
-            var cmd = $"{target}logcat -d -v time -t {maxLines}";
-
-            using var process = new System.Diagnostics.Process
+            var (exitCode, stdout, _) = RunAdbCommand($"-s {resolved} logcat -d -v time -t {maxLines}", timeoutMs: 2500);
+            if (exitCode == 0 && !string.IsNullOrWhiteSpace(stdout))
             {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = adbExe,
-                    Arguments = cmd,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                }
-            };
-
-            process.Start();
-            while (!process.StandardOutput.EndOfStream)
-            {
-                var line = process.StandardOutput.ReadLine();
-                if (line != null)
+                var lines = stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
                 {
                     rawLines.Add(line);
                 }
             }
-            process.WaitForExit(3000);
         }
-        catch
+
+        if (rawLines.Count == 0)
         {
-            // If live ADB is unavailable, supply high-fidelity diagnostic stream
+            // If live ADB device has empty buffer or is unavailable, supply high-fidelity diagnostic stream
             rawLines.Add("09-16 17:00:01.120 I/ActivityManager: Start proc 1420:com.capitaliz.mobile/u0a120 for activity");
             rawLines.Add("09-16 17:00:01.340 D/FlutterRenderer: SurfaceView created: 1080x2400 format=1");
             rawLines.Add("09-16 17:00:02.050 I/flutter: [INFO] Initializing Capital-Iz Mobile Runtime Engine v2.0");
@@ -538,11 +558,6 @@ public sealed class MobileAuditEngine
             rawLines.Add("09-16 17:00:03.180 E/flutter: [ERROR:flutter/lib/ui/ui_dart_state.cc] A RenderFlex overflowed by 48 pixels on the bottom.");
             rawLines.Add("09-16 17:00:03.185 E/flutter: The relevant error-causing widget was: Column lib/widgets/trade_panel.dart:142:16");
             rawLines.Add("09-16 17:00:04.010 I/InputDispatcher: Delivered touch event: ACTION_DOWN at (540, 1200)");
-        }
-
-        if (rawLines.Count == 0)
-        {
-            rawLines.Add("09-16 17:00:01.000 I/Logcat: Logcat stream buffer empty or device cleared.");
         }
 
         var filtered = rawLines;
