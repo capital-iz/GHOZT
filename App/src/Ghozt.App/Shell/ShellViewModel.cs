@@ -29,6 +29,8 @@ public sealed class ShellViewModel : ObservableBase
     private Target? _target;
     private TrayState _tray = TrayState.Peek;
     private string _streamFilter = "";
+    private string _streamSeverityFilter = "All Severities";
+    private bool _autoScrollEnabled = true;
     private object? _inspectorSubject;
     private bool _commandPaletteOpen;
     private bool _recording = true;
@@ -80,6 +82,9 @@ public sealed class ShellViewModel : ObservableBase
         });
 
         CopyVisibleEvents = new RelayCommand(ExecuteCopyVisibleEvents);
+        ToggleAutoScroll = new RelayCommand(() => AutoScrollEnabled = !AutoScrollEnabled);
+        ExportStreamJson = new RelayCommand(ExportVisibleEventsJson);
+        ExportStreamNdjson = new RelayCommand(ExportVisibleEventsNdjson);
 
         Refresh();
 
@@ -112,6 +117,47 @@ public sealed class ShellViewModel : ObservableBase
     public RelayCommand ToggleRecorder { get; }
 
     public RelayCommand CopyVisibleEvents { get; }
+
+    public RelayCommand ToggleAutoScroll { get; }
+
+    public RelayCommand ExportStreamJson { get; }
+
+    public RelayCommand ExportStreamNdjson { get; }
+
+    public bool AutoScrollEnabled
+    {
+        get => _autoScrollEnabled;
+        set
+        {
+            if (Set(ref _autoScrollEnabled, value))
+            {
+                OnPropertyChanged(nameof(AutoScrollLabel));
+            }
+        }
+    }
+
+    public string AutoScrollLabel => _autoScrollEnabled ? "Auto-Scroll: ON" : "Auto-Scroll: OFF";
+
+    public string StreamSeverityFilter
+    {
+        get => _streamSeverityFilter;
+        set
+        {
+            if (Set(ref _streamSeverityFilter, value))
+            {
+                Refresh();
+            }
+        }
+    }
+
+    public Severity? ResolveMinSeverity() => _streamSeverityFilter switch
+    {
+        "Critical Only" => Severity.Critical,
+        "High & Critical" => Severity.High,
+        "Warnings & Faults" => Severity.Low,
+        "Info Only" => Severity.Info,
+        _ => null,
+    };
 
     public event Action? RefreshRequested;
 
@@ -147,6 +193,40 @@ public sealed class ShellViewModel : ObservableBase
         catch
         {
             // Safe clipboard access handling on native desktop
+        }
+    }
+
+    public void ExportVisibleEventsJson()
+    {
+        if (Events.Count == 0) return;
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(Events, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            Clipboard.SetText(json);
+            Log("STREAM.EXPORT", $"Exported {Events.Count} visible events to clipboard as JSON array.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Log("STREAM.EXPORT.FAULT", $"Failed to export JSON stream: {ex.Message}", Severity.High);
+        }
+    }
+
+    public void ExportVisibleEventsNdjson()
+    {
+        if (Events.Count == 0) return;
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var evt in Events)
+            {
+                sb.AppendLine(System.Text.Json.JsonSerializer.Serialize(evt));
+            }
+            Clipboard.SetText(sb.ToString());
+            Log("STREAM.EXPORT", $"Exported {Events.Count} visible events to clipboard as NDJSON.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Log("STREAM.EXPORT.FAULT", $"Failed to export NDJSON stream: {ex.Message}", Severity.High);
         }
     }
 
@@ -488,7 +568,8 @@ public sealed class ShellViewModel : ObservableBase
         Events.Reset(_store.RecentEvents(
             400,
             _target?.Id,
-            string.IsNullOrWhiteSpace(_streamFilter) ? null : _streamFilter.ToUpperInvariant()));
+            string.IsNullOrWhiteSpace(_streamFilter) ? null : _streamFilter.ToUpperInvariant(),
+            ResolveMinSeverity()));
 
         Findings.Reset(_target is null ? [] : _store.Findings(_target.Id));
 

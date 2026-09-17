@@ -89,6 +89,7 @@
                     <!-- Quick Node Search -->
                     <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="SEARCH" VerticalAlignment="Center" Margin="0,0,6,0" />
                     <TextBox x:Name="NodeSearchBox" Width="110" Height="26" VerticalAlignment="Center"
+                             AutomationProperties.AutomationId="NodeSearchBox"
                              TextChanged="OnNodeSearchChanged"
                              ToolTip="Search state node by label or ID"
                              AutomationProperties.Name="Search state nodes" />

@@ -63,6 +63,17 @@
                             <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Accent.Text}" />
                         </MenuItem.Icon>
                     </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Export Stream (JSON)..." Click="OnExportStreamJson">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xEDE1;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Accent.Text}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Export Stream (NDJSON)..." Click="OnExportStreamNdjson">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xEDE1;" FontFamily="{StaticResource Font.Icon}" FontSize="12" Foreground="{DynamicResource Accent.Text}" />
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </ContextMenu>
             </ListBox.ContextMenu>
 

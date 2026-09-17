@@ -3,9 +3,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Ghozt.App.Theming;
 using Ghozt.App.Workspaces;
 using Ghozt.Core;
+using Ghozt.Theming;
 
 namespace Ghozt.App.Shell;
 
@@ -102,6 +104,31 @@ public partial class MainWindow : Window
         }
 
         Canvas.Content = view;
+        AnimateWorkspaceEntry(view);
+    }
+
+    private static void AnimateWorkspaceEntry(UIElement element)
+    {
+        var motion = ThemeManager.Current.Motion;
+        if (motion == MotionLevel.Off)
+        {
+            element.Opacity = 1.0;
+            element.RenderTransform = null;
+            return;
+        }
+
+        var translate = new TranslateTransform(0, 6);
+        element.RenderTransform = translate;
+        element.Opacity = 0.0;
+
+        var duration = TimeSpan.FromMilliseconds(motion == MotionLevel.Reduced ? 90 : 180);
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        var opacityAnim = new DoubleAnimation(0.0, 1.0, duration) { EasingFunction = easing };
+        var slideAnim = new DoubleAnimation(6.0, 0.0, duration) { EasingFunction = easing };
+
+        element.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
+        translate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
     }
 
     /// <summary>Switches workspace for a capture run, without going through the view model.</summary>

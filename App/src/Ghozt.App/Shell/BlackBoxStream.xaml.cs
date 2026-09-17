@@ -14,21 +14,45 @@ public partial class BlackBoxStream : UserControl
         DataContextChanged += (_, _) => Attach();
     }
 
+    private ShellViewModel? _shell;
+
     private void Attach()
     {
         UpdateEmptyMessage();
 
+        if (_shell is not null)
+        {
+            _shell.PropertyChanged -= OnShellChanged;
+            _shell.Events.CollectionChanged -= OnEventsCollectionChanged;
+        }
+
         if (DataContext is ShellViewModel shell)
         {
-            shell.PropertyChanged += OnShellChanged;
+            _shell = shell;
+            _shell.PropertyChanged += OnShellChanged;
+            _shell.Events.CollectionChanged += OnEventsCollectionChanged;
         }
     }
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ShellViewModel.StreamFilter) or nameof(ShellViewModel.Target))
+        if (e.PropertyName is nameof(ShellViewModel.StreamFilter) or nameof(ShellViewModel.Target) or nameof(ShellViewModel.StreamSeverityFilter))
         {
             UpdateEmptyMessage();
+        }
+    }
+
+    private void OnEventsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (_shell?.AutoScrollEnabled == true && Rows.Items.Count > 0)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (_shell?.AutoScrollEnabled == true && Rows.Items.Count > 0)
+                {
+                    Rows.ScrollIntoView(Rows.Items[^1]);
+                }
+            }, System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 
@@ -91,6 +115,22 @@ public partial class BlackBoxStream : UserControl
         if (DataContext is ShellViewModel shell)
         {
             shell.CopyVisibleEvents.Execute(null);
+        }
+    }
+
+    private void OnExportStreamJson(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ShellViewModel shell)
+        {
+            shell.ExportStreamJson.Execute(null);
+        }
+    }
+
+    private void OnExportStreamNdjson(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ShellViewModel shell)
+        {
+            shell.ExportStreamNdjson.Execute(null);
         }
     }
 

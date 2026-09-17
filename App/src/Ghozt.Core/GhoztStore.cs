@@ -755,7 +755,7 @@ public sealed class GhoztStore : IDisposable
     /// to grow without limit, and a stream surface that materialises the whole table to show the last
     /// hundred lines is how a forensics tool becomes unusable on the machine it was sized for.
     /// </remarks>
-    public IReadOnlyList<LedgerEvent> RecentEvents(int limit = 500, GhoztId? targetId = null, string? codePrefix = null)
+    public IReadOnlyList<LedgerEvent> RecentEvents(int limit = 500, GhoztId? targetId = null, string? codePrefix = null, Severity? minSeverity = null)
     {
         var list = new List<LedgerEvent>();
         using var command = _connection.CreateCommand();
@@ -770,6 +770,18 @@ public sealed class GhoztStore : IDisposable
         {
             where.Add("Code LIKE $c");
             command.Parameters.AddWithValue("$c", codePrefix + "%");
+        }
+
+        if (minSeverity is not null)
+        {
+            var allowedSeverities = System.Enum.GetValues<Severity>()
+                .Where(s => s >= minSeverity.Value)
+                .Select(s => $"'{s}'")
+                .ToList();
+            if (allowedSeverities.Count > 0)
+            {
+                where.Add($"Severity IN ({string.Join(", ", allowedSeverities)})");
+            }
         }
 
         command.CommandText =

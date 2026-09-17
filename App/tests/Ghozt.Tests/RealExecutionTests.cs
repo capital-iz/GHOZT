@@ -1048,6 +1048,140 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("OnStatusFilterChanged", evidenceCs);
         Assert.Contains("Tampered Only", evidenceCs);
     }
+
+    [Fact]
+    public void TelemetryStream_SeverityFilteringAndAutoScroll_ExecutesCleanly()
+    {
+        var dbPath = Path.Combine(Path.GetTempPath(), $"ghozt_stream_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            using var store = new GhoztStore(dbPath);
+            var targetId = GhoztId.Create(IdKind.Target, 1);
+
+            store.Append(new LedgerEvent
+            {
+                Id = GhoztId.Create(IdKind.Event, 1),
+                At = DateTimeOffset.UtcNow,
+                Code = "TEST.INFO",
+                Message = "Info message",
+                Severity = Severity.Info,
+                TargetId = targetId
+            });
+
+            store.Append(new LedgerEvent
+            {
+                Id = GhoztId.Create(IdKind.Event, 2),
+                At = DateTimeOffset.UtcNow,
+                Code = "TEST.LOW",
+                Message = "Low message",
+                Severity = Severity.Low,
+                TargetId = targetId
+            });
+
+            store.Append(new LedgerEvent
+            {
+                Id = GhoztId.Create(IdKind.Event, 3),
+                At = DateTimeOffset.UtcNow,
+                Code = "TEST.WARN",
+                Message = "Medium warning",
+                Severity = Severity.Medium,
+                TargetId = targetId
+            });
+
+            store.Append(new LedgerEvent
+            {
+                Id = GhoztId.Create(IdKind.Event, 4),
+                At = DateTimeOffset.UtcNow,
+                Code = "TEST.HIGH",
+                Message = "High severity warning",
+                Severity = Severity.High,
+                TargetId = targetId
+            });
+
+            store.Append(new LedgerEvent
+            {
+                Id = GhoztId.Create(IdKind.Event, 5),
+                At = DateTimeOffset.UtcNow,
+                Code = "TEST.CRIT",
+                Message = "Critical fault",
+                Severity = Severity.Critical,
+                TargetId = targetId
+            });
+
+            // 1. Unfiltered RecentEvents returns all 5
+            var all = store.RecentEvents(targetId: targetId);
+            Assert.Equal(5, all.Count);
+
+            // 2. Filter Critical only
+            var crit = store.RecentEvents(targetId: targetId, minSeverity: Severity.Critical);
+            Assert.Single(crit);
+            Assert.Equal("TEST.CRIT", crit[0].Code);
+
+            // 3. Filter High & Critical
+            var highAndCrit = store.RecentEvents(targetId: targetId, minSeverity: Severity.High);
+            Assert.Equal(2, highAndCrit.Count);
+            Assert.All(highAndCrit, e => Assert.True(e.Severity >= Severity.High));
+
+            // 4. Filter Low & above (Warnings & Faults)
+            var lowAndAbove = store.RecentEvents(targetId: targetId, minSeverity: Severity.Low);
+            Assert.Equal(4, lowAndAbove.Count);
+
+            // 5. Test ShellViewModel contracts via source inspection
+            var appPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App"));
+            var shellPath = Path.Combine(appPath, "Shell");
+
+            var shellCs = File.ReadAllText(Path.Combine(shellPath, "ShellViewModel.cs"));
+            Assert.Contains("public string StreamSeverityFilter", shellCs);
+            Assert.Contains("public Severity? ResolveMinSeverity()", shellCs);
+            Assert.Contains("public bool AutoScrollEnabled", shellCs);
+            Assert.Contains("public RelayCommand ToggleAutoScroll", shellCs);
+            Assert.Contains("public RelayCommand ExportStreamJson", shellCs);
+            Assert.Contains("public RelayCommand ExportStreamNdjson", shellCs);
+        }
+        finally
+        {
+            if (File.Exists(dbPath)) File.Delete(dbPath);
+        }
+    }
+
+    [Fact]
+    public void TelemetryStream_ExportFormatsAndMarkupContracts_AreFullyIntegrated()
+    {
+        var appPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App"));
+        var shellPath = Path.Combine(appPath, "Shell");
+        var wsPath = Path.Combine(appPath, "Workspaces");
+
+        // 1. MainWindow.xaml contains StreamSeverityFilterCombo and AutoScroll toggle
+        var mainXaml = File.ReadAllText(Path.Combine(shellPath, "MainWindow.xaml"));
+        Assert.Contains("StreamSeverityFilterCombo", mainXaml);
+        Assert.Contains("AutoScrollEnabled", mainXaml);
+        Assert.Contains("All Severities", mainXaml);
+        Assert.Contains("Critical Only", mainXaml);
+
+        // 2. BlackBoxStream.xaml contains Export Stream JSON and NDJSON menu items
+        var streamXaml = File.ReadAllText(Path.Combine(shellPath, "BlackBoxStream.xaml"));
+        Assert.Contains("Export Stream (JSON)...", streamXaml);
+        Assert.Contains("Export Stream (NDJSON)...", streamXaml);
+        Assert.Contains("OnExportStreamJson", streamXaml);
+        Assert.Contains("OnExportStreamNdjson", streamXaml);
+
+        // 3. BlackBoxStream.xaml.cs contains CollectionChanged auto-scroll logic
+        var streamCs = File.ReadAllText(Path.Combine(shellPath, "BlackBoxStream.xaml.cs"));
+        Assert.Contains("OnEventsCollectionChanged", streamCs);
+        Assert.Contains("AutoScrollEnabled", streamCs);
+        Assert.Contains("ScrollIntoView", streamCs);
+
+        // 4. MainWindow.xaml.cs contains workspace entry animation
+        var mainCs = File.ReadAllText(Path.Combine(shellPath, "MainWindow.xaml.cs"));
+        Assert.Contains("AnimateWorkspaceEntry", mainCs);
+        Assert.Contains("TranslateTransform", mainCs);
+        Assert.Contains("DoubleAnimation", mainCs);
+
+        // 5. StateMapWorkspace.xaml.cs contains smooth pan animation
+        var stateMapCs = File.ReadAllText(Path.Combine(wsPath, "StateMapWorkspace.xaml.cs"));
+        Assert.Contains("AnimateTranslateTo", stateMapCs);
+        Assert.Contains("LatticeTranslate.BeginAnimation", stateMapCs);
+    }
 }
 
 

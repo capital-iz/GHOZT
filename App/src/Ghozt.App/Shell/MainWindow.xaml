@@ -324,7 +324,7 @@
 
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                                 <Grid>
-                                    <TextBox x:Name="StreamFilter" Width="240" Height="24" FontSize="11"
+                                    <TextBox x:Name="StreamFilter" Width="180" Height="24" FontSize="11"
                                          Text="{Binding StreamFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}"
                                              ToolTip="Filter by event code prefix, e.g. HTTP or UI (Ctrl+L)"
                                              AutomationProperties.Name="Filter the event stream by code" />
@@ -345,7 +345,31 @@
                                     </TextBlock>
                                 </Grid>
 
-                                <Button Style="{StaticResource Button.Icon}" Width="24" Height="24" Margin="8,0,0,0"
+                                <ComboBox x:Name="StreamSeverityFilterCombo" Width="125" Height="24" Margin="6,0,0,0" FontSize="10"
+                                          AutomationProperties.AutomationId="StreamSeverityFilterCombo"
+                                          SelectedValue="{Binding StreamSeverityFilter, Mode=TwoWay}"
+                                          SelectedValuePath="Content"
+                                          ToolTip="Filter event stream by minimum severity threshold"
+                                          AutomationProperties.Name="Filter event stream by severity">
+                                    <ComboBoxItem Content="All Severities" IsSelected="True" />
+                                    <ComboBoxItem Content="Critical Only" />
+                                    <ComboBoxItem Content="High &amp; Critical" />
+                                    <ComboBoxItem Content="Warnings &amp; Faults" />
+                                    <ComboBoxItem Content="Info Only" />
+                                </ComboBox>
+
+                                <ToggleButton Style="{StaticResource Toggle.Pill}" Height="24" Margin="6,0,0,0" Padding="8,0"
+                                              AutomationProperties.AutomationId="AutoScrollToggle"
+                                              IsChecked="{Binding AutoScrollEnabled, Mode=TwoWay}"
+                                              ToolTip="Toggle black-box live event auto-scrolling"
+                                              AutomationProperties.Name="Toggle black-box auto-scrolling">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE895;" FontFamily="{StaticResource Font.Icon}" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                        <TextBlock Text="{Binding AutoScrollLabel}" FontSize="10" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </ToggleButton>
+
+                                <Button Style="{StaticResource Button.Icon}" Width="24" Height="24" Margin="6,0,0,0"
                                         Content="&#xE8C8;" Command="{Binding CopyVisibleEvents}"
                                         ToolTip="Copy all visible events to clipboard"
                                         AutomationProperties.Name="Copy visible events to clipboard" />

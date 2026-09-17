@@ -90,6 +90,7 @@ public sealed class RailButton : Control
         // The accessible name is the title plus its purpose, so a screen-reader user gets what a
         // sighted operator gets from the tooltip - not merely the glyph's name.
         AutomationProperties.SetName(this, $"{Definition.Title}. {Definition.Purpose}");
+        AutomationProperties.SetAutomationId(this, $"Nav_{Definition.Kind}");
         ToolTip = $"{Definition.Title}  ({Definition.Shortcut})\n{Definition.Purpose}";
 
         var shell = FindShell();

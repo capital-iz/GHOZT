@@ -96,13 +96,53 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
             var top = Canvas.GetTop(match.Element);
             if (GraphScroll.ActualWidth > 50 && GraphScroll.ActualHeight > 50)
             {
-                LatticeTranslate.X = (GraphScroll.ActualWidth / 2) - (left * _zoom);
-                LatticeTranslate.Y = (GraphScroll.ActualHeight / 2) - (top * _zoom);
+                var targetX = (GraphScroll.ActualWidth / 2) - (left * _zoom);
+                var targetY = (GraphScroll.ActualHeight / 2) - (top * _zoom);
+                AnimateTranslateTo(targetX, targetY);
             }
 
             HighlightNode(match.Node);
             OpenNodeInspector(match.Node);
         }
+    }
+
+    private void AnimateTranslateTo(double targetX, double targetY)
+    {
+        var motion = Theming.ThemeManager.Current.Motion;
+        if (motion == Ghozt.Theming.MotionLevel.Off)
+        {
+            LatticeTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            LatticeTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            LatticeTranslate.X = targetX;
+            LatticeTranslate.Y = targetY;
+            return;
+        }
+
+        var duration = TimeSpan.FromMilliseconds(motion == Ghozt.Theming.MotionLevel.Reduced ? 120 : 240);
+        var easing = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+
+        var animX = new System.Windows.Media.Animation.DoubleAnimation(LatticeTranslate.X, targetX, duration)
+        {
+            EasingFunction = easing
+        };
+        var animY = new System.Windows.Media.Animation.DoubleAnimation(LatticeTranslate.Y, targetY, duration)
+        {
+            EasingFunction = easing
+        };
+
+        animX.Completed += (_, _) =>
+        {
+            LatticeTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            LatticeTranslate.X = targetX;
+        };
+        animY.Completed += (_, _) =>
+        {
+            LatticeTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            LatticeTranslate.Y = targetY;
+        };
+
+        LatticeTranslate.BeginAnimation(TranslateTransform.XProperty, animX);
+        LatticeTranslate.BeginAnimation(TranslateTransform.YProperty, animY);
     }
 
     private void OnViewChanged(object sender, RoutedEventArgs e)
@@ -255,6 +295,8 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
     {
         if (e.ChangedButton is MouseButton.Middle or MouseButton.Right or MouseButton.Left)
         {
+            LatticeTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            LatticeTranslate.BeginAnimation(TranslateTransform.YProperty, null);
             _isPanning = true;
             _lastPanPoint = e.GetPosition(GraphScroll);
             CanvasContainer.CaptureMouse();
