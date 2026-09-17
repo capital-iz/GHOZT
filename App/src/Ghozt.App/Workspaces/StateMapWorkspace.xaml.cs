@@ -43,6 +43,7 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
     private readonly List<(LatticeNode Node, FrameworkElement Element)> _renderedNodes = [];
     private IReadOnlyList<LatticeEdge> _currentEdges = [];
     private IReadOnlyList<string>? _activePathNodeIds;
+    private bool _isHeatmapActive;
 
     public sealed record PathBreadcrumbItem(string Id, string Label, string Detail, bool IsLast);
 
@@ -481,6 +482,11 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
             Lattice.Children.Add(element);
             _renderedNodes.Add((node, element));
         }
+
+        if (_isHeatmapActive)
+        {
+            ApplyHeatmapVisuals();
+        }
     }
 
     private void HighlightNodePreview(LatticeNode? preview)
@@ -538,11 +544,18 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
 
         if (selected is null)
         {
+            if (_isHeatmapActive)
+            {
+                ApplyHeatmapVisuals();
+                return;
+            }
+
             foreach (var (edge, line) in _renderedEdges)
             {
                 line.StrokeThickness = 1;
                 line.Opacity = 0.7;
                 line.Stroke = edge.Relationship == "counterfactual" ? B("Ghozt.Counterfactual") : B("Border.Default");
+                line.StrokeDashArray = edge.Relationship == "counterfactual" ? [3, 3] : null;
             }
 
             foreach (var (node, element) in _renderedNodes)
@@ -845,12 +858,14 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
                 line.StrokeThickness = 3.5;
                 line.Opacity = 1.0;
                 line.Stroke = B("State.Critical");
+                line.StrokeDashArray = [4, 2];
             }
             else
             {
                 line.StrokeThickness = 1;
                 line.Opacity = 0.15;
                 line.Stroke = B("Border.Subtle");
+                line.StrokeDashArray = null;
             }
         }
 
@@ -878,6 +893,118 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
             else
             {
                 element.Opacity = 0.25;
+            }
+        }
+    }
+
+    private void OnTraceFailureClick(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null) return;
+
+        var allNodes = App.Store.Nodes(target.Id);
+        var allEdges = App.Store.Edges(target.Id);
+        if (allNodes.Count == 0) return;
+
+        var root = allNodes.FirstOrDefault(n => n.Kind == NodeKind.System) ?? allNodes[0];
+
+        // Trace to selected fault/deviation node, or find first fault or deviation node
+        var destination = _selectedNode;
+        if (destination is null || (destination.State != "Fault" && destination.State != "Deviation"))
+        {
+            destination = allNodes.FirstOrDefault(n => n.State == "Fault")
+                          ?? allNodes.FirstOrDefault(n => n.State == "Deviation")
+                          ?? _selectedNode
+                          ?? allNodes.LastOrDefault();
+        }
+
+        if (destination is null) return;
+
+        _selectedNode = destination;
+        if (Shell is not null) Shell.InspectorSubject = destination;
+
+        if (_isHeatmapActive)
+        {
+            _isHeatmapActive = false;
+            if (BtnToggleHeatmap is not null) BtnToggleHeatmap.IsChecked = false;
+        }
+
+        var path = StateSpaceMath.FindShortestPath(allNodes, allEdges, root.Id, destination.Id);
+        if (path.Count > 0)
+        {
+            HighlightPath(path, allNodes);
+            FocusNode(destination.Id);
+            Shell?.Log("LATTICE.PATH.TRACE", $"Traced causal failure path from '{root.Label}' to '{destination.Label}' ({path.Count - 1} hops).",
+                Severity.Info, detail: string.Join(" -> ", path), related: destination.Id);
+        }
+        else
+        {
+            Shell?.Log("LATTICE.PATH.UNREACHABLE", $"No traversable path from '{root.Label}' to '{destination.Label}'.",
+                Severity.Medium, related: destination.Id);
+        }
+    }
+
+    private void OnToggleHeatmapClick(object sender, RoutedEventArgs e)
+    {
+        _isHeatmapActive = BtnToggleHeatmap.IsChecked == true;
+        if (_isHeatmapActive)
+        {
+            _activePathNodeIds = null;
+            if (ForensicPathBar is not null) ForensicPathBar.Visibility = Visibility.Collapsed;
+            ApplyHeatmapVisuals();
+            Shell?.Log("LATTICE.HEATMAP.ON", "Activated traversal density heatmap mode on State Lattice.", Severity.Info);
+        }
+        else
+        {
+            HighlightNode(_selectedNode);
+            Shell?.Log("LATTICE.HEATMAP.OFF", "Deactivated traversal density heatmap mode.", Severity.Info);
+        }
+    }
+
+    private void ApplyHeatmapVisuals()
+    {
+        if (!_isHeatmapActive)
+        {
+            HighlightNode(_selectedNode);
+            return;
+        }
+
+        var maxTraversals = _renderedEdges.Count > 0 ? _renderedEdges.Max(e => e.Edge.TraversalCount) : 0;
+        if (maxTraversals <= 0) maxTraversals = 1;
+
+        foreach (var (edge, line) in _renderedEdges)
+        {
+            line.StrokeDashArray = edge.Relationship == "counterfactual" ? [3, 3] : null;
+
+            if (edge.TraversalCount > 0)
+            {
+                var ratio = Math.Clamp((double)edge.TraversalCount / maxTraversals, 0.0, 1.0);
+                line.StrokeThickness = 1.5 + (ratio * 3.5);
+                line.Opacity = 0.5 + (0.5 * ratio);
+
+                if (ratio > 0.66)
+                    line.Stroke = B("State.Warning");
+                else if (ratio > 0.33)
+                    line.Stroke = B("Ghozt.Live");
+                else
+                    line.Stroke = B("State.Verified");
+            }
+            else
+            {
+                line.StrokeThickness = 1.0;
+                line.Opacity = 0.25;
+                line.Stroke = edge.Relationship == "counterfactual" ? B("Ghozt.Counterfactual") : B("Border.Subtle");
+            }
+        }
+
+        foreach (var (node, element) in _renderedNodes)
+        {
+            element.Opacity = 1.0;
+            if (element is Border b)
+            {
+                var state = System.Enum.TryParse<GhoztState>(node.State, true, out var parsed) ? parsed : GhoztState.Untested;
+                b.BorderBrush = state == GhoztState.Untested ? B("Text.Muted") : B(state.TokenName());
+                b.BorderThickness = new Thickness(state == GhoztState.Untested ? 1 : 2);
             }
         }
     }
@@ -918,7 +1045,18 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
     {
         _activePathNodeIds = null;
         ForensicPathBar.Visibility = Visibility.Collapsed;
-        HighlightNode(_selectedNode);
+        foreach (var (edge, line) in _renderedEdges)
+        {
+            line.StrokeDashArray = edge.Relationship == "counterfactual" ? [3, 3] : null;
+        }
+        if (_isHeatmapActive)
+        {
+            ApplyHeatmapVisuals();
+        }
+        else
+        {
+            HighlightNode(_selectedNode);
+        }
     }
 
     private async void OnRunDiscoverySweep(object sender, RoutedEventArgs e)

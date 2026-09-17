@@ -95,6 +95,8 @@ public partial class TargetsWorkspace : UserControl, IRefreshableWorkspace
             if (EmptyState is not null) EmptyState.Visibility = Visibility.Collapsed;
             if (FilterEmptyState is not null) FilterEmptyState.Visibility = Visibility.Collapsed;
         }
+
+        UpdateOperationsConsole();
     }
 
     private void OnLaunchTarget(object sender, RoutedEventArgs e)
@@ -178,6 +180,7 @@ public partial class TargetsWorkspace : UserControl, IRefreshableWorkspace
         {
             Shell.Target = target;
             Shell.InspectorSubject = target;
+            UpdateOperationsConsole();
         }
     }
 
@@ -481,5 +484,128 @@ public partial class TargetsWorkspace : UserControl, IRefreshableWorkspace
             detail: $"id={target.Id}", related: target.Id.ToString());
 
         Shell.ReloadTargets();
+    }
+
+    private void UpdateOperationsConsole()
+    {
+        if (OpDetailContainer is null) return;
+
+        var target = Shell?.Target ?? Shell?.Targets.FirstOrDefault();
+        if (target is null)
+        {
+            OpDetailContainer.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        OpDetailContainer.Visibility = Visibility.Visible;
+
+        if (OpTargetName is not null) OpTargetName.Text = target.Name;
+        if (OpTargetId is not null) OpTargetId.Text = target.Id.ToString();
+        if (OpBaseAddress is not null) OpBaseAddress.Text = string.IsNullOrWhiteSpace(target.BaseAddress) ? "None specified" : target.BaseAddress;
+        if (OpEnvironment is not null) OpEnvironment.Text = target.Environment.ToString();
+        if (OpAccess is not null) OpAccess.Text = target.Access.ToString();
+        if (OpAuthorityNote is not null)
+        {
+            OpAuthorityNote.Text = string.IsNullOrWhiteSpace(target.AuthorityNote)
+                ? "No authority grant recorded — Ghozt will observe only."
+                : target.AuthorityNote;
+        }
+
+        if (OpReachableText is not null)
+        {
+            OpReachableText.Text = target.Reachable ? "Reachable" : "Unreachable";
+            OpReachableText.SetResourceReference(TextBlock.ForegroundProperty, target.Reachable ? "State.Verified" : "State.Fault");
+        }
+
+        try
+        {
+            var nodes = App.Store.Nodes(target.Id);
+            var edges = App.Store.Edges(target.Id);
+            var findings = App.Store.Findings(target.Id);
+            var evidence = App.Store.EvidenceItems(target.Id);
+
+            if (OpNodesCount is not null) OpNodesCount.Text = nodes.Count.ToString();
+            if (OpEdgesCount is not null) OpEdgesCount.Text = edges.Count.ToString();
+            if (OpDeviationsCount is not null) OpDeviationsCount.Text = findings.Count.ToString();
+            if (OpEvidenceCount is not null) OpEvidenceCount.Text = evidence.Count.ToString();
+
+            if (OpClearanceVerdictText is not null && OpClearanceVerdictBadge is not null)
+            {
+                var criticalOrHigh = findings.Count(f => f.Severity is Severity.Critical or Severity.High);
+                if (criticalOrHigh > 0)
+                {
+                    OpClearanceVerdictText.Text = $"CLEARANCE DENIED ({criticalOrHigh} CRITICAL/HIGH FAULTS)";
+                    OpClearanceVerdictBadge.SetResourceReference(Border.BackgroundProperty, "State.CriticalSoft");
+                    OpClearanceVerdictText.SetResourceReference(TextBlock.ForegroundProperty, "State.Critical");
+                }
+                else if (findings.Count > 0)
+                {
+                    OpClearanceVerdictText.Text = $"CONDITIONAL CLEARANCE ({findings.Count} DEVIATIONS)";
+                    OpClearanceVerdictBadge.SetResourceReference(Border.BackgroundProperty, "State.WarningSoft");
+                    OpClearanceVerdictText.SetResourceReference(TextBlock.ForegroundProperty, "State.Warning");
+                }
+                else if (nodes.Count > 0)
+                {
+                    OpClearanceVerdictText.Text = "CLEARANCE ELIGIBLE (0 OPEN DEVIATIONS)";
+                    OpClearanceVerdictBadge.SetResourceReference(Border.BackgroundProperty, "State.VerifiedSoft");
+                    OpClearanceVerdictText.SetResourceReference(TextBlock.ForegroundProperty, "State.Verified");
+                }
+                else
+                {
+                    OpClearanceVerdictText.Text = "EXPLORATION REQUIRED (0 LATTICE NODES)";
+                    OpClearanceVerdictBadge.SetResourceReference(Border.BackgroundProperty, "Surface.Inset");
+                    OpClearanceVerdictText.SetResourceReference(TextBlock.ForegroundProperty, "Text.Muted");
+                }
+            }
+        }
+        catch
+        {
+            // Store query guard during uninitialized state
+        }
+    }
+
+    private void OnOpRunSweep(object sender, RoutedEventArgs e)
+    {
+        if (Shell is null) return;
+        if (Shell.Target is null && Shell.Targets.Count > 0)
+            Shell.Target = Shell.Targets[0];
+        if (Shell.Target is not null)
+            Shell.Workspace = WorkspaceKind.Sweep;
+    }
+
+    private void OnOpExploreLattice(object sender, RoutedEventArgs e)
+    {
+        if (Shell is null) return;
+        if (Shell.Target is null && Shell.Targets.Count > 0)
+            Shell.Target = Shell.Targets[0];
+        if (Shell.Target is not null)
+            Shell.Workspace = WorkspaceKind.StateMap;
+    }
+
+    private void OnOpTriageFaults(object sender, RoutedEventArgs e)
+    {
+        if (Shell is null) return;
+        if (Shell.Target is null && Shell.Targets.Count > 0)
+            Shell.Target = Shell.Targets[0];
+        if (Shell.Target is not null)
+            Shell.Workspace = WorkspaceKind.Faults;
+    }
+
+    private void OnOpViewEvidence(object sender, RoutedEventArgs e)
+    {
+        if (Shell is null) return;
+        if (Shell.Target is null && Shell.Targets.Count > 0)
+            Shell.Target = Shell.Targets[0];
+        if (Shell.Target is not null)
+            Shell.Workspace = WorkspaceKind.Evidence;
+    }
+
+    private void OnOpClearanceDossier(object sender, RoutedEventArgs e)
+    {
+        if (Shell is null) return;
+        if (Shell.Target is null && Shell.Targets.Count > 0)
+            Shell.Target = Shell.Targets[0];
+        if (Shell.Target is not null)
+            Shell.Workspace = WorkspaceKind.Clearance;
     }
 }

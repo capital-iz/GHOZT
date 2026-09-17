@@ -1182,6 +1182,144 @@ public sealed class RealExecutionTests : IDisposable
         Assert.Contains("AnimateTranslateTo", stateMapCs);
         Assert.Contains("LatticeTranslate.BeginAnimation", stateMapCs);
     }
+
+    [Fact]
+    public void TargetOperationsConsole_And_StateMapKinematics_AreFullyIntegrated()
+    {
+        var appPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Ghozt.App"));
+        var wsPath = Path.Combine(appPath, "Workspaces");
+
+        // 1. TargetsWorkspace: Two-column layout and Target Operations Console
+        var targetsXaml = File.ReadAllText(Path.Combine(wsPath, "TargetsWorkspace.xaml"));
+        Assert.Contains("TargetOperationsPanel", targetsXaml);
+        Assert.Contains("OpDetailContainer", targetsXaml);
+        Assert.Contains("OpTargetName", targetsXaml);
+        Assert.Contains("OpNodesCount", targetsXaml);
+        Assert.Contains("OpEdgesCount", targetsXaml);
+        Assert.Contains("OpDeviationsCount", targetsXaml);
+        Assert.Contains("OpEvidenceCount", targetsXaml);
+        Assert.Contains("OpClearanceVerdictBadge", targetsXaml);
+        Assert.Contains("OnOpRunSweep", targetsXaml);
+        Assert.Contains("OnOpExploreLattice", targetsXaml);
+        Assert.Contains("OnOpTriageFaults", targetsXaml);
+        Assert.Contains("OnOpViewEvidence", targetsXaml);
+        Assert.Contains("OnOpClearanceDossier", targetsXaml);
+
+        var targetsCs = File.ReadAllText(Path.Combine(wsPath, "TargetsWorkspace.xaml.cs"));
+        Assert.Contains("UpdateOperationsConsole", targetsCs);
+        Assert.Contains("OnOpRunSweep", targetsCs);
+        Assert.Contains("OnOpExploreLattice", targetsCs);
+        Assert.Contains("OnOpTriageFaults", targetsCs);
+        Assert.Contains("OnOpViewEvidence", targetsCs);
+        Assert.Contains("OnOpClearanceDossier", targetsCs);
+
+        // 2. StateMapWorkspace: Kinematic Causal Failure Trace & Heatmap controls
+        var stateMapXaml = File.ReadAllText(Path.Combine(wsPath, "StateMapWorkspace.xaml"));
+        Assert.Contains("BtnTraceFailure", stateMapXaml);
+        Assert.Contains("OnTraceFailureClick", stateMapXaml);
+        Assert.Contains("BtnToggleHeatmap", stateMapXaml);
+        Assert.Contains("OnToggleHeatmapClick", stateMapXaml);
+
+        var stateMapCs = File.ReadAllText(Path.Combine(wsPath, "StateMapWorkspace.xaml.cs"));
+        Assert.Contains("_isHeatmapActive", stateMapCs);
+        Assert.Contains("ApplyHeatmapVisuals", stateMapCs);
+        Assert.Contains("OnTraceFailureClick", stateMapCs);
+        Assert.Contains("OnToggleHeatmapClick", stateMapCs);
+        Assert.Contains("StrokeDashArray = [4, 2]", stateMapCs);
+    }
+
+    [Fact]
+    public void TargetOperationsAndStateMapKinematics_ExecutionLogic_VerifiesAccurately()
+    {
+        var tempDb = Path.Combine(Path.GetTempPath(), $"ghozt_kinematics_test_{Guid.NewGuid():N}.db");
+        try
+        {
+            using (var store = new GhoztStore(tempDb))
+            {
+                var targetId = store.NextId(IdKind.Target);
+                var target = new Target
+                {
+                    Id = targetId,
+                    Name = "Kinematics Test Target",
+                    Kind = "Desktop application",
+                    Environment = TargetEnvironment.Local,
+                    Access = AccessClass.Interact,
+                    Reachable = true
+                };
+                store.Save(target);
+
+                var root = new LatticeNode
+                {
+                    Id = "root",
+                    TargetId = targetId,
+                    Label = "ROOT",
+                    Kind = NodeKind.System,
+                    State = "Verified",
+                    Provenance = "Source"
+                };
+                var intermediate = new LatticeNode
+                {
+                    Id = "node_mid",
+                    TargetId = targetId,
+                    Label = "DISPATCH",
+                    Kind = NodeKind.Feature,
+                    State = "Verified",
+                    Provenance = "Source"
+                };
+                var faultNode = new LatticeNode
+                {
+                    Id = "node_fault",
+                    TargetId = targetId,
+                    Label = "FAULT_CRASH",
+                    Kind = NodeKind.Endpoint,
+                    State = "Fault",
+                    Provenance = "Observed"
+                };
+
+                store.Save(root);
+                store.Save(intermediate);
+                store.Save(faultNode);
+
+                store.Save(new LatticeEdge
+                {
+                    TargetId = targetId,
+                    FromId = "root",
+                    ToId = "node_mid",
+                    Label = "step1",
+                    Relationship = "observed",
+                    TraversalCount = 20
+                });
+                store.Save(new LatticeEdge
+                {
+                    TargetId = targetId,
+                    FromId = "node_mid",
+                    ToId = "node_fault",
+                    Label = "step2",
+                    Relationship = "observed",
+                    TraversalCount = 5
+                });
+
+                // Verify StateSpaceMath finds causal path from root to fault
+                var nodes = store.Nodes(targetId);
+                var edges = store.Edges(targetId);
+                var path = StateSpaceMath.FindShortestPath(nodes, edges, "root", "node_fault");
+
+                Assert.Equal(3, path.Count);
+                Assert.Equal(["root", "node_mid", "node_fault"], path);
+
+                // Verify Edge Traversal Count for Heatmap scaling
+                var maxTraversals = edges.Max(e => e.TraversalCount);
+                Assert.Equal(20, maxTraversals);
+                var ratioFaultEdge = (double)edges.First(e => e.ToId == "node_fault").TraversalCount / maxTraversals;
+                Assert.Equal(0.25, ratioFaultEdge);
+            }
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            if (File.Exists(tempDb)) File.Delete(tempDb);
+        }
+    }
 }
 
 
