@@ -85,7 +85,7 @@ public readonly record struct GhoztId
         "SWP" => IdKind.Sweep,
         "ACT" => IdKind.Action,
         "EVT" => IdKind.Event,
-        "EVD" => IdKind.Evidence,
+        "EVD" or "EVI" => IdKind.Evidence,
         "DEV" => IdKind.Deviation,
         "FLT" or "FND" => IdKind.Fault,
         "RPR" => IdKind.Reproducer,
