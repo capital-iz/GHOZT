@@ -10,6 +10,29 @@ using Ghozt.Core;
 
 namespace Ghozt.App.Workspaces;
 
+public sealed class EvidenceItemViewModel
+{
+    public required Evidence Artefact { get; init; }
+    public GhoztId Id => Artefact.Id;
+    public GhoztId TargetId => Artefact.TargetId;
+    public string Kind => Artefact.Kind;
+    public string Summary => Artefact.Summary;
+    public string Sha256 => Artefact.Sha256;
+    public long SizeBytes => Artefact.SizeBytes;
+    public string Payload => Artefact.Payload;
+    public string SourceAdapter => Artefact.SourceAdapter;
+    public GhoztId? FindingId => Artefact.FindingId;
+    public GhoztId? SweepId => Artefact.SweepId;
+    public DateTimeOffset CapturedAt => Artefact.CapturedAt;
+    public bool Sealed => Artefact.Sealed;
+    public string SealedBy => Artefact.SealedBy;
+    public bool Redacted => Artefact.Redacted;
+
+    public bool IsTampered { get; set; }
+    public bool IsVerified { get; set; }
+    public bool IsVerifiedOnly => IsVerified && !Sealed && !IsTampered;
+}
+
 public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
 {
     public EvidenceWorkspace()
@@ -24,6 +47,8 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
     }
 
     private bool _attached;
+    private readonly HashSet<GhoztId> _verified = [];
+    private readonly HashSet<GhoztId> _tampered = [];
 
     private void Attach()
     {
@@ -39,7 +64,7 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
 
     private ShellViewModel Shell => (ShellViewModel)DataContext;
 
-    private Evidence? Selected => Items.SelectedItem as Evidence;
+    private Evidence? Selected => (Items.SelectedItem as EvidenceItemViewModel)?.Artefact ?? Items.SelectedItem as Evidence;
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -70,12 +95,24 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
         var match = all.FirstOrDefault(e => e.Id == requestedId);
         if (match is not null)
         {
-            Items.SelectedItem = match;
-            Items.ScrollIntoView(match);
+            var matchVm = (Items.ItemsSource as IEnumerable<EvidenceItemViewModel>)?.FirstOrDefault(vm => vm.Id == requestedId);
+            if (matchVm is not null)
+            {
+                Items.SelectedItem = matchVm;
+                Items.ScrollIntoView(matchVm);
+            }
             OpenPreviewDrawer(match);
         }
 
         Shell.RequestedEvidenceId = null;
+    }
+
+    private void OnStatusFilterChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IsInitialized)
+        {
+            Refresh();
+        }
     }
 
     private void OnSearch(object sender, TextChangedEventArgs e)
@@ -107,13 +144,29 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
         var selectedKindItem = (KindFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString();
         var filterKind = string.IsNullOrEmpty(selectedKindItem) || selectedKindItem == "All Kinds" ? null : selectedKindItem;
 
+        var selectedStatusItem = (StatusFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All Statuses";
+
         var query = Search?.Text.Trim() ?? "";
-        var shown = all.Where(a =>
+
+        var viewModels = all.Select(ev => new EvidenceItemViewModel
         {
+            Artefact = ev,
+            IsTampered = _tampered.Contains(ev.Id),
+            IsVerified = _verified.Contains(ev.Id),
+        }).ToList();
+
+        var shown = viewModels.Where(vm =>
+        {
+            var a = vm.Artefact;
             if (filterKind is not null && !string.Equals(a.Kind, filterKind, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
+
+            if (selectedStatusItem == "Tampered Only" && !vm.IsTampered) return false;
+            if (selectedStatusItem == "Verified" && !vm.IsVerified) return false;
+            if (selectedStatusItem == "Sealed" && !a.Sealed) return false;
+            if (selectedStatusItem == "Redacted" && !a.Redacted) return false;
 
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -147,7 +200,7 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
                     Items.ScrollIntoView(match);
                 }
             }
-            else if (Items.SelectedItem is not Evidence ev || !shown.Contains(ev))
+            else if (Items.SelectedItem is not EvidenceItemViewModel ev || !shown.Contains(ev))
             {
                 Items.SelectedIndex = 0;
             }
@@ -218,6 +271,11 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
 
         PreviewSealBadge.Visibility = artefact.Sealed ? Visibility.Visible : Visibility.Collapsed;
         PreviewSealText.Text = artefact.Sealed ? $"SEALED ({artefact.SealedBy})" : "";
+
+        if (PreviewTamperBadge != null)
+        {
+            PreviewTamperBadge.Visibility = _tampered.Contains(artefact.Id) ? Visibility.Visible : Visibility.Collapsed;
+        }
 
         PreviewSourceAdapter.Text = string.IsNullOrWhiteSpace(artefact.SourceAdapter) ? "Native Observer" : artefact.SourceAdapter;
         PreviewSizeBytes.Text = $"{artefact.SizeBytes:N0} bytes";
@@ -352,8 +410,6 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
         }
     }
 
-    private readonly HashSet<GhoztId> _verified = [];
-
     private void OnVerifyAll(object sender, RoutedEventArgs e)
     {
         var target = Shell?.Target;
@@ -372,11 +428,13 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
             if (string.Equals(recomputed, artefact.Sha256, StringComparison.OrdinalIgnoreCase))
             {
                 _verified.Add(artefact.Id);
+                _tampered.Remove(artefact.Id);
                 matched++;
             }
             else
             {
                 _verified.Remove(artefact.Id);
+                _tampered.Add(artefact.Id);
                 failed++;
             }
         }
@@ -485,10 +543,12 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
         if (matches)
         {
             _verified.Add(artefact.Id);
+            _tampered.Remove(artefact.Id);
         }
         else
         {
             _verified.Remove(artefact.Id);
+            _tampered.Add(artefact.Id);
         }
 
         Shell.Log(
@@ -517,6 +577,7 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
 
         // Re-evaluate the seal gate now that the verification result has changed.
         UpdateActionGates();
+        Refresh();
         Shell.Refresh();
     }
 

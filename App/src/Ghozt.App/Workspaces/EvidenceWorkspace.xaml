@@ -72,6 +72,17 @@
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="STATUS" />
+                        <ComboBox x:Name="StatusFilter" Width="120" Height="26" SelectionChanged="OnStatusFilterChanged"
+                                  AutomationProperties.Name="Filter evidence by verification status">
+                            <ComboBoxItem Content="All Statuses" IsSelected="True" />
+                            <ComboBoxItem Content="Tampered Only" />
+                            <ComboBoxItem Content="Verified" />
+                            <ComboBoxItem Content="Sealed" />
+                            <ComboBoxItem Content="Redacted" />
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                         <TextBlock Style="{StaticResource Type.MicroLabelStyle}" Text="CAPTURE MODE" />
                         <ComboBox x:Name="CaptureModeFilter" Width="135" Height="26" SelectionChanged="OnCaptureModeChanged"
                                   AutomationProperties.Name="Select active capture fidelity mode">
@@ -156,6 +167,16 @@
                                                 Background="{DynamicResource Surface.CardStrong}" BorderBrush="{DynamicResource Border.Card}" BorderThickness="1">
                                             <TextBlock Text="REDACTED" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource Text.Muted}" />
                                         </Border>
+                                        <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="3" VerticalAlignment="Center"
+                                                Visibility="{Binding IsTampered, Converter={StaticResource BoolToVisibility}}"
+                                                Background="{DynamicResource State.Critical}">
+                                            <TextBlock Text="TAMPER DETECTED" FontSize="9" FontWeight="Bold" Foreground="White" />
+                                        </Border>
+                                        <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="3" VerticalAlignment="Center"
+                                                Visibility="{Binding IsVerifiedOnly, Converter={StaticResource BoolToVisibility}}"
+                                                Background="{DynamicResource State.Verified}">
+                                            <TextBlock Text="VERIFIED" FontSize="9" FontWeight="SemiBold" Foreground="Black" />
+                                        </Border>
                                     </StackPanel>
                                     <TextBlock Text="{Binding Sha256}" Margin="0,4,0,0"
                                                Style="{StaticResource Type.IdentifierStyle}"
@@ -220,6 +241,10 @@
                             <Border x:Name="PreviewSealBadge" CornerRadius="{StaticResource Radius.Chip}" Padding="8,3" Margin="0,0,8,0"
                                     Background="{DynamicResource Authority.Soft}" BorderBrush="{DynamicResource Authority.Border}" BorderThickness="1">
                                 <TextBlock x:Name="PreviewSealText" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Authority.Clearance}" />
+                            </Border>
+                            <Border x:Name="PreviewTamperBadge" CornerRadius="{StaticResource Radius.Chip}" Padding="8,3" Margin="0,0,8,0"
+                                    Visibility="Collapsed" Background="{DynamicResource State.Critical}">
+                                <TextBlock Text="HASH TAMPERED" FontSize="10" FontWeight="Bold" Foreground="White" />
                             </Border>
                         </StackPanel>
 

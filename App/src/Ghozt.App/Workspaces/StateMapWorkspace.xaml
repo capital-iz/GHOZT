@@ -3,8 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shell="clr-namespace:Ghozt.App.Shell">
 
+    <UserControl.Resources>
+        <shell:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <shell:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -118,7 +124,54 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" ClipToBounds="True">
+        <!-- Forensic Failure Path Breadcrumb Bar -->
+        <Border Grid.Row="1" x:Name="ForensicPathBar" Visibility="Collapsed"
+                Padding="20,7" Background="{DynamicResource Surface.Deep}"
+                BorderBrush="{DynamicResource Border.Subtle}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="{DynamicResource State.Critical}" CornerRadius="3" Padding="6,2" Margin="0,0,10,0">
+                        <TextBlock Text="FORENSIC FAILURE PATH" Foreground="White" FontSize="10" FontWeight="Bold" />
+                    </Border>
+                    <TextBlock x:Name="PathHopCountText" Text="3 HOPS" Style="{StaticResource Type.MonoStyle}" FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0" />
+                </StackPanel>
+
+                <!-- Interactive Breadcrumb Chips -->
+                <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="PathBreadcrumbs">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="{Binding Label}" Tag="{Binding Id}" Click="OnPathBreadcrumbClick"
+                                            Padding="8,2" Margin="2,0" Height="24" FontSize="11"
+                                            ToolTip="{Binding Detail}"
+                                            AutomationProperties.Name="{Binding Label, StringFormat='Focus path node {0}'}" />
+                                    <TextBlock Text="➔" Foreground="{DynamicResource Text.Muted}" Margin="4,0" VerticalAlignment="Center"
+                                               Visibility="{Binding IsLast, Converter={StaticResource InverseBoolToVisibility}}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Button Grid.Column="2" Content="✕ Clear Trace" Height="24" Padding="8,0" Click="OnClearPathTrace"
+                        ToolTip="Reset failure path highlighting and restore default lattice view"
+                        AutomationProperties.Name="Clear failure path trace" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" ClipToBounds="True">
             <!-- The lattice canvas. Interactive vector canvas with zoom and pan. -->
             <ScrollViewer x:Name="GraphScroll" HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
@@ -240,6 +293,10 @@
                                     Click="OnViewNodeFaults" Margin="0,0,8,0"
                                     ToolTip="Triage deviations and findings recorded against this state node in Faults"
                                     AutomationProperties.Name="View faults linked to node" />
+                            <Button x:Name="BtnTracePath" Content="Trace Failure Path"
+                                    Click="OnTraceFailurePath" Margin="0,0,8,0"
+                                    ToolTip="Compute and highlight the shortest causal traversal path from Root to this node"
+                                    AutomationProperties.Name="Trace failure path from root" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>

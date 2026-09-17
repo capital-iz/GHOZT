@@ -319,6 +319,8 @@ public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
         {
             EmptyNotice.Visibility = Visibility.Visible;
             ReplayContent.Visibility = Visibility.Collapsed;
+            if (DeviationBadge != null) DeviationBadge.Visibility = Visibility.Collapsed;
+            if (JumpDeviationBtn != null) JumpDeviationBtn.Visibility = Visibility.Collapsed;
             OutcomeText.Text = "NO SWEEP SELECTED";
             StepSlider.Maximum = 0;
             StepCounterText.Text = "0 / 0";
@@ -463,9 +465,22 @@ public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
         {
             EmptyNotice.Visibility = Visibility.Visible;
             ReplayContent.Visibility = Visibility.Collapsed;
+            if (DeviationBadge != null) DeviationBadge.Visibility = Visibility.Collapsed;
+            if (JumpDeviationBtn != null) JumpDeviationBtn.Visibility = Visibility.Collapsed;
             StepSlider.Maximum = 0;
             StepCounterText.Text = "0 / 0";
             return;
+        }
+
+        var devCount = _steps.Count(s => !s.Success || s.Oracles.Any(o => !o.Passed));
+        if (DeviationBadge != null)
+        {
+            DeviationBadge.Visibility = devCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+            DeviationBadgeText.Text = $"{devCount} DEVIATION{(devCount > 1 ? "S" : "")}";
+        }
+        if (JumpDeviationBtn != null)
+        {
+            JumpDeviationBtn.Visibility = devCount > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         EmptyNotice.Visibility = Visibility.Collapsed;
@@ -654,6 +669,55 @@ public partial class ReplayWorkspace : UserControl, IRefreshableWorkspace
         else
         {
             StopPlayback();
+        }
+    }
+
+    private double _playbackSpeedMultiplier = 1.0;
+
+    private void OnSpeedChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (SpeedPicker?.SelectedItem is ComboBoxItem item &&
+            double.TryParse(item.Content?.ToString()?.Replace("x", "", StringComparison.OrdinalIgnoreCase),
+                System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var speed))
+        {
+            _playbackSpeedMultiplier = Math.Max(0.1, speed);
+            _playbackTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(100, 1200 / _playbackSpeedMultiplier));
+            Shell?.Log("REPLAY.SPEED", $"Playback speed adjusted to {_playbackSpeedMultiplier:0.0}x.", Severity.Info);
+        }
+    }
+
+    private void OnJumpToDeviation(object sender, RoutedEventArgs e)
+    {
+        if (_steps.Count == 0) return;
+
+        // Look for next deviation after _currentStepIndex
+        var nextDevIndex = -1;
+        for (var i = _currentStepIndex + 1; i < _steps.Count; i++)
+        {
+            if (!_steps[i].Success || _steps[i].Oracles.Any(o => !o.Passed))
+            {
+                nextDevIndex = i;
+                break;
+            }
+        }
+
+        // If none found after current, wrap around from beginning
+        if (nextDevIndex == -1)
+        {
+            for (var i = 0; i <= _currentStepIndex; i++)
+            {
+                if (!_steps[i].Success || _steps[i].Oracles.Any(o => !o.Passed))
+                {
+                    nextDevIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (nextDevIndex >= 0)
+        {
+            ShowStep(nextDevIndex);
+            Shell?.Log("REPLAY.JUMP.DEVIATION", $"Jumped to deviation at Step {nextDevIndex + 1}: {_steps[nextDevIndex].ActionDescription}.", Severity.Info);
         }
     }
 

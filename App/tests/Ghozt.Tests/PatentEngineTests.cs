@@ -289,4 +289,104 @@ public sealed class PatentEngineTests : IDisposable
         Assert.Contains(7, result.MinimalSequence);
         Assert.Equal(80.0, result.ReductionPercent);
     }
+
+    [Fact]
+    public void StateSpaceMath_FindShortestPath_ResolvesShortestTraversalAndHandlesCycles()
+    {
+        var targetId = GhoztId.Create(IdKind.Target, 901);
+        var nodes = new List<LatticeNode>
+        {
+            new() { Id = "node:root", TargetId = targetId, Label = "System Root", Kind = NodeKind.System, State = "Observed", Provenance = "Declared" },
+            new() { Id = "node:auth", TargetId = targetId, Label = "Auth Module", Kind = NodeKind.Feature, State = "Verified", Provenance = "Observed" },
+            new() { Id = "node:login", TargetId = targetId, Label = "Login Endpoint", Kind = NodeKind.Endpoint, State = "Observed", Provenance = "Observed" },
+            new() { Id = "node:fault", TargetId = targetId, Label = "SQL Row Leak", Kind = NodeKind.Action, State = "Fault", Provenance = "Observed" },
+            new() { Id = "node:isolated", TargetId = targetId, Label = "Isolated Node", Kind = NodeKind.Feature, State = "Untested", Provenance = "Declared" },
+        };
+
+        var edges = new List<LatticeEdge>
+        {
+            new() { TargetId = targetId, FromId = "node:root", ToId = "node:auth", Relationship = "contains" },
+            new() { TargetId = targetId, FromId = "node:auth", ToId = "node:login", Relationship = "exposes" },
+            new() { TargetId = targetId, FromId = "node:login", ToId = "node:fault", Relationship = "triggers" },
+            // Cycle back to auth
+            new() { TargetId = targetId, FromId = "node:login", ToId = "node:auth", Relationship = "loops" },
+        };
+
+        // 1. Direct / Multi-hop path resolution
+        var path = StateSpaceMath.FindShortestPath(nodes, edges, "node:root", "node:fault");
+        Assert.Equal(4, path.Count);
+        Assert.Equal(["node:root", "node:auth", "node:login", "node:fault"], path);
+
+        // 2. Self path
+        var selfPath = StateSpaceMath.FindShortestPath(nodes, edges, "node:auth", "node:auth");
+        Assert.Equal(["node:auth"], selfPath);
+
+        // 3. Unreachable node
+        var unreachable = StateSpaceMath.FindShortestPath(nodes, edges, "node:root", "node:isolated");
+        Assert.Empty(unreachable);
+
+        // 4. Undirected fallback (reverse traversal)
+        var reversePath = StateSpaceMath.FindShortestPath(nodes, edges, "node:fault", "node:root");
+        Assert.Equal(4, reversePath.Count);
+        Assert.Equal("node:fault", reversePath[0]);
+        Assert.Equal("node:root", reversePath[3]);
+    }
+
+    [Fact]
+    public void Evidence_TamperAssay_FlagsDiscrepanciesAndBatchVerifies()
+    {
+        var targetId = GhoztId.Create(IdKind.Target, 910);
+        var originalPayload = "{\"session_token\":\"valid_cryptographic_payload\",\"status\":\"ok\"}";
+        var originalSha = Hashing.Sha256(originalPayload);
+
+        var validArtefact = new Evidence
+        {
+            Id = GhoztId.Create(IdKind.Evidence, 911),
+            TargetId = targetId,
+            Kind = "application/json",
+            Summary = "Valid Authenticated Session",
+            Payload = originalPayload,
+            Sha256 = originalSha,
+        };
+
+        var tamperedArtefact = new Evidence
+        {
+            Id = GhoztId.Create(IdKind.Evidence, 912),
+            TargetId = targetId,
+            Kind = "application/json",
+            Summary = "Tampered Host Log",
+            Payload = "{\"modified_by_attacker\":\"unauthorized_state\"}",
+            Sha256 = originalSha, // Stale recorded hash does not match modified payload!
+        };
+
+        // Recompute hashes
+        var validRecomputed = Hashing.Sha256(validArtefact.Payload);
+        var tamperedRecomputed = Hashing.Sha256(tamperedArtefact.Payload);
+
+        Assert.Equal(validArtefact.Sha256, validRecomputed);
+        Assert.NotEqual(tamperedArtefact.Sha256, tamperedRecomputed);
+
+        // Verify batch tamper detection logic
+        var artefacts = new List<Evidence> { validArtefact, tamperedArtefact };
+        var verifiedIds = new HashSet<GhoztId>();
+        var tamperedIds = new HashSet<GhoztId>();
+
+        foreach (var ev in artefacts)
+        {
+            var hash = Hashing.Sha256(ev.Payload);
+            if (string.Equals(hash, ev.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                verifiedIds.Add(ev.Id);
+            }
+            else
+            {
+                tamperedIds.Add(ev.Id);
+            }
+        }
+
+        Assert.Single(verifiedIds);
+        Assert.Contains(validArtefact.Id, verifiedIds);
+        Assert.Single(tamperedIds);
+        Assert.Contains(tamperedArtefact.Id, tamperedIds);
+    }
 }

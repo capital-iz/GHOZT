@@ -277,4 +277,104 @@ public static class StateSpaceMath
 
         return tree;
     }
+
+    /// <summary>
+    /// Computes the minimal ordered sequence of node IDs connecting startNodeId to targetNodeId
+    /// using Breadth-First Search (BFS).
+    /// First attempts directed traversal (from -> to). If no directed path exists, falls back
+    /// to undirected traversal to preserve structural connectivity visibility.
+    /// Returns empty list if target is unreachable or if start/target is not in nodes.
+    /// </summary>
+    public static IReadOnlyList<string> FindShortestPath(
+        IEnumerable<LatticeNode> nodes,
+        IEnumerable<LatticeEdge> edges,
+        string startNodeId,
+        string targetNodeId)
+    {
+        if (string.IsNullOrWhiteSpace(startNodeId) || string.IsNullOrWhiteSpace(targetNodeId))
+        {
+            return [];
+        }
+
+        var nodeIds = new HashSet<string>(nodes.Select(n => n.Id), StringComparer.Ordinal);
+        if (!nodeIds.Contains(startNodeId) || !nodeIds.Contains(targetNodeId))
+        {
+            return [];
+        }
+
+        if (string.Equals(startNodeId, targetNodeId, StringComparison.Ordinal))
+        {
+            return [startNodeId];
+        }
+
+        // 1. Directed BFS traversal
+        var path = BfsPath(startNodeId, targetNodeId, isDirected: true);
+        if (path.Count > 0)
+        {
+            return path;
+        }
+
+        // 2. Undirected BFS fallback
+        return BfsPath(startNodeId, targetNodeId, isDirected: false);
+
+        List<string> BfsPath(string start, string goal, bool isDirected)
+        {
+            var adj = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (var edge in edges)
+            {
+                if (!adj.TryGetValue(edge.FromId, out var outgoing))
+                {
+                    outgoing = [];
+                    adj[edge.FromId] = outgoing;
+                }
+                outgoing.Add(edge.ToId);
+
+                if (!isDirected)
+                {
+                    if (!adj.TryGetValue(edge.ToId, out var incoming))
+                    {
+                        incoming = [];
+                        adj[edge.ToId] = incoming;
+                    }
+                    incoming.Add(edge.FromId);
+                }
+            }
+
+            var queue = new Queue<string>();
+            var parent = new Dictionary<string, string>(StringComparer.Ordinal);
+            queue.Enqueue(start);
+            parent[start] = "";
+
+            while (queue.Count > 0)
+            {
+                var curr = queue.Dequeue();
+                if (string.Equals(curr, goal, StringComparison.Ordinal))
+                {
+                    var reconstructed = new List<string>();
+                    var trace = goal;
+                    while (!string.IsNullOrEmpty(trace))
+                    {
+                        reconstructed.Add(trace);
+                        trace = parent[trace];
+                    }
+                    reconstructed.Reverse();
+                    return reconstructed;
+                }
+
+                if (adj.TryGetValue(curr, out var neighbors))
+                {
+                    foreach (var next in neighbors)
+                    {
+                        if (!parent.ContainsKey(next) && nodeIds.Contains(next))
+                        {
+                            parent[next] = curr;
+                            queue.Enqueue(next);
+                        }
+                    }
+                }
+            }
+
+            return [];
+        }
+    }
 }

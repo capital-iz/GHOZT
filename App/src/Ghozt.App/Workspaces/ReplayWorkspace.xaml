@@ -69,22 +69,41 @@
                             ToolTip="Jump to first step" AutomationProperties.Name="First step" />
                     <Button x:Name="PrevBtn" Content="&#x25C0;" Width="32" Height="28" Margin="2,0" Click="OnPrevStep"
                             ToolTip="Previous step" AutomationProperties.Name="Previous step" />
-                    <Button x:Name="PlayPauseBtn" Content="Play" Width="68" Height="28" Margin="4,0" Click="OnPlayPause"
+                    <Button x:Name="PlayPauseBtn" Content="Play" Width="58" Height="28" Margin="2,0" Click="OnPlayPause"
                             ToolTip="Play/Pause automatic timeline playback" AutomationProperties.Name="Play or pause replay" />
                     <Button x:Name="NextBtn" Content="&#x25B6;" Width="32" Height="28" Margin="2,0" Click="OnNextStep"
                             ToolTip="Next step" AutomationProperties.Name="Next step" />
                     <Button x:Name="LastBtn" Content="&#x25B6;|" Width="32" Height="28" Margin="2,0" Click="OnLastStep"
                             ToolTip="Jump to last step" AutomationProperties.Name="Last step" />
 
-                    <Slider x:Name="StepSlider" Width="200" Margin="14,0,8,0" Minimum="0" Maximum="0" SmallChange="1" LargeChange="1"
+                    <Button x:Name="JumpDeviationBtn" Content="Jump to Deviation" Height="28" Padding="8,0" Margin="6,0,2,0"
+                            Click="OnJumpToDeviation" Visibility="Collapsed"
+                            ToolTip="Jump to next failed oracle or deviation step in the execution sequence"
+                            AutomationProperties.Name="Jump to deviation step" />
+
+                    <Slider x:Name="StepSlider" Width="170" Margin="10,0,6,0" Minimum="0" Maximum="0" SmallChange="1" LargeChange="1"
                             IsSnapToTickEnabled="True" TickFrequency="1" ValueChanged="OnSliderValueChanged"
                             VerticalAlignment="Center" AutomationProperties.Name="Timeline scrubber slider" />
 
-                    <TextBlock x:Name="StepCounterText" Text="0 / 0" Style="{StaticResource Type.MonoStyle}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                    <TextBlock x:Name="StepCounterText" Text="0 / 0" Style="{StaticResource Type.MonoStyle}" VerticalAlignment="Center" Margin="4,0,8,0" />
+
+                    <Rectangle Width="1" Height="16" Fill="{DynamicResource Border.Subtle}" Margin="4,0,8,0" VerticalAlignment="Center" />
+                    <TextBlock Text="SPEED" Style="{StaticResource Type.MicroLabelStyle}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <ComboBox x:Name="SpeedPicker" Width="64" Height="28" SelectionChanged="OnSpeedChanged" VerticalAlignment="Center"
+                              ToolTip="Timeline playback speed" AutomationProperties.Name="Playback speed">
+                        <ComboBoxItem Content="0.5x" />
+                        <ComboBoxItem Content="1.0x" IsSelected="True" />
+                        <ComboBoxItem Content="2.0x" />
+                        <ComboBoxItem Content="5.0x" />
+                    </ComboBox>
                 </StackPanel>
 
                 <!-- Right: Outcome & Verification Seal Indicator -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="DeviationBadge" Visibility="Collapsed" Margin="0,0,8,0" Padding="8,4" CornerRadius="4"
+                            Background="{DynamicResource State.Critical}" VerticalAlignment="Center">
+                        <TextBlock x:Name="DeviationBadgeText" Text="0 DEVIATIONS" FontWeight="Bold" FontSize="10" Foreground="White" />
+                    </Border>
                     <Border x:Name="OutcomeBadge" Padding="10,4" CornerRadius="4" BorderThickness="1"
                             BorderBrush="{DynamicResource Border.Subtle}" Background="{DynamicResource Surface.Card}">
                         <TextBlock x:Name="OutcomeText" Text="NO SWEEP SELECTED" Style="{StaticResource Type.MicroLabelStyle}" />

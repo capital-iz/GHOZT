@@ -42,6 +42,9 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
     private readonly List<(LatticeEdge Edge, Line Line)> _renderedEdges = [];
     private readonly List<(LatticeNode Node, FrameworkElement Element)> _renderedNodes = [];
     private IReadOnlyList<LatticeEdge> _currentEdges = [];
+    private IReadOnlyList<string>? _activePathNodeIds;
+
+    public sealed record PathBreadcrumbItem(string Id, string Label, string Detail, bool IsLast);
 
     // Interactive node dragging state
     private bool _isDraggingNode;
@@ -289,6 +292,12 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
 
     public void Refresh()
     {
+        _activePathNodeIds = null;
+        if (ForensicPathBar != null)
+        {
+            ForensicPathBar.Visibility = Visibility.Collapsed;
+        }
+
         Lattice.Children.Clear();
         Tree.Items.Clear();
         _renderedEdges.Clear();
@@ -471,6 +480,19 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
     private void HighlightNode(LatticeNode? selected)
     {
         _selectedNode = selected;
+
+        if (_activePathNodeIds is not null)
+        {
+            if (selected is null)
+            {
+                _activePathNodeIds = null;
+                if (ForensicPathBar != null) ForensicPathBar.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                return; // Maintain active path trace view
+            }
+        }
 
         if (selected is null)
         {
@@ -749,6 +771,112 @@ public partial class StateMapWorkspace : UserControl, IRefreshableWorkspace
     {
         NodeInspectorDrawer.Visibility = Visibility.Collapsed;
         HighlightNode(null);
+    }
+
+    public void HighlightPath(IReadOnlyList<string> pathIds, IReadOnlyList<LatticeNode> allNodes)
+    {
+        _activePathNodeIds = pathIds;
+        var nodeMap = allNodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
+        var breadcrumbs = new List<PathBreadcrumbItem>();
+        for (var i = 0; i < pathIds.Count; i++)
+        {
+            var id = pathIds[i];
+            var label = nodeMap.TryGetValue(id, out var n) ? n.Label : id;
+            var detail = nodeMap.TryGetValue(id, out var nd) ? $"{nd.Kind} · {nd.State}" : id;
+            breadcrumbs.Add(new PathBreadcrumbItem(id, $"{i}: {label}", detail, i == pathIds.Count - 1));
+        }
+        PathBreadcrumbs.ItemsSource = breadcrumbs;
+        PathHopCountText.Text = $"{pathIds.Count - 1} HOP{(pathIds.Count - 1 == 1 ? "" : "S")}";
+        ForensicPathBar.Visibility = Visibility.Visible;
+
+        var pathSegments = new HashSet<(string From, string To)>();
+        for (var i = 0; i < pathIds.Count - 1; i++)
+        {
+            pathSegments.Add((pathIds[i], pathIds[i + 1]));
+            pathSegments.Add((pathIds[i + 1], pathIds[i]));
+        }
+
+        foreach (var (edge, line) in _renderedEdges)
+        {
+            if (pathSegments.Contains((edge.FromId, edge.ToId)) || pathSegments.Contains((edge.ToId, edge.FromId)))
+            {
+                line.StrokeThickness = 3.5;
+                line.Opacity = 1.0;
+                line.Stroke = B("State.Critical");
+            }
+            else
+            {
+                line.StrokeThickness = 1;
+                line.Opacity = 0.15;
+                line.Stroke = B("Border.Subtle");
+            }
+        }
+
+        var pathSet = pathIds.ToHashSet(StringComparer.Ordinal);
+        var terminalId = pathIds.LastOrDefault();
+        foreach (var (node, element) in _renderedNodes)
+        {
+            if (pathSet.Contains(node.Id))
+            {
+                element.Opacity = 1.0;
+                if (element is Border b)
+                {
+                    if (node.Id == terminalId)
+                    {
+                        b.BorderBrush = B("State.Critical");
+                        b.BorderThickness = new Thickness(3);
+                    }
+                    else
+                    {
+                        b.BorderBrush = B("Accent.BorderStrong");
+                        b.BorderThickness = new Thickness(2);
+                    }
+                }
+            }
+            else
+            {
+                element.Opacity = 0.25;
+            }
+        }
+    }
+
+    private void OnTraceFailurePath(object sender, RoutedEventArgs e)
+    {
+        var target = Shell?.Target;
+        if (target is null || _selectedNode is null) return;
+
+        var allNodes = App.Store.Nodes(target.Id);
+        var allEdges = App.Store.Edges(target.Id);
+        var root = allNodes.FirstOrDefault(n => n.Kind == NodeKind.System) ?? allNodes.FirstOrDefault();
+        if (root is null) return;
+
+        var path = StateSpaceMath.FindShortestPath(allNodes, allEdges, root.Id, _selectedNode.Id);
+        if (path.Count > 0)
+        {
+            HighlightPath(path, allNodes);
+            Shell?.Log("LATTICE.PATH.TRACE", $"Traced failure path from '{root.Label}' to '{_selectedNode.Label}' ({path.Count - 1} hops).",
+                Severity.Info, detail: string.Join(" -> ", path), related: _selectedNode.Id);
+        }
+        else
+        {
+            Shell?.Log("LATTICE.PATH.UNREACHABLE", $"No traversable path from '{root.Label}' to '{_selectedNode.Label}'.",
+                Severity.Medium, related: _selectedNode.Id);
+        }
+    }
+
+    private void OnPathBreadcrumbClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string nodeId })
+        {
+            FocusNode(nodeId);
+        }
+    }
+
+    private void OnClearPathTrace(object sender, RoutedEventArgs e)
+    {
+        _activePathNodeIds = null;
+        ForensicPathBar.Visibility = Visibility.Collapsed;
+        HighlightNode(_selectedNode);
     }
 
     private async void OnRunDiscoverySweep(object sender, RoutedEventArgs e)
