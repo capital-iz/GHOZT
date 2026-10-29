@@ -332,7 +332,7 @@ public sealed class DesktopRuntimeAuditEngine
         sb.AppendLine("# Windows Native Desktop Runtime & UI Automation Audit Dossier");
         sb.AppendLine();
         sb.AppendLine($"- **Date**: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}");
-        sb.AppendLine("- **Auditor**: Capital-Iz Ghozt — Windows Native Runtime Sentry");
+        sb.AppendLine("- **Auditor**: CAPITAL-IZ Ghozt — Windows Native Runtime Sentry");
         sb.AppendLine($"- **Total Audits**: {results.Count}");
         sb.AppendLine($"- **Passed**: {results.Count(r => r.Passed)} / {results.Count}");
         sb.AppendLine();

@@ -105,7 +105,7 @@ public sealed class HeadlessRunner
 
         _out.WriteLine("================================================================================");
         _out.WriteLine("  GHOZT - DEV TESTER :: AUTONOMOUS HEADLESS EXAMINATION RUNNER");
-        _out.WriteLine("  Publisher: Capital-Iz | Sovereign Quality Verification Engine");
+        _out.WriteLine("  Publisher: CAPITAL-IZ | Sovereign Quality Verification Engine");
         _out.WriteLine("================================================================================");
 
         // Branch 1: Autonomous Self-Test Execution

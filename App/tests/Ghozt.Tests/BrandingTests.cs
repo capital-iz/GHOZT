@@ -15,7 +15,7 @@ namespace Ghozt.Tests;
 /// </para>
 /// <para>
 /// The clearance rule is the expensive one: WixUI draws each dialog's title and description over the
-/// LEFT of the banner. The Capital-Iz mark sits at the right for that reason, and this measures the
+/// LEFT of the banner. The CAPITAL-IZ mark sits at the right for that reason, and this measures the
 /// left region is genuinely empty rather than trusting that it was laid out correctly.
 /// </para>
 /// </remarks>
@@ -141,12 +141,12 @@ public sealed class BrandingTests
     public void TheInstallerAuthoringNamesTheProductAndPublisherCorrectly()
     {
         // The naming lock in GZT-ID-001 §02: the formal product name carries the descriptor, the
-        // publisher is Capital-Iz, and the visible shortcut label is "Ghozt" with nothing appended.
+        // publisher is CAPITAL-IZ, and the visible shortcut label is "Ghozt" with nothing appended.
         var wxs = File.ReadAllText(
             Path.Combine(ProductRoot().FullName, "Windows", "Installer", "msi", "Package.wxs"));
 
         Assert.Contains("Name=\"Ghozt - Dev Tester\"", wxs, StringComparison.Ordinal);
-        Assert.Contains("Manufacturer=\"Capital-Iz\"", wxs, StringComparison.Ordinal);
+        Assert.Contains("Manufacturer=\"CAPITAL-IZ\"", wxs, StringComparison.Ordinal);
         Assert.Contains("Name=\"Ghozt\"", wxs, StringComparison.Ordinal);
 
         // A misspelling of the product name is the one branding error that cannot be undone once it

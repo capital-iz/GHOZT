@@ -19,8 +19,8 @@ from pywinauto import Application
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-LOCAL_PUB_EXE = r"C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT\Windows\build\publish\win-x64\Ghozt.exe"
-INSTALLED_EXE = r"C:\Program Files\Capital-Iz\Ghozt\Ghozt.exe"
+LOCAL_PUB_EXE = r"C:\Users\reama\Soft Dev\CAPITAL-IZ\Apps\Desktop\GHOZT\Windows\build\publish\win-x64\Ghozt.exe"
+INSTALLED_EXE = r"C:\Program Files\CAPITAL-IZ\Ghozt\Ghozt.exe"
 GHOZT_EXE = LOCAL_PUB_EXE if os.path.exists(LOCAL_PUB_EXE) else INSTALLED_EXE
 SCREENSHOTS_DIR = r"C:\Users\reama\.gemini\antigravity\brain\54eb30be-3d1b-4020-bb7f-71968b400064\screenshots\e2e_run"
 WORKSPACES = [
@@ -398,7 +398,7 @@ def test_backend_and_event_log_integrity():
     print("=" * 70)
 
     # 1. SQLite Data Plane
-    db_path = os.path.expandvars(r"%LOCALAPPDATA%\Capital-Iz\Ghozt\ghozt.db")
+    db_path = os.path.expandvars(r"%LOCALAPPDATA%\CAPITAL-IZ\Ghozt\ghozt.db")
     if os.path.exists(db_path):
         print(f"Asserting SQLite database at: {db_path}")
         size_kb = os.path.getsize(db_path) / 1024.0

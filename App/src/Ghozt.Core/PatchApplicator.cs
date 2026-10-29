@@ -84,7 +84,7 @@ public static class PatchApplicator
             // Case 2: Target file is external, cross-platform (e.g. Flutter/Android in sibling repo), or synthetic
             var patchDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz",
+                "CAPITAL-IZ",
                 "Ghozt",
                 "Patches");
             Directory.CreateDirectory(patchDir);

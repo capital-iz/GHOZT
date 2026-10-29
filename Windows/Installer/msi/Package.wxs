@@ -2,9 +2,9 @@
 <!--
     Ghozt - Dev Tester installer.
 
-    Follows the Capital-Iz suite signature: WixUI_InstallDir with the family's wizard chrome,
-    perMachine into Program Files\Capital-Iz, a Start menu folder shared with the other products,
-    and an HKLM registration other Capital-Iz apps can read.
+    Follows the CAPITAL-IZ suite signature: WixUI_InstallDir with the family's wizard chrome,
+    perMachine into Program Files\CAPITAL-IZ, a Start menu folder shared with the other products,
+    and an HKLM registration other CAPITAL-IZ apps can read.
 
     UpgradeCode below must never change: it is what lets every future build recognise and replace
     this one instead of installing alongside it.
@@ -14,7 +14,7 @@
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <Package Name="Ghozt - Dev Tester"
-           Manufacturer="Capital-Iz"
+           Manufacturer="CAPITAL-IZ"
            Version="$(var.ProductVersion)"
            UpgradeCode="8F3A6C21-7D94-4E52-9B08-51C4A7E6D310"
            Scope="perMachine"
@@ -22,7 +22,7 @@
            InstallerVersion="500">
 
     <SummaryInformation Description="Ghozt - autonomous software forensics and quality certification"
-                        Manufacturer="Capital-Iz"/>
+                        Manufacturer="CAPITAL-IZ"/>
 
     <!-- Remove the previous version before laying down the new one, so no stale files survive. -->
     <MajorUpgrade AllowSameVersionUpgrades="yes"
@@ -56,14 +56,14 @@
             Message="Ghozt requires Windows 10 or later."/>
 
     <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="CompanyFolder" Name="Capital-Iz">
+      <Directory Id="CompanyFolder" Name="CAPITAL-IZ">
         <Directory Id="INSTALLFOLDER" Name="Ghozt"/>
       </Directory>
     </StandardDirectory>
 
     <!-- The same Start menu folder the rest of the suite uses, so the products group together. -->
     <StandardDirectory Id="ProgramMenuFolder">
-      <Directory Id="ApplicationProgramsFolder" Name="Capital-Iz"/>
+      <Directory Id="ApplicationProgramsFolder" Name="CAPITAL-IZ"/>
     </StandardDirectory>
 
     <StandardDirectory Id="DesktopFolder"/>
@@ -118,7 +118,7 @@
         <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall"/>
 
         <!-- perMachine packages still need a per-user key path for the shortcut component. -->
-        <RegistryValue Root="HKCU" Key="Software\Capital-Iz\Ghozt" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes"/>
+        <RegistryValue Root="HKCU" Key="Software\CAPITAL-IZ\Ghozt" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
 
       <Component Id="DesktopShortcutComponent" Guid="B7E4102A-58C6-4D19-8A73-2F60D9B14E85" Directory="DesktopFolder">
@@ -128,7 +128,7 @@
                   Target="[INSTALLFOLDER]Ghozt.exe"
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="GhoztIcon"/>
-        <RegistryValue Root="HKCU" Key="Software\Capital-Iz\Ghozt" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+        <RegistryValue Root="HKCU" Key="Software\CAPITAL-IZ\Ghozt" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
     </ComponentGroup>
   </Fragment>
@@ -136,12 +136,12 @@
   <Fragment>
     <ComponentGroup Id="ApplicationRegistration">
       <!--
-          Publishes where Ghozt lives so other Capital-Iz apps can find the one installed copy
+          Publishes where Ghozt lives so other CAPITAL-IZ apps can find the one installed copy
           instead of shipping their own, exactly as CommandDeck does. Ghozt is a testing tool for
           the suite's own products, so the deck and Mouse n Key need to be able to locate it.
       -->
       <Component Id="InstallLocationRegistration" Guid="D419F7B2-6E30-4C8D-95A1-7C0B3E58A6D2" Directory="INSTALLFOLDER">
-        <RegistryKey Root="HKLM" Key="SOFTWARE\Capital-Iz\Ghozt">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\CAPITAL-IZ\Ghozt">
           <RegistryValue Name="InstallPath" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes"/>
           <RegistryValue Name="Version" Type="string" Value="$(var.ProductVersion)"/>
           <RegistryValue Name="Executable" Type="string" Value="[INSTALLFOLDER]Ghozt.exe"/>

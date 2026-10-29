@@ -22,7 +22,7 @@ public enum ThemeMode
 /// surface they land on, so no combination can ship unreadable.
 /// </para>
 /// <para>
-/// The token names are the Capital-Iz suite's token names wherever a role already exists there.
+/// The token names are the CAPITAL-IZ suite's token names wherever a role already exists there.
 /// Keeping them identical is what lets a design change be made once and read the same across the
 /// suite. The <c>Ghozt.*</c>, <c>State.*</c>, <c>Authority.*</c>, <c>Evidence.*</c> and
 /// <c>Focus.*</c> families are new, and are the product adaptation the design system admits.
@@ -365,7 +365,7 @@ public sealed record GhoztPalette
         // Keep the accent ink clear of the authority gold.
         //
         // Gold means one thing in this product: an approval, a complete evidence seal, a release
-        // clearance or a Capital-Iz provenance mark. If a palette's ordinary accent ink lands on the
+        // clearance or a CAPITAL-IZ provenance mark. If a palette's ordinary accent ink lands on the
         // same colour, an "Approve" label and any other emphasised label become the same colour, and
         // the surface then claims a decision nobody made.
         //
@@ -504,7 +504,7 @@ public sealed record GhoztPalette
             ["State.OnCritical"] = onCritical,
 
             // Gold is authority, not emphasis. It appears only on an approval, a complete evidence
-            // seal, a release clearance or a Capital-Iz provenance mark.
+            // seal, a release clearance or a CAPITAL-IZ provenance mark.
             ["Authority.Clearance"] = authority,
             ["Authority.Fill"] = authorityFill,
             ["Authority.OnFill"] = onAuthority,

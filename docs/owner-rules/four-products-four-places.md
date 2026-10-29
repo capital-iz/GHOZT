@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-31T12:35:22.463Z
 ---
 
-The Capital-Iz suite is **four products in four places**, and nothing else is a product:
+The CAPITAL-IZ suite is **four products in four places**, and nothing else is a product:
 
 | Product | Path |
 |---|---|

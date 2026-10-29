@@ -1,6 +1,6 @@
 ---
 name: agents-md-is-the-rule-carrier
-description: "Global rule - every Capital-Iz repo carries an AGENTS.md holding all standing rules, so any AI agent on any platform picks them up without Rea re-explaining."
+description: "Global rule - every CAPITAL-IZ repo carries an AGENTS.md holding all standing rules, so any AI agent on any platform picks them up without Rea re-explaining."
 metadata: 
   node_type: memory
   type: feedback
@@ -15,7 +15,7 @@ the ai agents, such that when i return to you - my global rules are active acros
 platforms and i dont have to keep re-explaining myself."*
 
 The mechanism: an **`AGENTS.md` at the root of every repo** (CAPITAL-IZ DESKTOP, Mouse n Key,
-CAPITAL-IZ MOBILE, capital-iz website, and the `Capital-Iz` root), byte-identical in all of them,
+CAPITAL-IZ MOBILE, capital-iz website, and the `CAPITAL-IZ` root), byte-identical in all of them,
 plus a `CLAUDE.md` alias in the desktop repo. `AGENTS.md` is the convention Codex, Cursor, Gemini
 CLI, Copilot and Claude Code all read. Alongside it, `docs/HANDOFF-2026-08-30.md` carries programme
 state: authoritative vs stale trees, priority strategy, anti-hallucination protocol, commit

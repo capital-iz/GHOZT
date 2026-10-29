@@ -3,7 +3,7 @@
 **Blueprint ID:** GZT-UX-002  
 **Date:** 2026-09-17  
 **Status:** Approved  
-**Author:** Capital-Iz Systems Architecture  
+**Author:** CAPITAL-IZ Systems Architecture  
 
 ---
 
@@ -27,7 +27,7 @@
 ---
 
 ## 2. Constraints & Invariants
-- **Design System Invariant:** All visual tokens must resolve through the Capital-Iz 12-palette token engine. No hardcoded literal hex colors in XAML.
+- **Design System Invariant:** All visual tokens must resolve through the CAPITAL-IZ 12-palette token engine. No hardcoded literal hex colors in XAML.
 - **Backward Compatibility:** `GhoztStore.RecentEvents` retains default parameters for existing calls.
 - **Performance Budget:** Transitions must run within 250ms and consume 0 GPU overhead when idle.
 - **Audit Traceability:** Export actions must log canonical events into the tamper-evident ledger.

@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-31T23:27:31.918Z
 ---
 
-**Ghozt - Dev Tester** is a Capital-Iz desktop product, added 2026-08-31/09-01. It is a software
+**Ghozt - Dev Tester** is a CAPITAL-IZ desktop product, added 2026-08-31/09-01. It is a software
 forensics and release-clearance platform: it registers targets, runs governed sweeps, records an
 event ledger, hashes evidence, and decides whether a build has earned clearance.
 

@@ -60,7 +60,7 @@ public sealed class ClearanceEngine
             Id = "GATE.ZERO_CRITICAL",
             Name = "Zero Critical Defect Ceiling",
             Requirement = "Zero unmitigated Critical or Fatal crash defects.",
-            PolicySource = "Capital-Iz Clearance Canon §3",
+            PolicySource = "CAPITAL-IZ Clearance Canon §3",
             Mandatory = true,
             Passed = zeroCritical,
             Result = zeroCritical ? "Passed" : $"Failed ({criticalFaults} critical fault{(criticalFaults == 1 ? "" : "s")})",

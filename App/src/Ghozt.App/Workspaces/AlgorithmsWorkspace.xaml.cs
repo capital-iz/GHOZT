@@ -95,7 +95,7 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
             var dossier = AlgorithmHarness.GenerateMathematicalDossier(_lastReport);
             var exportDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz",
+                "CAPITAL-IZ",
                 "Ghozt",
                 "AlgorithmReports");
             Directory.CreateDirectory(exportDir);
@@ -1357,7 +1357,7 @@ public partial class AlgorithmsWorkspace : UserControl, IRefreshableWorkspace
         {
             var exportDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz",
+                "CAPITAL-IZ",
                 "Ghozt",
                 "AuditDossiers");
             Directory.CreateDirectory(exportDir);

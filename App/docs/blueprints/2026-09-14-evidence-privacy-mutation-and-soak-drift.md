@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Build blueprint (mechanism, alternatives, failure paths, contracts, test cross-reference) |
-| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **Capital-Iz Ghozt** |
+| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **CAPITAL-IZ Ghozt** |
 | Scope | `Apps\Desktop\GHOZT\App` — `Ghozt.Core` & `Ghozt.App` (`RedactionEngine`, `RegressionEngine`, `SoakAnalysisEngine`, `EvidenceWorkspace`, `RegressionsWorkspace`) |
 | Date | 2026-09-14 |
 | Status | Architecture implemented; 220/220 automated tests verified green |
-| Governance | Universal Design System v2.0 §12, Menial v.2 UI Canon, Capital-Iz Execution Doctrine |
+| Governance | Universal Design System v2.0 §12, Menial v.2 UI Canon, CAPITAL-IZ Execution Doctrine |
 | Patent Reference | Ghozt Patent Architecture Blueprint §21 (Soak & Recurrence), §22/§35 (Privacy Validation & Evidence Redaction), §31 (Mutation & False-Confidence Controls) |
 
 ---

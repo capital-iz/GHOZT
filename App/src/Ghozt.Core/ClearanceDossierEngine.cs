@@ -159,7 +159,7 @@ public sealed class ClearanceDossierEngine
         {
             ClearanceId = clearanceId,
             TargetAndBuild = $"{target.Id} / {(string.IsNullOrWhiteSpace(target.BuildLabel) ? "dev" : target.BuildLabel)}",
-            Policy = "Capital-Iz-Release-Standard@v1.0",
+            Policy = "CAPITAL-IZ-Release-Standard@v1.0",
             Decision = decision.Outcome,
             VerifiedWeightedCoverage = Math.Round(coverage, 2),
             UnknownRisk = Math.Round(unknownRisk, 2),
@@ -188,7 +188,7 @@ public sealed class ClearanceDossierEngine
 
         var certDir = destinationDirectory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Capital-Iz",
+            "CAPITAL-IZ",
             "Ghozt",
             "Certificates");
 
@@ -236,7 +236,7 @@ public sealed class ClearanceDossierEngine
     }
 
     /// <summary>
-    /// Generates a self-contained, brand-compliant HTML certificate featuring Capital-Iz
+    /// Generates a self-contained, brand-compliant HTML certificate featuring CAPITAL-IZ
     /// gold authority accents, dark UI tokens, gate results, and three-state honesty bars.
     /// </summary>
     public static string GenerateHtmlCertificate(Target target, ClearanceDigest digest, ClearanceDecision decision)

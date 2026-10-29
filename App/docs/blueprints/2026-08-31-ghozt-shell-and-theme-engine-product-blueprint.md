@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Product blueprint (behaviours, enumerated and cross-referenced to tests) |
-| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **Capital-Iz Ghozt** |
+| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **CAPITAL-IZ Ghozt** |
 | Date | 2026-08-31 |
 | Status | Implemented behaviours verified; planned behaviours marked |
 

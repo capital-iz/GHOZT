@@ -1,4 +1,4 @@
-# AGENTS.md — Capital-Iz suite
+# AGENTS.md — CAPITAL-IZ suite
 
 **Read this before touching anything.** These are the owner's standing rules. They are not
 negotiable and they are not per-task. Rea has had to repeat several of them many times; do not make
@@ -48,7 +48,7 @@ byte-identical).
    starts, that build ships and the item goes in the next version. Only an explicit stop redirects.
 7. **Never expose internal infrastructure in client UI.** The admin host, VPS IP, registry paths and
    channel keys must never be rendered to a user or shipped in user-visible text. Configuration only.
-8. **Naming.** The business is **Capital-Iz**. The product is **CommanDeck** (that exact casing).
+8. **Naming.** The business is **CAPITAL-IZ**. The product is **CommanDeck** (that exact casing).
    **Mouse n Key** is written in full, never abbreviated to MNK in conversation. On mobile there is
    ONE app and it is CommanDeck; Mouse n Key's mobile features live inside it. The AI
    subsystem/workspace is **OCULAR AI** — label everything AI, especially ours, accordingly.
@@ -124,4 +124,4 @@ release needs `android/key.properties` (the keystores exist at `%USERPROFILE%\.c
 - **Overnight ledger:** `docs/OVERNIGHT-LEDGER-2026-08-30.md`.
 - **Blueprints:** `docs/blueprints/` in each repo.
 - **Owner's memory (rules above, canonical):**
-  `C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps\memory\`
+  `C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps\memory\`

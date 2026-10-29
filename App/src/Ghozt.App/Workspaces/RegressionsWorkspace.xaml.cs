@@ -93,7 +93,7 @@ public partial class RegressionsWorkspace : UserControl, IRefreshableWorkspace
         {
             var exportDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz",
+                "CAPITAL-IZ",
                 "Ghozt",
                 "Guards");
             Directory.CreateDirectory(exportDir);

@@ -476,7 +476,7 @@ public partial class EvidenceWorkspace : UserControl, IRefreshableWorkspace
         {
             var exportDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz",
+                "CAPITAL-IZ",
                 "Ghozt",
                 "EvidenceExport");
             Directory.CreateDirectory(exportDir);

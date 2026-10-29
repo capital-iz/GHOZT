@@ -4,7 +4,7 @@
 **Status**: ACTIVE / VERIFIED  
 **Date**: 2026-09-15  
 **Governing Blueprint**: GZT-BLD-019 (`2026-09-15-replay-telemetry-fallback-and-cross-flow-synthesis.md`)  
-**Product**: Capital-Iz Ghozt — Dev Tester  
+**Product**: CAPITAL-IZ Ghozt — Dev Tester  
 
 ---
 

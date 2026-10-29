@@ -13,7 +13,7 @@ namespace Ghozt.Theming;
 /// legibility a property of the system rather than something to be rechecked by eye each time.
 /// </para>
 /// <para>
-/// This mirrors the Capital-Iz suite's <c>ColorMath</c> so that a Ghozt token and a CommanDeck token
+/// This mirrors the CAPITAL-IZ suite's <c>ColorMath</c> so that a Ghozt token and a CommanDeck token
 /// with the same name resolve the same way. Ghozt extends the suite rather than forking it: the
 /// arithmetic here is the suite's arithmetic, and only the palette declarations and the semantic
 /// namespace are new.

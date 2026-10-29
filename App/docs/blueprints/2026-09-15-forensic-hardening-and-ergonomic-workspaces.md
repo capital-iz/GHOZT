@@ -1,7 +1,7 @@
 # Ghozt Build Blueprint — Forensic Hardening, Ergonomic Workspaces & Interactive Developer Laboratories
 **Document ID:** GZT-BLD-016  
 **Date:** 2026-09-15  
-**Author:** Capital-Iz Systems Engineering  
+**Author:** CAPITAL-IZ Systems Engineering  
 **Classification:** Patent-Standard Architecture Specification  
 
 ---
@@ -75,7 +75,7 @@ Given an arbitrary input vector $C = [c_1, c_2, \dots, c_n]$ supplied by the ope
 
 ## 3. Failure Handling & Invariants
 
-1. **Sandboxed Database Isolation (Doctrine §25.2)**: All interactive testing, automated test suites, and visual captures must target ephemeral or sandboxed SQLite databases, never mutating `%LOCALAPPDATA%\Capital-Iz\Ghozt\ghozt.db`.
+1. **Sandboxed Database Isolation (Doctrine §25.2)**: All interactive testing, automated test suites, and visual captures must target ephemeral or sandboxed SQLite databases, never mutating `%LOCALAPPDATA%\CAPITAL-IZ\Ghozt\ghozt.db`.
 2. **Three-State Honesty**: If a finding lacks an evidence artifact or stack trace, the bug report generator explicitly outputs `[UNVERIFIED - No Stack Trace Available]`, never fabricating data.
 3. **Empty Collection Safety**: Filtering with empty results renders a clean `EmptyFilterNotice` rather than crashing the UI with null reference exceptions.
 

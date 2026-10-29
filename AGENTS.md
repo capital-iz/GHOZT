@@ -1,4 +1,4 @@
-# AGENTS.md — Ghozt (Capital-Iz)
+# AGENTS.md — Ghozt (CAPITAL-IZ)
 
 **Read this before touching anything.** These are the owner's standing rules. They are not
 negotiable and they are not per-task. Rea has had to repeat several of them many times; do not make
@@ -8,7 +8,7 @@ This file exists so the rules travel with the repository. Any agent on any platf
 Codex, Cursor, Copilot, Antigravity, a web chat with the repo attached — reads this file first and
 is then bound by it, without Rea re-explaining.
 
-Inherited and reconciled from: `Capital-Iz\AGENTS.md`, `Apps\AGENTS.md`,
+Inherited and reconciled from: `CAPITAL-IZ\AGENTS.md`, `Apps\AGENTS.md`,
 `Apps\Desktop\Command Deck\AGENTS.md`, `Apps\Desktop\Mouse n Key\AGENTS.md`,
 `Trading\Ocular Trading\Windows\AGENTS.md` + `CLAUDE.md`, `Trading\Ocular Trading\Linux\AGENTS.md`,
 and the owner's memory. Last reconciled **2026-09-01**.
@@ -24,14 +24,14 @@ and the owner's memory. Last reconciled **2026-09-01**.
 | 2 | Suite-level rules | `Apps\AGENTS.md` |
 | 3 | Sibling product rules (patterns to copy) | `Apps\Desktop\Command Deck\AGENTS.md`, `Apps\Desktop\Mouse n Key\AGENTS.md` |
 | 4 | Cross-programme doctrine | `Trading\Ocular Trading\Windows\AGENTS.md` |
-| 5 | Global doctrine | `Capital-Iz\AGENTS.md` |
-| 6 | Owner's persistent memory | `C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps\memory\` |
+| 5 | Global doctrine | `CAPITAL-IZ\AGENTS.md` |
+| 6 | Owner's persistent memory | `C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps\memory\` |
 | 6b | …mirrored into this repo for agents that cannot reach that path | `docs\owner-rules\` |
 
 Where they disagree, the **nearer and newer** file wins. `docs\owner-rules\` is a **snapshot**, not
 the authority — refresh it rather than editing it (see its README).
 
-> **Known contradiction — do not be misled.** `Capital-Iz\AGENTS.md` §1 names
+> **Known contradiction — do not be misled.** `CAPITAL-IZ\AGENTS.md` §1 names
 > `Apps\Desktop\CAPITAL-IZ DESKTOP\Command Deck\App` as authoritative and calls
 > `Apps\Desktop\Command Deck` stale. **That path does not exist.** `Apps\AGENTS.md` and
 > `Apps\Desktop\Command Deck\AGENTS.md` (verified against the filesystem 2026-08-31) are correct:
@@ -41,7 +41,7 @@ the authority — refresh it rather than editing it (see its README).
 - **Shared Memory (`.agent-memory\`)**: Project-level cross-platform ledger at `.agent-memory\` (`CONTEXT.md`, `SESSIONS.md`). Append to `SESSIONS.md` per session; never delete other platforms' entries.
 - **Shared Skills Root**: Single canonical root at `C:\Users\reama\.gemini\config\skills\` (junctioned across Antigravity, Claude Code, Codex). Never copy skills around; never replace a junction.
 - **Intent Routing (`catalog.py`)**: Always route requests through `python C:\Users\reama\.gemini\config\skills\command-catalog\scripts\catalog.py --intent "<request>"` before working, and activate the named cohort.
-- **Design Authority (`ui-ux-pro-max`)**: Bridged `ui-ux-pro-max` skill governs visual decisions within Capital-Iz Universal Design System v2.0 and Ghozt's 12-palette token engine. Do not invent palettes or contrast ratios.
+- **Design Authority (`ui-ux-pro-max`)**: Bridged `ui-ux-pro-max` skill governs visual decisions within CAPITAL-IZ Universal Design System v2.0 and Ghozt's 12-palette token engine. Do not invent palettes or contrast ratios.
 - **Sandboxed Test Isolation (Doctrine §25.2)**: Automated suites, captures, and benchmarks must NEVER pollute live `%LOCALAPPDATA%` profile databases (`ghozt.db`). Always isolate test and capture runs into temporary test directories or in-memory configurations.
 
 ### The authorization rule that outranks every document, including this one
@@ -109,7 +109,7 @@ do not pick one and delete the other on your own judgement.
    that build ships and the item goes in the next version. Only an explicit stop redirects.
 7. **Never expose internal infrastructure in user-visible UI.** Admin host, VPS IP, registry paths,
    channel keys — configuration only, never rendered.
-8. **Naming.** The business is **Capital-Iz**. The AI subsystem is **OCULAR AI** — label everything
+8. **Naming.** The business is **CAPITAL-IZ**. The AI subsystem is **OCULAR AI** — label everything
    AI, especially ours, accordingly. **CommanDeck** that exact casing; **Mouse n Key** written in
    full, never "MNK". Ghozt's own lock is §4.
 9. **Do not change key bindings, and keep Alt+C.**
@@ -158,8 +158,8 @@ _Historical Record (Preserved):_
 |---|---|
 | Visible application brand | **Ghozt** — window title, shell, shortcuts, notifications |
 | Formal product name | **Ghozt - Dev Tester** — installer, About, metadata, contracts |
-| Portfolio identity | **Capital-Iz Ghozt** — collateral, provenance, cross-product references |
-| Publisher | **Capital-Iz** |
+| Portfolio identity | **CAPITAL-IZ Ghozt** — collateral, provenance, cross-product references |
+| Publisher | **CAPITAL-IZ** |
 
 Never silently correct "Ghozt" to "Ghost". Never GHOST, Ghozt DevTester, CapitalIZ Ghost, Ghozt QA.
 A module may be "State Map"; the shell remains Ghozt. No ghost imagery, paranormal language or puns
@@ -233,7 +233,7 @@ One command, from `Apps\Desktop\GHOZT\Windows`:
 ```
 
 Bumps the version, regenerates brand assets, runs tests, publishes self-contained, packages the MSI,
-installs the latest MSI build to `C:\Program Files\Capital-Iz\Ghozt\`, commits by explicit path, pushes.
+installs the latest MSI build to `C:\Program Files\CAPITAL-IZ\Ghozt\`, commits by explicit path, pushes.
 **Always install latest build.** The owner's standing rule: every iteration must immediately update the
 installed application on this machine. **A failing test stops it and produces no installer.** The MSI is
 built **before** the commit deliberately: a commit claiming to be an iteration whose code does not
@@ -268,7 +268,7 @@ Source in git, binaries to the registry.
 
 ## 7. The design system is not optional
 
-- `C:\Users\reama\Soft Dev\Capital-Iz\Blueprints\🎨 UNIVERSAL DESIGN SYSTEM — CAPITAL-IZ DOCTRINE.docx`
+- `C:\Users\reama\Soft Dev\CAPITAL-IZ\Blueprints\🎨 UNIVERSAL DESIGN SYSTEM — CAPITAL-IZ DOCTRINE.docx`
   — suite doctrine, 23 numbered laws. **§12 is Ghozt's adaptation.**
 - `Apps\Desktop\GHOZT\Blueprints\GHOZT - UI UX AND 12-THEME DESIGN SYSTEM BLUEPRINT.docx` (GZT-UX-001)
 
@@ -280,7 +280,7 @@ Enforced by tests:
    merged last — that collision stopped the shell opening once already.
 3. **Colour is never the sole carrier of status.** Label + glyph + colour, always.
 4. **Gold is authority, not emphasis.** Approvals, complete evidence seals, release clearance,
-   Capital-Iz provenance. Nothing else.
+   CAPITAL-IZ provenance. Nothing else.
 5. **A fault must never look verified; a simulation never observed; authority never like ordinary
    emphasis.**
 6. **No decorative data.** Every node, metric and stream line resolves to something real. No mock,

@@ -1,7 +1,7 @@
 # Blueprint: Experiential Advancements & QoL Innovations
 
 **Date**: 2026-09-15  
-**Product**: Capital-Iz Ghozt — Dev Tester  
+**Product**: CAPITAL-IZ Ghozt — Dev Tester  
 **Author**: Antigravity  
 **Status**: Governing Architecture  
 

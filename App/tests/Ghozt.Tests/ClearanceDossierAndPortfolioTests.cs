@@ -83,7 +83,7 @@ public sealed class ClearanceDossierAndPortfolioTests : IDisposable
         // Verify Patent Appendix B Table 10 contract fields
         Assert.StartsWith("CLR-", digest.ClearanceId);
         Assert.Contains("v1.0.0-rc1", digest.TargetAndBuild);
-        Assert.Equal("Capital-Iz-Release-Standard@v1.0", digest.Policy);
+        Assert.Equal("CAPITAL-IZ-Release-Standard@v1.0", digest.Policy);
         Assert.True(digest.VerifiedWeightedCoverage >= 0.0);
         Assert.True(digest.UnknownRisk >= 0.0);
         Assert.Equal(1.0, Math.Round(digest.VerifiedWeightedCoverage + digest.UnknownRisk, 2));
@@ -219,7 +219,7 @@ public sealed class ClearanceDossierAndPortfolioTests : IDisposable
 
         var jsonContent = File.ReadAllText(jsonPath);
         Assert.Contains(cert.Digest.ClearanceId, jsonContent);
-        Assert.Contains("Capital-Iz-Release-Standard@v1.0", jsonContent);
+        Assert.Contains("CAPITAL-IZ-Release-Standard@v1.0", jsonContent);
 
         var htmlContent = File.ReadAllText(cert.SavedFilePath);
         Assert.Contains("CAPITAL-IZ GHOZT", htmlContent, StringComparison.OrdinalIgnoreCase);

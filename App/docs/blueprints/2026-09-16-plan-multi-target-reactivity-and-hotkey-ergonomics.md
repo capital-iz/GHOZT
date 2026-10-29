@@ -3,7 +3,7 @@
 **Document ID**: GZT-PLN-020  
 **Status**: ACTIVE / VERIFIED  
 **Date**: 2026-09-16  
-**Product**: Capital-Iz Ghozt — Dev Tester  
+**Product**: CAPITAL-IZ Ghozt — Dev Tester  
 **Paired Build Blueprint**: GZT-BLD-020  
 
 ---

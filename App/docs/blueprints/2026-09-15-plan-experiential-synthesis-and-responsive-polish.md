@@ -2,7 +2,7 @@
 
 - **Document ID:** GZT-PLN-018
 - **Date:** 2026-09-15
-- **Author:** Antigravity (Capital-Iz Systems Architect & Execution Engineer)
+- **Author:** Antigravity (CAPITAL-IZ Systems Architect & Execution Engineer)
 - **Status:** In Progress
 - **Direct Parity Blueprint:** GZT-BLD-018
 
@@ -30,5 +30,5 @@ To achieve complete experiential fluidity and responsive robustness across all w
 6. **Phase 5.6 — Test Suite, Mutation Test, Package & UI Verification**:
    - Add `WorkspacesExperientialPhase5SynthesisAndPolishExist` in `RealExecutionTests.cs`.
    - Perform mutation testing (Red $\rightarrow$ Green).
-   - Package MSI 1.0.9, install to `C:\Program Files\Capital-Iz\Ghozt\`, commit, and push.
+   - Package MSI 1.0.9, install to `C:\Program Files\CAPITAL-IZ\Ghozt\`, commit, and push.
    - Re-run `deep_forensic_drive.py` and verify all 19 screenshots.

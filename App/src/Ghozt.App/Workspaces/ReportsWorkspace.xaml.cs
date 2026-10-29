@@ -231,7 +231,7 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
     {
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Capital-Iz", "Ghozt", "Reports");
+            "CAPITAL-IZ", "Ghozt", "Reports");
         Directory.CreateDirectory(dir);
         return dir;
     }
@@ -522,7 +522,7 @@ public partial class ReportsWorkspace : UserControl, IRefreshableWorkspace
         var titlePanel = new StackPanel();
         titlePanel.Children.Add(new TextBlock
         {
-            Text = "Capital-Iz Estate Quality & Release Readiness Rollup",
+            Text = "CAPITAL-IZ Estate Quality & Release Readiness Rollup",
             FontSize = 18,
             FontWeight = FontWeights.Bold,
             Foreground = (Brush)TryFindResource("Text.Primary"),

@@ -3,7 +3,7 @@
 These files are a **read-only mirror** of Rea's persistent memory at:
 
 ```
-C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps\memory\
+C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps\memory\
 ```
 
 They are mirrored here so that an agent on **any** platform — Codex, Cursor, Copilot, Antigravity, a
@@ -20,7 +20,7 @@ disagree, the file under `.claude\projects\...\memory\` is correct.
 Refresh the mirror with:
 
 ```powershell
-Copy-Item "$env:USERPROFILE\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps\memory\*.md" `
+Copy-Item "$env:USERPROFILE\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps\memory\*.md" `
           "Apps\Desktop\GHOZT\docs\owner-rules\" -Force
 ```
 

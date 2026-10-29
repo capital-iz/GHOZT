@@ -16,7 +16,7 @@ if (Test-Path $log) {
     Select-String -Path $log -Pattern 'Product:|MainEngineThread is returning|Installation success or error' | Select-Object -Last 5 | ForEach-Object { Write-Host $_.Line }
 }
 
-$exe = 'C:\Program Files\Capital-Iz\Ghozt\Ghozt.exe'
+$exe = 'C:\Program Files\CAPITAL-IZ\Ghozt\Ghozt.exe'
 if (Test-Path $exe) {
     (Get-Item $exe).VersionInfo | Format-List ProductVersion, FileVersion, FileName
 }

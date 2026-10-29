@@ -3,7 +3,7 @@
 **Classification:** Patent-Standard Architecture Specification  
 **Status:** IMPLEMENTED  
 **Date:** 2026-09-17  
-**Authority:** Capital-Iz Systems Architecture & Universal Design System v2.0  
+**Authority:** CAPITAL-IZ Systems Architecture & Universal Design System v2.0  
 
 ---
 
@@ -83,7 +83,7 @@ The panel surfaces:
 
 The **Export Hub Card** (`ExportHubCard`) provides dedicated operational cards for all five supported report export formats:
 1. **Markdown (`.md`)**: Full technical brief formatted for GitHub/GitLab pull request descriptions.
-2. **HTML (`.html`)**: Self-contained styled report with embedded SVG charts and Capital-Iz design tokens.
+2. **HTML (`.html`)**: Self-contained styled report with embedded SVG charts and CAPITAL-IZ design tokens.
 3. **JSON (`.json`)**: Machine-readable JSON schema containing the entire evidence dataset.
 4. **OASIS SARIF v2.1.0 (`.sarif`)**: Static Analysis Results Interchange Format for automated ingestion by GitHub Code Scanning, SonarQube, and CI security gates.
 5. **JUnit XML (`.xml`)**: Automated test execution XML for Jenkins, Azure Pipelines, and GitLab CI.

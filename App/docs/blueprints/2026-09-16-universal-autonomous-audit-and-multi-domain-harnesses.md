@@ -3,19 +3,19 @@
 | Field | Value |
 |---|---|
 | Document | Build blueprint (mathematical formulations, system DAG, multi-domain runtime harnesses, failure handling, contracts) |
-| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **Capital-Iz Ghozt** |
+| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **CAPITAL-IZ Ghozt** |
 | Scope | `Apps\Desktop\GHOZT\App` — `Ghozt.Core` & `Ghozt.App` (Mobile Emulator E2E, Desktop Native Runtime, Scientific Mathematical Audit, ML/Agentic AI Hardening) |
 | Date | 2026-09-16 |
 | Status | Ratified and implemented under Owner Directive |
-| Governance | Universal Design System v2.0 §12, Capital-Iz Execution Doctrine, Menial v.2 UI Canon |
+| Governance | Universal Design System v2.0 §12, CAPITAL-IZ Execution Doctrine, Menial v.2 UI Canon |
 
 ---
 
 ## 1. Executive Summary & Foundational Purpose
 
-This blueprint establishes the **Universal Autonomous Multi-Domain Audit & Forensic Runtime Engine** within Capital-Iz Ghozt. 
+This blueprint establishes the **Universal Autonomous Multi-Domain Audit & Forensic Runtime Engine** within CAPITAL-IZ Ghozt. 
 
-Ghozt was originally established as an autonomous exploration and state-lattice engine for Windows desktop targets. However, practical verification across the Capital-Iz engineering portfolio requires rigorous, hands-on, deep forensic execution across four specialized technical domains:
+Ghozt was originally established as an autonomous exploration and state-lattice engine for Windows desktop targets. However, practical verification across the CAPITAL-IZ engineering portfolio requires rigorous, hands-on, deep forensic execution across four specialized technical domains:
 1. **Mobile Application Runtime & Android Emulator E2E Engine**: Validates mobile codebases (Flutter, Native Android/Kotlin) by managing emulator life cycles, executing UI Automator gestures via ADB, streaming real-time Logcat telemetry to detect fatal runtime faults (including Android SQLite row-returning execSQL violations and Flutter RenderFlex overflows), and capturing cryptographic proof screencaps.
 2. **Windows Desktop Native Runtime & UI Automation Engine**: Verifies desktop applications directly on the host OS through clean build validation, process telemetry supervision, physical UI Automation / Win32 direct message driving, database integrity validation, and visual proofing.
 3. **First-Principles Mathematical & Layered Algorithmic Audit Engine**: Evaluates scientific computing and numerical simulation engines from foundational mathematics: formula selection against closed-form analytical truths, 4-layer DAG cascade boundary invariants, IEEE 754 floating-point $\varepsilon$-damping, and property-based boundary fuzzing.
@@ -178,7 +178,7 @@ To achieve full operational maturity beyond synthetic testing, Ghozt incorporate
    - **Autonomous Patch Applicator (`PatchApplicator.ApplyPatch`)**:
      * Parses unified diff header (`--- a/...`, `+++ b/...`).
      * Locates target file on disk, creates verified `.bak` backup copy, and replaces targeted hunks cleanly.
-     * For synthetic, external, or cross-platform targets, persists verified patch to `%LOCALAPPDATA%\Capital-Iz\Ghozt\Patches\<slug>.patch` ready for `git apply`.
+     * For synthetic, external, or cross-platform targets, persists verified patch to `%LOCALAPPDATA%\CAPITAL-IZ\Ghozt\Patches\<slug>.patch` ready for `git apply`.
      * Renders interactive **[Apply Patch]** button on remediation cards that transitions to "Applied!" upon execution.
 
 4. **Live Execution Console / Streaming Telemetry Drawer**:

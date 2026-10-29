@@ -17,7 +17,7 @@
 3. Synchronize `ReportsWorkspace.xaml.cs` code-behind to update `ReportOperationsPanel` dynamically whenever a report or portfolio rollup is generated or selected.
 4. Add comprehensive unit and markup contract tests to `RealExecutionTests.cs`.
 5. Execute isolated runtime visual verification and capture high-resolution proof screenshots.
-6. Package MSI via `iterate.ps1`, install locally to `C:\Program Files\Capital-Iz\Ghozt\`, commit, and push.
+6. Package MSI via `iterate.ps1`, install locally to `C:\Program Files\CAPITAL-IZ\Ghozt\`, commit, and push.
 
 ---
 

@@ -3,7 +3,7 @@
 **Document ID**: GZT-BLD-019  
 **Status**: ACTIVE / VERIFIED  
 **Date**: 2026-09-15  
-**Product**: Capital-Iz Ghozt — Dev Tester  
+**Product**: CAPITAL-IZ Ghozt — Dev Tester  
 **Subsystem**: Replay Workspace & Cross-Flow Ergonomics  
 
 ---

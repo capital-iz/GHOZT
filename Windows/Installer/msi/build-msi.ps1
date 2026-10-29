@@ -133,4 +133,4 @@ if ($LASTEXITCODE -ne 0) { throw "wix build failed with exit code $LASTEXITCODE"
 $msi = Get-Item $msiPath
 Write-Host ""
 Write-Host ("==> {0} ({1:N1} MB)" -f $msi.FullName, ($msi.Length / 1MB)) -ForegroundColor Green
-Write-Host "    Publisher: Capital-Iz    Product: Ghozt - Dev Tester    Version: $msiVersion"
+Write-Host "    Publisher: CAPITAL-IZ    Product: Ghozt - Dev Tester    Version: $msiVersion"

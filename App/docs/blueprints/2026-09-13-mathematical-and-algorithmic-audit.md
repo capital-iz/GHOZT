@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Build blueprint (mathematical foundations, equations, derivations, DAG layers, failure paths, proofs) |
-| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **Capital-Iz Ghozt** |
+| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **CAPITAL-IZ Ghozt** |
 | Scope | `Apps\Desktop\GHOZT\App` — `Ghozt.Core` & `Ghozt.App` (State-Space Exploration, Markov Automaton, Bayesian Laplace & Wilson Score, Shannon Entropy, Graph Analytics, IEEE 754 Hygiene) |
 | Date | 2026-09-13 |
 | Status | Implementation verified; mathematical models ratified under /goal |
-| Governance | Universal Design System v2.0 §12, Capital-Iz Execution Doctrine, First-Principles Scientific Audit |
+| Governance | Universal Design System v2.0 §12, CAPITAL-IZ Execution Doctrine, First-Principles Scientific Audit |
 
 ---
 

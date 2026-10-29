@@ -482,7 +482,7 @@ public sealed class MobileAuditEngine
         sb.AppendLine("# Android Mobile Emulator E2E & UI Runtime Audit Dossier");
         sb.AppendLine();
         sb.AppendLine($"- **Date**: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}");
-        sb.AppendLine("- **Auditor**: Capital-Iz Ghozt — Mobile Runtime Sentry");
+        sb.AppendLine("- **Auditor**: CAPITAL-IZ Ghozt — Mobile Runtime Sentry");
         sb.AppendLine($"- **Total Audits**: {results.Count}");
         sb.AppendLine($"- **Passed**: {results.Count(r => r.Passed)} / {results.Count}");
         sb.AppendLine();
@@ -552,7 +552,7 @@ public sealed class MobileAuditEngine
             // If live ADB device has empty buffer or is unavailable, supply high-fidelity diagnostic stream
             rawLines.Add("09-16 17:00:01.120 I/ActivityManager: Start proc 1420:com.capitaliz.mobile/u0a120 for activity");
             rawLines.Add("09-16 17:00:01.340 D/FlutterRenderer: SurfaceView created: 1080x2400 format=1");
-            rawLines.Add("09-16 17:00:02.050 I/flutter: [INFO] Initializing Capital-Iz Mobile Runtime Engine v2.0");
+            rawLines.Add("09-16 17:00:02.050 I/flutter: [INFO] Initializing CAPITAL-IZ Mobile Runtime Engine v2.0");
             rawLines.Add("09-16 17:00:02.410 E/SQLiteDatabase: Error executing: PRAGMA journal_mode = WAL");
             rawLines.Add("09-16 17:00:02.412 E/SQLiteDatabase: android.database.SQLException: Queries can be performed using SQLiteDatabase query or rawQuery methods only.");
             rawLines.Add("09-16 17:00:03.180 E/flutter: [ERROR:flutter/lib/ui/ui_dart_state.cc] A RenderFlex overflowed by 48 pixels on the bottom.");

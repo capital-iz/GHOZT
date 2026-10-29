@@ -3,7 +3,7 @@
 - **Document code:** GZT-BLD-007
 - **Version:** `0.6.0`
 - **Date:** 2026-09-14
-- **Author:** Capital-Iz / Systems Architecture
+- **Author:** CAPITAL-IZ / Systems Architecture
 - **Governing Doctrine:** Ghozt Patent-Level Functional and System Architecture Blueprint (§19, §20, §34, §37)
 - **Status:** APPROVED / IMPLEMENTED
 

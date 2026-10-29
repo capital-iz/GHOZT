@@ -3,7 +3,7 @@
 **Blueprint ID:** GZT-UX-003  
 **Date:** 2026-09-17  
 **Status:** Approved  
-**Author:** Capital-Iz Systems Architecture  
+**Author:** CAPITAL-IZ Systems Architecture  
 
 ---
 
@@ -39,7 +39,7 @@
 ---
 
 ## 2. Constraints & Invariants
-- **Design System Invariant:** All visual tokens must resolve through the Capital-Iz 12-palette token engine. No hardcoded literal hex colors in XAML.
+- **Design System Invariant:** All visual tokens must resolve through the CAPITAL-IZ 12-palette token engine. No hardcoded literal hex colors in XAML.
 - **Three-State Honesty Invariant (Doctrine §9):** Absence of evidence or unmeasured metrics must display as UNVERIFIED or UNKNOWN, never defaulted to zero or green.
 - **Zero Live Contamination (Doctrine §25.2):** All test and capture suites run against isolated sandbox databases.
 - **Performance Budget:** Causal path computation must complete in < 5ms for lattices up to 1,000 nodes.

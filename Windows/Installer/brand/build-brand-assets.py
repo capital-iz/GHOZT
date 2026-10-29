@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Generates Ghozt's branding assets from the Capital-Iz master mark.
+Generates Ghozt's branding assets from the CAPITAL-IZ master mark.
 
 Run:  python build-brand-assets.py
 
@@ -49,7 +49,7 @@ def font(path: str, size: int) -> ImageFont.FreeTypeFont:
 
 
 def mark(height: int, colour=None) -> Image.Image:
-    """The Capital-Iz monogram, scaled to a height and optionally recoloured."""
+    """The CAPITAL-IZ monogram, scaled to a height and optionally recoloured."""
     src = Image.open(MASTER_MARK).convert("RGBA")
 
     # Trim the transparent margin so 'height' means the height of the glyph itself rather than of
@@ -138,7 +138,7 @@ def build_dialog() -> str:
     draw.text((text_x + 2, glyph_y + 62), "D E V   T E S T E R", font=sub, fill=GREY)
 
     house = font(FONT_LIGHT, 11)
-    draw.text((text_x, glyph_y + 80), "A Capital-Iz system", font=house, fill=GREY)
+    draw.text((text_x, glyph_y + 80), "A CAPITAL-IZ system", font=house, fill=GREY)
 
     # The left spectral rail, echoing the shell's own selected-item treatment.
     draw.rectangle([0, 0, 3, 311], fill=SPECTRAL)
@@ -150,11 +150,11 @@ def build_dialog() -> str:
 
 def build_icon() -> str:
     """
-    The application icon: the Capital-Iz monogram in spectral teal on a chamfered void plate.
+    The application icon: the CAPITAL-IZ monogram in spectral teal on a chamfered void plate.
 
     The chamfer is Ghozt's own geometry (one clipped corner, GZT-UX-001 §04) and the colour is its
     signature. The monogram is the family's, unchanged - the product is Ghozt, the house is
-    Capital-Iz, and the icon says both without inventing a second logo.
+    CAPITAL-IZ, and the icon says both without inventing a second logo.
     """
     size = 512
     inset = 26

@@ -6,11 +6,11 @@ All agents working here must treat the trading blueprint and CAPITAL-IZ HQ doctr
 
 ## Primary Sources
 
-- Trading blueprint: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\Capital-Iz Institutional Trading System – Unified Structural Blueprint.txt`
-- HQ blueprint: `C:\Users\reama\Soft Dev\Capital-Iz\Blueprints\🏢 CAPITAL-IZ HQ SYSTEM BLUEPRINT.txt`
-- Owner-directive doctrine: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\Blueprints\2026-07-29-owner-directive-continuous-blueprint-evolution.md`
-- Legacy algorithm source: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\mt5-ml-bot`
-- Main repository root: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\Ocular Trading`
+- Trading blueprint: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\CAPITAL-IZ Institutional Trading System – Unified Structural Blueprint.txt`
+- HQ blueprint: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Blueprints\🏢 CAPITAL-IZ HQ SYSTEM BLUEPRINT.txt`
+- Owner-directive doctrine: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\Blueprints\2026-07-29-owner-directive-continuous-blueprint-evolution.md`
+- Legacy algorithm source: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\mt5-ml-bot`
+- Main repository root: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\Ocular Trading`
 
 ## Owner Authority and Continuous Blueprint Evolution
 

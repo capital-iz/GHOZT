@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Build blueprint (mechanism, alternatives, failure paths) |
-| Product | Ghozt - Dev Tester · publisher **Capital-Iz** |
+| Product | Ghozt - Dev Tester · publisher **CAPITAL-IZ** |
 | Scope | `Apps\Desktop\GHOZT\Windows` — brand assets, WiX MSI, iteration workflow, git |
 | Date | 2026-09-01 |
 | Status | Implemented; MSI built and its payload verified by execution |
@@ -37,12 +37,12 @@ Read off the existing suite installers rather than invented. `CapitalIz.CommandD
 | Element | Suite convention | Ghozt |
 |---|---|---|
 | Toolchain | WiX 5, `WixUI_InstallDir` | same |
-| Banner | 493x58, white, Capital-Iz mark at the **right** | same, plus a spectral hairline at the foot |
+| Banner | 493x58, white, CAPITAL-IZ mark at the **right** | same, plus a spectral hairline at the foot |
 | Dialog | 493x312, white, mark left-of-centre | same, plus the spectral rail down the left edge |
-| Publisher | `Capital-Iz` | same |
-| Install root | `Program Files\Capital-Iz\<Product>` | `…\Capital-Iz\Ghozt` |
-| Start menu | shared `Capital-Iz` folder | same |
-| HKLM registration | `SOFTWARE\Capital-Iz\<Product>` with InstallPath + Version | same, plus `Executable` |
+| Publisher | `CAPITAL-IZ` | same |
+| Install root | `Program Files\CAPITAL-IZ\<Product>` | `…\CAPITAL-IZ\Ghozt` |
+| Start menu | shared `CAPITAL-IZ` folder | same |
+| HKLM registration | `SOFTWARE\CAPITAL-IZ\<Product>` with InstallPath + Version | same, plus `Executable` |
 | Upgrade | `MajorUpgrade`, immutable `UpgradeCode` | same, `8F3A6C21-…` |
 | Files | `<Files Include="$(var.PublishDir)\**"/>` | same |
 | Runtime | self-contained win-x64 | same |
@@ -57,7 +57,7 @@ mutation-tested: moving the mark to x=200 reported 800 offending pixels.
 | Difference | Reason |
 |---|---|
 | **No autostart** | CommandDeck registers a Run key because a clipboard manager that is not running has missed the copy. Ghozt examines systems under explicit authority; a forensics tool that launches itself at every logon can act before anyone decided it should. |
-| Icon is a chamfered void plate in spectral teal | Ghozt's own geometry and colour (GZT-UX-001 §04), carrying the family monogram unchanged. The product is Ghozt; the house is Capital-Iz. |
+| Icon is a chamfered void plate in spectral teal | Ghozt's own geometry and colour (GZT-UX-001 §04), carrying the family monogram unchanged. The product is Ghozt; the house is CAPITAL-IZ. |
 | `CloseApplication` timeout 15s, not 10 | Ghozt holds a SQLite write-ahead log. The extra time lets it close cleanly rather than be killed mid-transaction. |
 
 ## 3. Branding is generated, not drawn
@@ -131,11 +131,11 @@ mistake.
 - Mutation-tested the banner clearance check: moved the mark left, watched it report 800 offending
   pixels, restored.
 - MSI properties read back from the package: `ProductName = Ghozt - Dev Tester`,
-  `Manufacturer = Capital-Iz`, `ProductVersion = 0.1.1`, `UpgradeCode = 8F3A6C21-…`,
+  `Manufacturer = CAPITAL-IZ`, `ProductVersion = 0.1.1`, `UpgradeCode = 8F3A6C21-…`,
   `ARPPRODUCTICON = GhoztIcon`.
 - 258 file rows, 261 components, both shortcuts named `Ghozt`.
 - Payload extracted and executed successfully.
-- `Ghozt.exe` metadata: ProductName `Ghozt - Dev Tester`, Company `Capital-Iz`, FileVersion
+- `Ghozt.exe` metadata: ProductName `Ghozt - Dev Tester`, Company `CAPITAL-IZ`, FileVersion
   `0.1.1.0`.
 - Two full iterations run through `iterate.ps1`, both pushed
   (`4f5501b..150ef39`, `150ef39..b485766`).

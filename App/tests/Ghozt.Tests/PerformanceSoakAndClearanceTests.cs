@@ -122,7 +122,7 @@ public sealed class PerformanceSoakAndClearanceTests : IDisposable
         Assert.Contains("circle", report.HtmlContent);
         Assert.Contains("Forensic Examination Dossier", report.HtmlContent);
         Assert.Contains("Release Policy Clearance Gates", report.HtmlContent);
-        Assert.Contains("Capital-Iz Ghozt", report.HtmlContent);
+        Assert.Contains("CAPITAL-IZ Ghozt", report.HtmlContent);
         Assert.Contains("badge-", report.HtmlContent);
         Assert.Contains("AuditorBob", report.GeneratedBy);
         Assert.False(string.IsNullOrWhiteSpace(report.Sha256Seal));

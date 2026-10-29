@@ -6,11 +6,11 @@ All agents working here must treat the trading blueprint and CAPITAL-IZ HQ doctr
 
 ## Primary Sources
 
-- Trading blueprint: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\Capital-Iz Institutional Trading System – Unified Structural Blueprint.txt`
-- HQ blueprint: `C:\Users\reama\Soft Dev\Capital-Iz\Blueprints\🏢 CAPITAL-IZ HQ SYSTEM BLUEPRINT.txt`
-- Owner-directive doctrine: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\Blueprints\2026-07-29-owner-directive-continuous-blueprint-evolution.md`
-- Legacy algorithm source: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\mt5-ml-bot`
-- Main repository root: `C:\Users\reama\Soft Dev\Capital-Iz\Trading\Ocular Trading`
+- Trading blueprint: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\CAPITAL-IZ Institutional Trading System – Unified Structural Blueprint.txt`
+- HQ blueprint: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Blueprints\🏢 CAPITAL-IZ HQ SYSTEM BLUEPRINT.txt`
+- Owner-directive doctrine: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\Blueprints\2026-07-29-owner-directive-continuous-blueprint-evolution.md`
+- Legacy algorithm source: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\mt5-ml-bot`
+- Main repository root: `C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\Ocular Trading`
 
 ## Owner Authority and Continuous Blueprint Evolution
 
@@ -313,7 +313,7 @@ Small starting capital is a constraint to design FOR, not an objection to raise:
 
 Owner, verbatim: "BPL states apps must be C#. Now a new higher authority is RUST as the dominant language across all my new apps. So global agent rule. But for this app we will not do full port - just steady migration and mostly hybrid system, not removing what works already, just doing new stuff in Rust." And: "everything new or currently incomplete more than 50% must be done full from here on in Rust."
 
-- **Rust is the dominant language for every NEW Capital-Iz app.** This supersedes the C# authority line above for new work.
+- **Rust is the dominant language for every NEW CAPITAL-IZ app.** This supersedes the C# authority line above for new work.
 - **Anything NEW is written in Rust** - new algorithms, engines, services, math kernels.
 - **Anything less than 50% complete is FINISHED IN RUST, in full.** Half-built work has no earned correctness to protect.
 - **Anything already working is LEFT ALONE.** This rule is not permission to rewrite; it is the opposite.

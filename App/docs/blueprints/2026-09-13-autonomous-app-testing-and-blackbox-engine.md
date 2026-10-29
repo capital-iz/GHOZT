@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Build blueprint (mechanism, alternatives, failure paths, contracts) |
-| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **Capital-Iz Ghozt** |
+| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **CAPITAL-IZ Ghozt** |
 | Scope | `Apps\Desktop\GHOZT\App` — `Ghozt.Core` & `Ghozt.App` (Process supervision, UIA driver, exploration loop, oracle engine, black-box recorder, Replay workspace) |
 | Date | 2026-09-13 |
 | Status | Architecture finalized; implementation in progress under /goal |
-| Governance | Universal Design System v2.0 §12, Menial v.2 UI Canon, Capital-Iz Execution Doctrine |
+| Governance | Universal Design System v2.0 §12, Menial v.2 UI Canon, CAPITAL-IZ Execution Doctrine |
 
 ---
 

@@ -112,7 +112,7 @@ public static class GhoztCatalog
         {
             Key = "institutional_gold",
             Label = "Institutional Gold",
-            Description = "Premium Capital-Iz authority and formal review.",
+            Description = "Premium CAPITAL-IZ authority and formal review.",
             SuitedTo = "Reports, approvals, certificates, executive review",
             Primary = "#CDA661",
             Secondary = "#B08D55",

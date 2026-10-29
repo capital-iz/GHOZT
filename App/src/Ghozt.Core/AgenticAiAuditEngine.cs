@@ -438,7 +438,7 @@ public sealed class AgenticAiAuditEngine
         sb.AppendLine("# Machine Learning & Agentic AI Hardening Audit Dossier");
         sb.AppendLine();
         sb.AppendLine($"- **Date**: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}");
-        sb.AppendLine("- **Auditor**: Capital-Iz Ghozt — Agentic AI Verification Subsystem");
+        sb.AppendLine("- **Auditor**: CAPITAL-IZ Ghozt — Agentic AI Verification Subsystem");
         sb.AppendLine($"- **Total Audits**: {results.Count}");
         sb.AppendLine($"- **Cleared Gates**: {results.Count(r => r.Passed)} / {results.Count}");
         sb.AppendLine();

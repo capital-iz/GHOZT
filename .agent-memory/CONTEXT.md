@@ -4,11 +4,11 @@ _Read this first. It is what is true now, not a history._
 
 ## What this project is
 
-**Ghozt - Dev Tester** (visible shell brand **Ghozt**, portfolio **Capital-Iz Ghozt**, publisher **Capital-Iz**): an autonomous software forensics, quality certification, and development acceleration platform. It registers targets, executes governed sweeps, records every observation to an immutable SQLite WAL event ledger, captures and hashes evidence, and evaluates release policy to issue signed clearance decisions.
+**Ghozt - Dev Tester** (visible shell brand **Ghozt**, portfolio **CAPITAL-IZ Ghozt**, publisher **CAPITAL-IZ**): an autonomous software forensics, quality certification, and development acceleration platform. It registers targets, executes governed sweeps, records every observation to an immutable SQLite WAL event ledger, captures and hashes evidence, and evaluates release policy to issue signed clearance decisions.
 
 ## Current state
 
-- **Repository**: `https://github.com/capital-iz/GHOZT` (`main` branch), git root `C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT`.
+- **Repository**: `https://github.com/capital-iz/GHOZT` (`main` branch), git root `C:\Users\reama\Soft Dev\CAPITAL-IZ\Apps\Desktop\GHOZT`.
 - **Stack**: C# / WPF / .NET 8 (`net8.0-windows10.0.19041.0`), SQLite WAL (`ghozt.db`), xUnit (`Ghozt.Tests`), WiX 5 self-contained MSI packaging.
 - **Projects**:
   - `Ghozt.Theming`: Contrast arithmetic, 12 palettes x 2 modes, mathematical contrast enforcement, strictly generated tokens (`Text.*`, `Surface.*`, `Border.*`, `Accent.*`, `State.*`, `Ghozt.*`, `Authority.*`).
@@ -37,5 +37,5 @@ _Read this first. It is what is true now, not a history._
 - **Five Placeholder Workspaces**: Replay, Algorithms, Regressions, Reports, Clearance are currently marked planned.
 - **Motion Layer**: Token durations exist in `Ghozt.Theming` but are unconsumed in XAML.
 - **Redacted Mono Palette Accent**: Accent `#CDA661` converges with authority gold; needs owner decision.
-- **Sandboxed Test Isolation**: Capture and test runs currently hit `%LOCALAPPDATA%\Capital-Iz\Ghozt\ghozt.db` (violates doctrine §25.2); needs sandboxed data root.
+- **Sandboxed Test Isolation**: Capture and test runs currently hit `%LOCALAPPDATA%\CAPITAL-IZ\Ghozt\ghozt.db` (violates doctrine §25.2); needs sandboxed data root.
 - **Registry Slug Registration**: `ghozt` slug on `admin.capital-iz.com` pending owner approval before initial VPS publish.

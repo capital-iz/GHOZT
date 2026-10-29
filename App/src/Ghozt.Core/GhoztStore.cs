@@ -58,7 +58,7 @@ public sealed class GhoztStore : IDisposable
     /// <summary>The default location: per-user application data, beside the rest of the suite.</summary>
     public static string DefaultDatabasePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Capital-Iz",
+        "CAPITAL-IZ",
         "Ghozt",
         "ghozt.db");
 

@@ -2,7 +2,7 @@
 
 - **Document ID:** GZT-BLD-018
 - **Date:** 2026-09-15
-- **Author:** Antigravity (Capital-Iz Systems Architect & Execution Engineer)
+- **Author:** Antigravity (CAPITAL-IZ Systems Architect & Execution Engineer)
 - **Status:** Approved
 - **Governing Phase:** Phase 5 — Full Experiential Synthesis, Cross-Workspace Telemetry & Responsive Visual Polish
 
@@ -13,7 +13,7 @@
 Static code compilation and unit test passes represent baseline verification, but practical usage reveals layout truncations, unrendered states, and workflow dead-ends. Through automated hands-on screenshot scrutiny of Ghozt 1.0.8, several critical experiential defects were identified:
 1. **Clearance Gate Latency**: Navigating to `ClearanceWorkspace` required explicit button clicks before evaluating and rendering the 12 policy gates, leaving an empty card on entry.
 2. **Horizontal Action Truncations**: Rigid `StackPanel` containers in `FaultsWorkspace`, `ClearanceWorkspace`, and `ReportsWorkspace` caused trailing actions (`Assign to Issue Tracker`, `Export Certificate`, `Portfolio Rollup`) to truncate on standard displays.
-3. **Card Title Clipping**: In `TargetsWorkspace`, target names such as `Capital-Iz Ghozt Core` were truncated to `Capital-Iz Ghozt Cor` due to rigid header column constraints.
+3. **Card Title Clipping**: In `TargetsWorkspace`, target names such as `CAPITAL-IZ Ghozt Core` were truncated to `CAPITAL-IZ Ghozt Cor` due to rigid header column constraints.
 4. **Viewport Clipping in Algorithms Lab**: Outcome cards for Delta-Debugging minimization lacked vertical scroll containers, clipping pruned noise lists.
 5. **Evidence Toolbar Cramming**: `KindFilter` ComboBox width caused text clipping (`All Kin...`) alongside search and completeness ratio indicators.
 
@@ -34,7 +34,7 @@ Static code compilation and unit test passes represent baseline verification, bu
 - Widen `SeverityFilter` and `StateFilter` to `130px`, ensuring "All Severities" and "All States" render with zero clipping.
 
 ### 2.3 Fluid Header Layout (`TargetsWorkspace`)
-- **Mechanism**: Re-architect target card header layout with flexible star-sizing columns and auto-sizing badge containers, ensuring full brand title rendering (`Capital-Iz Ghozt Core`) before status badges.
+- **Mechanism**: Re-architect target card header layout with flexible star-sizing columns and auto-sizing badge containers, ensuring full brand title rendering (`CAPITAL-IZ Ghozt Core`) before status badges.
 
 ### 2.4 Laboratory Viewport Scroll Containment (`AlgorithmsWorkspace`)
 - **Mechanism**: Tab 3 ("Delta-Debugging Lab") content is enclosed within a dedicated `<ScrollViewer VerticalScrollBarVisibility="Auto">`. Outcome cards expand dynamically without window boundary clipping.

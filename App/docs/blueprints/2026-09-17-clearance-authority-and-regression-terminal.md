@@ -3,7 +3,7 @@
 **Blueprint ID:** GZT-UX-004  
 **Date:** 2026-09-17  
 **Status:** Approved  
-**Author:** Capital-Iz Systems Architecture  
+**Author:** CAPITAL-IZ Systems Architecture  
 
 ---
 
@@ -39,4 +39,4 @@
 - **Gold Authority Invariant (Law 21 & GZT-ID-001):** Gold is reserved strictly for Authority and Release Clearance Seals. Ordinary UI controls or metrics must not use gold.
 - **Three-State Honesty Invariant (Doctrine §9):** Absence of evidence, unmeasured metrics, or null values must display as `UNVERIFIED` or `UNKNOWN`, never defaulted to zero or passed.
 - **Zero Live Contamination (Doctrine §25.2):** All test and capture suites run against isolated sandbox databases.
-- **Design System Invariant:** All visual tokens must resolve through the Capital-Iz 12-palette token engine (`Authority.*`, `State.*`, `Surface.*`, `Border.*`, `Text.*`).
+- **Design System Invariant:** All visual tokens must resolve through the CAPITAL-IZ 12-palette token engine (`Authority.*`, `State.*`, `Surface.*`, `Border.*`, `Text.*`).

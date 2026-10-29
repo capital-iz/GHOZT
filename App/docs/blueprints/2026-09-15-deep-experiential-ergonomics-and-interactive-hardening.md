@@ -2,8 +2,8 @@
 
 - **Status:** Approved & Governed
 - **Date:** 2026-09-15
-- **Author:** Antigravity / Capital-Iz Systems Architect
-- **Target Products:** Capital-Iz Ghozt — Dev Tester (`Apps\Desktop\GHOZT`)
+- **Author:** Antigravity / CAPITAL-IZ Systems Architect
+- **Target Products:** CAPITAL-IZ Ghozt — Dev Tester (`Apps\Desktop\GHOZT`)
 - **Authority Directive:** Experiential Polish & Deep Forensic App Testing Directive
 
 ---
@@ -96,5 +96,5 @@ flowchart TD
    - Verifies zero modal dialogs block the run.
 3. **Packaging & Self-Test**:
    - Version bump to `1.0.8`.
-   - Rebuild MSI, install to `C:\Program Files\Capital-Iz\Ghozt\`.
+   - Rebuild MSI, install to `C:\Program Files\CAPITAL-IZ\Ghozt\`.
    - Run `--self-test` ensuring `SELF_HOST_QUALIFIED` across 12 domains.

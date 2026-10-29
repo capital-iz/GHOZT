@@ -2,7 +2,7 @@
 
 - **Identifier**: GZT-BLD-010
 - **Date**: 2026-09-14
-- **Author**: Capital-Iz Engineering Authority
+- **Author**: CAPITAL-IZ Engineering Authority
 - **Status**: Implemented
 - **Patent Cross-Reference**: Patent §14 (Behavioural Truth Triangulation), §15 (Multi-Source Reconciliation), §16 (Autonomous Exploration Engine), §17 (Candidate-Action Scoring), §23 (Adaptive Capture & Ring Buffer Forensics)
 

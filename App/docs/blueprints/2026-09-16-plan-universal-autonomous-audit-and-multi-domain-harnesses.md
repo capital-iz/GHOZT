@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Paired Implementation Plan |
-| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **Capital-Iz Ghozt** |
+| Product | Ghozt - Dev Tester · visible brand **Ghozt** · portfolio **CAPITAL-IZ Ghozt** |
 | Governing Blueprint | `2026-09-16-universal-autonomous-audit-and-multi-domain-harnesses.md` |
 | Scope | `Apps\Desktop\GHOZT\App` — `Ghozt.Core`, `Ghozt.App`, `Ghozt.Tests` |
 | Date | 2026-09-16 |
@@ -36,7 +36,7 @@
 - [x] Execute `dotnet test App\tests\Ghozt.Tests\Ghozt.Tests.csproj -c Release` to confirm 100% pass rate.
 
 ### Milestone 4: Runtime Desktop E2E Verification & Visual Proof
-- [x] Package clean WiX MSI installer and deploy to `C:\Program Files\Capital-Iz\Ghozt\Ghozt.exe`.
+- [x] Package clean WiX MSI installer and deploy to `C:\Program Files\CAPITAL-IZ\Ghozt\Ghozt.exe`.
 - [x] Run hands-on UI Automation script (`verify_experiential_qol_runtime.py`) driving Ghozt live on desktop.
 - [x] Exercise all 4 interactive domain workbenches, edit parameters, trigger live commands, click `[Copy Fix Diff]`, and verify console stream.
 - [x] Capture visual proof screenshots and confirm SQLite WAL evidence database integrity.

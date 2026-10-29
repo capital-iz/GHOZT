@@ -3,7 +3,7 @@
 **Document ID**: GZT-BLD-020  
 **Status**: ACTIVE / VERIFIED  
 **Date**: 2026-09-16  
-**Product**: Capital-Iz Ghozt — Dev Tester  
+**Product**: CAPITAL-IZ Ghozt — Dev Tester  
 **Subsystem**: Shell Infrastructure, Target Management, & Workspace State Isolation  
 
 ---

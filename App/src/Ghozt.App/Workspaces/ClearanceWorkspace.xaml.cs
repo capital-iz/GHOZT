@@ -411,7 +411,7 @@ public partial class ClearanceWorkspace : UserControl, IRefreshableWorkspace
         {
             var dir = System.IO.Path.Combine(
                 System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-                "Capital-Iz", "Ghozt", "Certificates");
+                "CAPITAL-IZ", "Ghozt", "Certificates");
 
             var certFiles = System.IO.Directory.Exists(dir)
                 ? System.IO.Directory.GetFiles(dir, $"CERT-{target.Id}-*.json")

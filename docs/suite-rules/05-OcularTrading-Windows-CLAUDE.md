@@ -52,7 +52,7 @@ applicable law, broker controls, and higher-level platform or system constraints
 
 ## Governing Blueprint
 
-`C:\Users\reama\Soft Dev\Capital-Iz\Trading\Blueprints\2026-07-29-owner-directive-continuous-blueprint-evolution.md`
+`C:\Users\reama\Soft Dev\CAPITAL-IZ\Trading\Blueprints\2026-07-29-owner-directive-continuous-blueprint-evolution.md`
 
 All execution follows:
 

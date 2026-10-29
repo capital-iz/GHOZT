@@ -10,7 +10,7 @@ namespace Ghozt.Theming;
 /// palettes are the product; the finishes are a preference on top of them, and an operator who wants
 /// Spectral Black flat should not have to accept a wash to get it.
 /// <para>
-/// The ranges mirror the suite's <c>ThemeEffects</c> exactly, so a look configured in one Capital-Iz
+/// The ranges mirror the suite's <c>ThemeEffects</c> exactly, so a look configured in one CAPITAL-IZ
 /// product transfers to another as the same numbers rather than as an approximation of it.
 /// </para>
 /// </remarks>

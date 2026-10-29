@@ -7,7 +7,7 @@
 | Scope | `Apps\Desktop\GHOZT\App` — theme engine, domain core, sweep engine, WPF shell, six workspaces |
 | Date | 2026-08-31 |
 | Status | Implemented and verified against a running application |
-| Sources | GZT-UX-001 (UI/UX & 12-Theme), GZT-ID-001 (Identity), GZT-ARCH (Functional & System Architecture), Capital-Iz Universal Design System v2.0 §12 |
+| Sources | GZT-UX-001 (UI/UX & 12-Theme), GZT-ID-001 (Identity), GZT-ARCH (Functional & System Architecture), CAPITAL-IZ Universal Design System v2.0 §12 |
 
 ---
 

@@ -538,7 +538,7 @@ public sealed class ScientificMathAuditEngine
         sb.AppendLine();
         sb.AppendLine($"- **Date**: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}");
         sb.AppendLine("- **Governing Domain**: Scientific Computing & Numerical Systems");
-        sb.AppendLine("- **Auditor**: Capital-Iz Ghozt — First-Principles Scientific Audit Subsystem");
+        sb.AppendLine("- **Auditor**: CAPITAL-IZ Ghozt — First-Principles Scientific Audit Subsystem");
         sb.AppendLine($"- **Total Invariants Audited**: {results.Count}");
         sb.AppendLine($"- **Passed**: {results.Count(r => r.Passed)} / {results.Count}");
         sb.AppendLine();

@@ -1,4 +1,4 @@
-# AGENTS.md — Capital-Iz suite
+# AGENTS.md — CAPITAL-IZ suite
 
 **Read this before touching anything.** These are the owner's standing rules. They are not
 negotiable and they are not per-task. Rea has had to repeat several of them many times; do not make
@@ -66,7 +66,7 @@ tell Rea — do not pick one and delete the other on your own judgement.
    starts, that build ships and the item goes in the next version. Only an explicit stop redirects.
 7. **Never expose internal infrastructure in client UI.** The admin host, VPS IP, registry paths and
    channel keys must never be rendered to a user or shipped in user-visible text. Configuration only.
-8. **Naming.** The business is **Capital-Iz**. The product is **CommanDeck** (that exact casing).
+8. **Naming.** The business is **CAPITAL-IZ**. The product is **CommanDeck** (that exact casing).
    **Mouse n Key** is written in full, never abbreviated to MNK in conversation. The AI subsystem is
    **OCULAR AI** — label everything AI, especially ours, accordingly.
 9. **Do not change key bindings**, and **keep Alt+C**.
@@ -147,4 +147,4 @@ Keep them there. They were previously kept in a folder no repo tracked, and were
 that folder was removed.
 - **Blueprints:** `docs/blueprints/` in each repo.
 - **Owner's memory (canonical for the rules above):**
-  `C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps\memory\`
+  `C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps\memory\`

@@ -1,7 +1,7 @@
 # Blueprint: Forensic Workflow Synthesis & Interactive State Manipulation
 
 **Date**: 2026-09-15  
-**Product**: Capital-Iz Ghozt — Dev Tester  
+**Product**: CAPITAL-IZ Ghozt — Dev Tester  
 **Author**: Antigravity  
 **Status**: Governing Architecture  
 
@@ -71,7 +71,7 @@ graph TD
 
 ## 3. Constraints & Invariants
 
-- **Sandboxed Test Isolation (Doctrine §25.2)**: All test suites and UI automation must run against sandboxed database files without touching `%LOCALAPPDATA%\Capital-Iz\Ghozt\ghozt.db`.
+- **Sandboxed Test Isolation (Doctrine §25.2)**: All test suites and UI automation must run against sandboxed database files without touching `%LOCALAPPDATA%\CAPITAL-IZ\Ghozt\ghozt.db`.
 - **Token Namespace Strictness (Universal Design System §12)**: Colors, borders, and fills must resolve strictly through published tokens (`Surface.*`, `Border.*`, `Accent.*`, `State.*`, `Authority.*`, `Ghozt.*`).
 - **Mutation Verification (AGENTS.md §5)**: At least one assertion must undergo deliberate mutation testing (RED $\to$ GREEN).
 - **Audit Integrity (Universal Doctrine §8)**: All navigation handoffs and node updates emit canonical audit events to the black-box stream.

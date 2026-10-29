@@ -192,7 +192,7 @@ public sealed class ReportGenerator
         typeof(ReportGenerator).Assembly.GetName().Version?.ToString(3) ?? "0.5.0";
 
     /// <summary>
-    /// Builds a patent-grade, self-contained HTML forensic dossier conforming to Capital-Iz Design System v2.0 (Patent §32).
+    /// Builds a patent-grade, self-contained HTML forensic dossier conforming to CAPITAL-IZ Design System v2.0 (Patent §32).
     /// Zero external CDN or script dependencies: fully air-gapped and offline capable.
     /// </summary>
     public static string BuildHtml(
@@ -386,7 +386,7 @@ public sealed class ReportGenerator
         // Footer
         html.AppendLine("<footer>");
         html.AppendLine(CultureInfo.InvariantCulture, $"  <p>Evidence Digest: <span class=\"mono\">{SecurityElement.Escape(decision.EvidenceDigest)}</span></p>");
-        html.AppendLine(CultureInfo.InvariantCulture, $"  <p style=\"margin-top:6px;\">Capital-Iz Ghozt - Dev Tester v{GetProductVersion()} · Universal Blueprint Development Doctrine · Authority Sealed</p>");
+        html.AppendLine(CultureInfo.InvariantCulture, $"  <p style=\"margin-top:6px;\">CAPITAL-IZ Ghozt - Dev Tester v{GetProductVersion()} · Universal Blueprint Development Doctrine · Authority Sealed</p>");
         html.AppendLine("</footer>");
 
         html.AppendLine("</div>");

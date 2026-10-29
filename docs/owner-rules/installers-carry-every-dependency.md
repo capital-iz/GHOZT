@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-29T16:08:27.259Z
 ---
 
-Every package Capital-Iz ships — MSI, bundle, APK, AAB — must carry **100% of the dependencies
+Every package CAPITAL-IZ ships — MSI, bundle, APK, AAB — must carry **100% of the dependencies
 needed to run on a machine that is not Rea's**. Nothing may rely on something that happens to be
 present on the development machine.
 

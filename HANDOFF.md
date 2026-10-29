@@ -14,7 +14,7 @@ situation: what exists, what is wrong, what is next.
 ## 0. Start here — the first five minutes
 
 ```bash
-cd "C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT"
+cd "C:\Users\reama\Soft Dev\CAPITAL-IZ\Apps\Desktop\GHOZT"
 git status                      # expect: clean, on main
 git log --oneline -5            # read the top SHA; do not trust this document's
 git ls-remote origin main       # expect: matches local HEAD
@@ -43,7 +43,7 @@ cd Windows
 
 | Thing | Path |
 |---|---|
-| **Product root / git root** | `C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT` |
+| **Product root / git root** | `C:\Users\reama\Soft Dev\CAPITAL-IZ\Apps\Desktop\GHOZT` |
 | Remote | `https://github.com/capital-iz/GHOZT` branch `main` |
 | App source | `GHOZT\App\src\` — `Ghozt.Theming`, `Ghozt.Core`, `Ghozt.App` |
 | Tests | `GHOZT\App\tests\Ghozt.Tests` |
@@ -51,18 +51,18 @@ cd Windows
 | Iteration script | `GHOZT\Windows\iterate.ps1` |
 | Artifacts (gitignored) | `GHOZT\Windows\artifacts\Ghozt-0.1.{0,1,2}.msi` |
 | Reference screenshots | `GHOZT\App\docs\screenshots\` |
-| Runtime data (not in git) | `%LOCALAPPDATA%\Capital-Iz\Ghozt\ghozt.db` |
+| Runtime data (not in git) | `%LOCALAPPDATA%\CAPITAL-IZ\Ghozt\ghozt.db` |
 
 ### This chat's transcript
 
-`C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps-Desktop-GHOZT--claude-worktrees-new-session-1d2b9f\49f73f88-47aa-4967-b2a3-261a22b8b5f8.jsonl`
+`C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps-Desktop-GHOZT--claude-worktrees-new-session-1d2b9f\49f73f88-47aa-4967-b2a3-261a22b8b5f8.jsonl`
 
 ~16 MB JSONL. Every tool call and result. Search it for exact reasoning; do not re-derive decisions
 that are recorded there.
 
 ### The owner's persistent memory
 
-`C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-Capital-Iz-Apps\memory\`
+`C:\Users\reama\.claude\projects\C--Users-reama-Soft-Dev-CAPITAL-IZ-Apps\memory\`
 
 `MEMORY.md` is the index; each `.md` beside it is one standing rule with its reasoning. These are
 Claude Code's memory format, but they are **plain markdown** — any agent can and should read them:
@@ -84,7 +84,7 @@ Claude Code's memory format, but they are **plain markdown** — any agent can a
 
 | File | Lines | Status |
 |---|---|---|
-| `Capital-Iz\AGENTS.md` | 127 | global — **partly stale**, names a path that does not exist |
+| `CAPITAL-IZ\AGENTS.md` | 127 | global — **partly stale**, names a path that does not exist |
 | `Apps\AGENTS.md` | 150 | suite layout — current |
 | `Apps\Desktop\Command Deck\AGENTS.md` | 150 | verified against the filesystem 2026-08-31; build/publish procedure, environment facts |
 | `Apps\Desktop\Mouse n Key\AGENTS.md` | 150 | sibling product |
@@ -186,7 +186,7 @@ black-box tray, status footer, command palette (Ctrl+K), width states, density, 
 Clearance.
 
 ### Windows — packaging
-WiX 5 MSI carrying the Capital-Iz installer signature (banner mark right, dialog, shared Start-menu
+WiX 5 MSI carrying the CAPITAL-IZ installer signature (banner mark right, dialog, shared Start-menu
 folder, HKLM registration, immutable UpgradeCode `8F3A6C21-7D94-4E52-9B08-51C4A7E6D310`). Branding
 generated from the master mark by `Installer\brand\build-brand-assets.py`. Self-contained: 256
 files, 170.9 MB → 57.3 MB MSI. **Verified by extracting the payload and running it**, not by reading
@@ -269,7 +269,7 @@ ordinary accent label are **13 units apart** — visually identical. It is carri
 reasoned exemption in `ThemeCatalogTests.AuthorityAccentExemptions`. Either change the palette's
 accent or accept the exemption as a documented property. **Rea's call.**
 
-### 4.5 `Capital-Iz\AGENTS.md` is stale and contradicts `Apps\AGENTS.md`
+### 4.5 `CAPITAL-IZ\AGENTS.md` is stale and contradicts `Apps\AGENTS.md`
 
 It names `Apps\Desktop\CAPITAL-IZ DESKTOP\Command Deck\App` as authoritative — **that path does not
 exist** — and calls the live `Apps\Desktop\Command Deck` a stale tree. A new agent reading the
@@ -318,8 +318,8 @@ widen it again.**
 
 ## 6. Anti-hallucination protocol — paste this into the new agent
 
-> You are working on **Ghozt**, a Capital-Iz product, at
-> `C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT`.
+> You are working on **Ghozt**, a CAPITAL-IZ product, at
+> `C:\Users\reama\Soft Dev\CAPITAL-IZ\Apps\Desktop\GHOZT`.
 >
 > **Before anything else**, read `AGENTS.md` and `HANDOFF.md` in that folder. They are the rules and
 > the current state. Then read `Apps\AGENTS.md` one level up. If you cannot read files, say so and
@@ -404,7 +404,7 @@ namespaces (two crashes came from that), or start a second UI in parallel.
 ## 8. Verification commands — use these, do not trust this document's numbers
 
 ```powershell
-cd "C:\Users\reama\Soft Dev\Capital-Iz\Apps\Desktop\GHOZT"
+cd "C:\Users\reama\Soft Dev\CAPITAL-IZ\Apps\Desktop\GHOZT"
 
 git rev-parse --show-toplevel                 # must end in \GHOZT
 git status --porcelain                        # must be empty before you start

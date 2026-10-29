@@ -16,7 +16,7 @@
    - Record sealed `performance:soak` evidence and clustered findings.
 
 2. **Executive & Technical HTML Audit Dossier (Patent §32)**:
-   - Upgrade `ReportGenerator.cs` to produce a self-contained, interactive HTML dashboard matching Capital-Iz Universal Design System v2.0.
+   - Upgrade `ReportGenerator.cs` to produce a self-contained, interactive HTML dashboard matching CAPITAL-IZ Universal Design System v2.0.
    - Include inline zero-dependency SVG charts (clearance gauge, severity distribution).
    - Render complete findings with 95% Wilson intervals and cryptographic provenance chain.
    - Eliminate hardcoded version strings in favor of dynamic assembly metadata.

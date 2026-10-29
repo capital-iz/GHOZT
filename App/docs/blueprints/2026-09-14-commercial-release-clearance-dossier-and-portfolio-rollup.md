@@ -2,7 +2,7 @@
 
 - **Identifier**: GZT-BLD-011
 - **Date**: 2026-09-14
-- **Author**: Capital-Iz Engineering Authority
+- **Author**: CAPITAL-IZ Engineering Authority
 - **Status**: Implemented
 - **Patent Cross-Reference**: Patent §33 (Earned, Not Asserted Release Clearance), §41 (Estate Governance & Portfolio Use), §45 (Honest Boundaries & Three-State Clearance), Appendix B (Table 10: Example Clearance Digest)
 
@@ -13,11 +13,11 @@
 Release decisions in commercial software development are often opaque, political, or based on misleading summary percentages. Conventional QA systems suffer from three critical defects:
 1. **False Completeness (Patent §45)**: Passing 100% of existing tests is routinely equated with "zero defects", hiding that 80% of application state space was never observed or tested.
 2. **Untraceable Clearance Claims (Patent §33 & Appendix B)**: Release clearance decisions lack cryptographic bindings to the actual underlying test artefacts, logs, and failure reproducers that support them.
-3. **Estate Blindness (Patent §41)**: Enterprise software systems consist of multiple interconnected products (e.g. Capital-Iz Desktop Suite: Ghozt, CommanDeck, Mouse n Key, Trading Terminal). Verifying one product in isolation without cross-product dependency and portfolio rollup leads to integration regressions.
+3. **Estate Blindness (Patent §41)**: Enterprise software systems consist of multiple interconnected products (e.g. CAPITAL-IZ Desktop Suite: Ghozt, CommanDeck, Mouse n Key, Trading Terminal). Verifying one product in isolation without cross-product dependency and portfolio rollup leads to integration regressions.
 
 Milestone v1.0.0 addresses these needs by delivering:
 - **Release Clearance Dossier Engine (`ClearanceDossierEngine.cs`)** implementing Patent Appendix B (Table 10), Three-State Honesty decomposition (Verified, Failed, Unknown), Merkle evidence roots, and standalone interactive HTML/JSON certificates.
-- **Portfolio Quality Rollup Engine (`PortfolioRollupEngine.cs`)** governing multi-target quality across the entire Capital-Iz desktop estate.
+- **Portfolio Quality Rollup Engine (`PortfolioRollupEngine.cs`)** governing multi-target quality across the entire CAPITAL-IZ desktop estate.
 
 ---
 
@@ -70,7 +70,7 @@ Where:
 
 ### 2.2 Portfolio Quality Rollup Engine (`PortfolioRollupEngine.cs` — Patent §41 & P511)
 
-- Manages multi-target quality aggregation across the Capital-Iz application portfolio:
+- Manages multi-target quality aggregation across the CAPITAL-IZ application portfolio:
   - Discovers all registered targets in `GhoztStore`.
   - Calculates estate-wide metrics:
     - Active target count and reachability status.

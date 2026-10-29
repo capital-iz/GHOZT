@@ -2,7 +2,7 @@
 
 - **Identifier**: GZT-BLD-009
 - **Date**: 2026-09-14
-- **Author**: Capital-Iz Engineering Authority
+- **Author**: CAPITAL-IZ Engineering Authority
 - **Status**: Implemented
 - **Patent Cross-Reference**: Patent §30 (Fix Brief & Bounded Repair Execution), §31 (Regression Memory & Change Impact), §38 (Deployment Topology & Headless Execution)
 

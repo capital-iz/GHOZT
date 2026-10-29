@@ -7,7 +7,7 @@
 - **Author:** Antigravity / Systems Architect
 - **Governing Doctrines:**
   - Ghozt Patent-Level Functional and System Architecture Blueprint (§21, §32, §33)
-  - Universal Design System — Capital-Iz Doctrine v2.0 (§12 Ghozt Adaptation)
+  - Universal Design System — CAPITAL-IZ Doctrine v2.0 (§12 Ghozt Adaptation)
   - Universal Security & Operational Doctrine §9
   - Verification-First Execution Doctrine §12
 
@@ -52,7 +52,7 @@
 
 2. **`ReportGenerator` (Executive & Technical HTML Dashboard — Patent §32)**:
    - Compiles technical, executive, and machine-readable dossiers.
-   - Embeds Capital-Iz Design System CSS tokens (`#0b1118`, `#121c26`, `#233444`, `#d4af37`, `#32d74b`, `#ff453a`).
+   - Embeds CAPITAL-IZ Design System CSS tokens (`#0b1118`, `#121c26`, `#233444`, `#d4af37`, `#32d74b`, `#ff453a`).
    - Renders pure SVG inline interactive data visualizations (zero external JavaScript or CDN dependencies):
      - Release Clearance Gates Status Ring (Donut chart).
      - Deviation Severity Distribution Bar.

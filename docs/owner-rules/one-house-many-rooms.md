@@ -8,7 +8,7 @@ metadata:
   modified: 2026-08-29T19:12:16.981Z
 ---
 
-The Capital-Iz suite is **one ecosystem**, not a set of apps that happen to share a brand. Rea's
+The CAPITAL-IZ suite is **one ecosystem**, not a set of apps that happen to share a brand. Rea's
 words: *"they must all feel like rooms in one house, each room has a bit of a personality of its
 own but its main essence is the house."* Mobile must feel exactly like PC and vice versa — a full
 adaptation, not a reduced port.
